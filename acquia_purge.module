@@ -1,0 +1,285 @@
+<?php
+
+/**
+ * @file
+ *   Automatically purge pages upon save or the full site from Varnish.
+ * @author
+ *   Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
+ */
+
+/**
+ * Implementation of hook_expire_cache().
+ */
+function acquia_purge_expire_cache($paths) {
+  
+  /**
+   * When the user enabled the expire module we strip the incoming URL's and
+   * pass it along to our own purging helper to let the user benefit most.
+   */
+  $stripped_paths = array();
+  $domains = _acquia_purge_get_domains();
+  foreach ($paths as $path) {
+    $stripped_path = $path;
+    foreach ($domains as $domain) {
+      $stripped_path = str_replace("http://$domain", '', $stripped_path);
+      $stripped_path = str_replace("https://$domain", '', $stripped_path);
+    }
+    $stripped_paths[] = $stripped_path;
+  }
+  _acquia_purge_purge_paths($stripped_paths);
+}
+
+/**
+ * Implementation of hook_node_insert().
+ */
+function acquia_purge_node_insert($node) {
+
+  // Pre-purge new nodes to be on the safe side, take all domains.
+  if (!module_exists('expire') && !module_exists('purge')) {
+    _acquia_purge_purge_node($node);
+  }
+}
+
+/**
+ * Implementation of hook_node_update().
+ */
+function acquia_purge_node_update($node) {
+
+  // Purge updated nodes from all domains in Varnish.
+  if (!module_exists('expire') && !module_exists('purge')) {
+    _acquia_purge_purge_node($node);
+  }
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter() - system_performance_settings form.
+ */
+function acquia_purge_form_system_performance_settings_alter(&$form, &$form_state, $form_id) {
+
+  /**
+   * Add a checkbox to the performance form to allow users to enable/disable purge reporting.
+   */
+  $checkbox = array();
+  $checkbox['#title'] = t('Report cache purges');
+  $checkbox['#description'] = t('Whenever something in Drupal gets updated that could be remotely cached in Varnish the Acquia Purge module can report this to the screen to notify you. When you install and enable the expire module much more urls will be pro actively purged from your Acquia site.');
+  $checkbox['#default_value'] = variable_get('acquia_purge_reportpurges', TRUE);
+  $checkbox['#type'] = 'checkbox';
+  $checkbox['#weight'] = -4;
+  $form['caching']['acquia_purge_reportpurges'] = $checkbox;
+}
+
+/**
+ * Determine whether we are running on Acquia Cloud or not.
+ *
+ * @returns
+ *   A boolean expression indicating if we currently run on Acquia hosting.
+ */
+function _acquia_purge_are_we_on_acquiacloud() {
+  static $connected;
+  if (is_null($connected)) {
+    $assertions = array(
+      is_array(variable_get('acquia_hosting_site_info', FALSE)),
+      variable_get('drupal_http_request_fails', FALSE) === FALSE,
+      (bool)_acquia_purge_get_site_name(),
+      (bool)_acquia_purge_get_site_group(),
+      php_sapi_name() !== 'cli',
+      function_exists('curl_init')
+    );
+    $connected = !in_array(FALSE, $assertions);
+  }
+  return $connected;
+}
+
+/**
+ * Get a list of defined domains that we can purge for.
+ *
+ * @returns
+ *  Array with string values mapping to all defined DNS domains for this site.
+ */
+function _acquia_purge_get_domains () {
+  static $domains;
+  if (is_null($domains)) {
+    $domains = array();
+
+    // Add the current HTTP_HOST that we're connected to.
+    $domains[] = trim($_SERVER['HTTP_HOST']);
+
+    // Take an absolute URL (which should respect $base_url) and strip its domain.
+    $base_domain = url('', array('absolute' => TRUE));
+    $base_domain = str_replace('http://', '', str_replace('https://', '', $base_domain));
+    $base_domain = str_replace('/', '', $base_domain);
+    if (!in_array($base_domain, $domains)) {
+      $domains[] = $base_domain;
+    }
+
+    // Albeit quite a dirty way, get all domains defined for this site's vhost (@TODO).
+    if (file_exists('/etc/apache2/conf.d')) {
+      $site_name = _acquia_purge_get_site_name();
+      $server_name = shell_exec("grep -r 'ServerName' /etc/apache2/conf.d/$site_name*.conf");
+      foreach (explode('ServerName', $server_name) as $testable) {
+        foreach (explode(' ', trim($testable)) as $domain) {
+          $domain = trim($domain);
+          if (strlen($domain) && !in_array($domain, $domains)) {
+            $domains[] = $domain;
+          }
+        }
+      }
+      $server_alias = shell_exec("grep -r 'ServerAlias' /etc/apache2/conf.d/$site_name*.conf");
+      foreach (explode('ServerAlias', $server_alias) as $testable) {
+        foreach (explode(' ', trim($testable)) as $domain) {
+          $domain = trim($domain);
+          if (strlen($domain) && !in_array($domain, $domains)) {
+            $domains[] = $domain;
+          }
+        }
+      }
+    }
+  }
+  return $domains;
+}
+
+/**
+ * Determine the Acquia site name.
+ *
+ * @returns
+ *  Either a boolean FALSE or a string identifying what site we are on.
+ */
+function _acquia_purge_get_site_name() {
+  static $ah_site_name;
+  if (is_null($ah_site_name)) {
+    $ah_site_name = FALSE;
+    if (isset($_ENV['AH_SITE_NAME']) && !empty($_ENV['AH_SITE_NAME'])) {
+      $ah_site_name = $_ENV['AH_SITE_NAME'];
+    }
+  }
+  return $ah_site_name;
+}
+
+/**
+ * Determine the Acquia site group.
+ *
+ * @returns
+ *  Either a boolean FALSE or a string identifying what site group this is.
+ */
+function _acquia_purge_get_site_group() {
+  static $ah_site_group;
+  if (is_null($ah_site_group)) {
+    $ah_site_group = FALSE;
+    if (isset($_ENV['AH_SITE_GROUP']) && !empty($_ENV['AH_SITE_GROUP'])) {
+      $ah_site_group = $_ENV['AH_SITE_GROUP'];
+    }
+  }
+  return $ah_site_group;
+}
+
+/**
+ * Purge the paths from a node from Varnish.
+ *
+ * @param &$node
+ *  A Drupal node object that was just inserted or saved.
+ * @param $domains
+ *  Array containing all the domain names the record should be purged
+ *  from. Optional, default list of domain names will be generated else.
+ *
+ * @returns
+ *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ */
+function _acquia_purge_purge_node(&$node, $domains = NULL) {
+
+  // Purge updated nodes from all domains in Varnish.
+  $paths = array('node/'. $node->nid);
+  if (isset($node->path['alias']) && strlen($node->path['alias'])) {
+    $paths[] = $node->path['alias'];
+  }
+  if (isset($node->promote) && $node->promote) {
+    $paths[] = '<front>';
+    $paths[] = 'rss.xml';
+  }
+  _acquia_purge_purge_paths($paths);
+}
+
+/**
+ * Purge a certain Drupal path from Varnish.
+ *
+ * @param $path
+ *  The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ * @param $domains
+ *  Array containing all the domain names the record should be purged
+ *  from. Optional, default list of domain names will be generated else.
+ *
+ * @returns
+ *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ */
+function _acquia_purge_purge_path($path, $domains = NULL) {
+
+  // Refuse execution whenever we are outside Acquia Hosting.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return FALSE;
+  }
+
+  // Get a list of domains ourselves when these are not given.
+  if (is_null($domains)) {
+    $domains = _acquia_purge_get_domains();
+  }
+
+  // The special path '<front>' links to the default front page.
+  if ($path == '<front>') {
+    $path = '';
+  }
+
+  // Declare the base path and sitename in local scope to prevent duplicate calls.
+  $base_path = base_path();
+  $site_name = _acquia_purge_get_site_name();
+
+  // Collect each execution result to be able to determine the return value.
+  $results = array();
+
+  // Loop through each domain and generate a URL to send the PURGE header to.
+  foreach ($domains as $domain) {
+    $headers = array ("Accept-Encoding: gzip", "X-Acquia-Purge:$site_name");
+    $uri = sprintf('http://%s%s%s', $domain, $base_path, $path);
+
+    // Configure the curl resource.
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $uri);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PURGE');
+    curl_setopt($curl, CURLOPT_FAILONERROR, TRUE);
+
+    // Execute the PURGE header and add up to the results.
+    $results[] = curl_exec($curl);
+
+    // Close the curl session.
+    curl_close($curl);
+
+    // To be certain we also clear any records from the cache_page bin.
+    cache_clear_all($uri, 'cache_page');
+
+    // Notify the user if he requested this.
+    if (variable_get('acquia_purge_reportpurges', TRUE)) {
+      drupal_set_message("Purged from Varnish: <b>$uri</b>", 'info');
+    }
+  }
+
+  return !in_array(FALSE, $results);
+}
+
+/**
+ * Purge a several Drupal paths from Varnish.
+ *
+ * @param $paths
+ *  Array with Drupal paths (e.g. '<front>', 'user/1' or an aliased path).
+ * @param $domains
+ *  Array containing all the domain names the record should be purged
+ *  from. Optional, default list of domain names will be generated else.
+ *
+ * @returns
+ *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ */
+function _acquia_purge_purge_paths($paths, $domains = NULL) {
+  $results = array();
+  foreach ($paths as $path) {
+    $results[] = _acquia_purge_purge_path($path, $domains);
+  }
+  return !in_array(FALSE, $results);
+}
