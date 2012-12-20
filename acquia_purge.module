@@ -112,9 +112,15 @@ function _acquia_purge_get_domains() {
     $base_domain = str_replace('/', '', $base_domain);
     _acquia_purge_get_domains_add($base_domain, $domains);
 
-    // Add the domain names the customer defined on Acquia Cloud. When this
-    // process would fail we have at least the current and/or $base_url domain.
-    _acquia_purge_get_domains_add_from_acloud($domains);
+    // To better support multi-sites we only load in the configured Acquia Cloud
+    // domain names when we are on the 'default' site as that would else flood
+    // another site which we don't want to see happening, on <front> for example.
+    if ( ($conf_path = conf_path()) == 'sites/default' ) {
+
+      // Add the domain names the customer defined on Acquia Cloud. When this
+      // process would fail we have at least the current and/or $base_url domain.
+      _acquia_purge_get_domains_add_from_acloud($domains);
+    }
   }
 
   return $domains;
