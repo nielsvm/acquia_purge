@@ -82,7 +82,6 @@ function _acquia_purge_are_we_on_acquiacloud() {
       variable_get('drupal_http_request_fails', FALSE) === FALSE,
       (bool)_acquia_purge_get_site_name(),
       (bool)_acquia_purge_get_site_group(),
-      php_sapi_name() !== 'cli',
       function_exists('curl_init')
     );
     $connected = !in_array(FALSE, $assertions);
