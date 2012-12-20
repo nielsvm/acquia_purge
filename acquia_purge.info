@@ -1,4 +1,4 @@
 name = Acquia Purge
-description = "Automatically purge pages upon save or the full site from Varnish. Automatic purging is even more powerful when the expire module is enabled."
+description = "Top-notch Varnish purging on Acquia Cloud! Automatical purging becomes even more powerful when the expire module is enabled."
 package = Acquia Network Connector
 core = 7.x
