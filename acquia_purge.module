@@ -26,7 +26,7 @@ function acquia_purge_expire_cache($paths) {
     }
     $stripped_paths[] = $stripped_path;
   }
-  _acquia_purge_purge_paths($stripped_paths);
+  acquia_purge_purge_paths($stripped_paths);
 }
 
 /**
@@ -36,7 +36,7 @@ function acquia_purge_node_insert($node) {
 
   // Pre-purge new nodes to be on the safe side, take all domains.
   if (!module_exists('expire') && !module_exists('purge')) {
-    _acquia_purge_purge_node($node);
+    acquia_purge_purge_node($node);
   }
 }
 
@@ -47,7 +47,7 @@ function acquia_purge_node_update($node) {
 
   // Purge updated nodes from all domains in Varnish.
   if (!module_exists('expire') && !module_exists('purge')) {
-    _acquia_purge_purge_node($node);
+    acquia_purge_purge_node($node);
   }
 }
 
@@ -184,7 +184,7 @@ function _acquia_purge_get_site_group() {
  * @returns
  *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
  */
-function _acquia_purge_purge_node(&$node, $domains = NULL) {
+function acquia_purge_purge_node(&$node, $domains = NULL) {
 
   // Purge updated nodes from all domains in Varnish.
   $paths = array('node/'. $node->nid);
@@ -195,7 +195,7 @@ function _acquia_purge_purge_node(&$node, $domains = NULL) {
     $paths[] = '<front>';
     $paths[] = 'rss.xml';
   }
-  _acquia_purge_purge_paths($paths);
+  acquia_purge_purge_paths($paths);
 }
 
 /**
@@ -210,7 +210,7 @@ function _acquia_purge_purge_node(&$node, $domains = NULL) {
  * @returns
  *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
  */
-function _acquia_purge_purge_path($path, $domains = NULL) {
+function acquia_purge_purge_path($path, $domains = NULL) {
 
   // Refuse execution whenever we are outside Acquia Hosting.
   if (!_acquia_purge_are_we_on_acquiacloud()) {
@@ -276,10 +276,10 @@ function _acquia_purge_purge_path($path, $domains = NULL) {
  * @returns
  *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
  */
-function _acquia_purge_purge_paths($paths, $domains = NULL) {
+function acquia_purge_purge_paths($paths, $domains = NULL) {
   $results = array();
   foreach ($paths as $path) {
-    $results[] = _acquia_purge_purge_path($path, $domains);
+    $results[] = acquia_purge_purge_path($path, $domains);
   }
   return !in_array(FALSE, $results);
 }

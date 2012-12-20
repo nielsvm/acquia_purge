@@ -50,10 +50,10 @@ This module provides the means to purge a list of paths from Varnish without
 having to deal with any technical details and basically provides the following
 API level components that other modules or your custom tailored integration
 module can leverage:
- * _acquia_purge_purge_path($path, $domains = NULL)
- * _acquia_purge_purge_paths($paths, $domains = NULL)
- * _acquia_purge_purge_node(&$node, $domains = NULL)
- 
+ * acquia_purge_purge_path($path, $domains = NULL)
+ * acquia_purge_purge_paths($paths, $domains = NULL)
+ * acquia_purge_purge_node(&$node, $domains = NULL)
+
 In addition to that the module works with or without the expire module, the
 choice is up to you. What's great about the expire project is that it provides a
 generic framework that other modules can integrate with whenever they feel like
