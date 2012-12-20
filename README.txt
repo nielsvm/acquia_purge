@@ -1,6 +1,6 @@
 What?
 ================================================================================
-The Acquia Purge module fills in the gap for customers hosting on Acquia Cloud
+The Acquia Purge module fills in the gap for customers running on Acquia Cloud
 products such as Acquia Dev Cloud and Acquia Managed Cloud that are in need of
 an effective proactive purging solution for their site. This module offers a
 turn-key experience in the sense that it automatically purges your content upon
