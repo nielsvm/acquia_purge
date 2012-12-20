@@ -72,7 +72,7 @@ function acquia_purge_form_system_performance_settings_alter(&$form, &$form_stat
  * Determine whether we are running on Acquia Cloud or not.
  *
  * @returns
- *   A boolean expression indicating if we currently run on Acquia hosting.
+ *   A boolean expression indicating if we currently run on Acquia cloud.
  */
 function _acquia_purge_are_we_on_acquiacloud() {
   static $connected;
@@ -212,7 +212,7 @@ function acquia_purge_purge_node(&$node, $domains = NULL) {
  */
 function acquia_purge_purge_path($path, $domains = NULL) {
 
-  // Refuse execution whenever we are outside Acquia Hosting.
+  // Refuse execution whenever we are outside Acquia Cloud.
   if (!_acquia_purge_are_we_on_acquiacloud()) {
     return FALSE;
   }
