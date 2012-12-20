@@ -8,10 +8,10 @@
  */
 
 /**
- * Implementation of hook_expire_cache().
+ * Implements hook_expire_cache().
  */
 function acquia_purge_expire_cache($paths) {
-  
+
   /**
    * When the user enabled the expire module we strip the incoming URL's and
    * pass it along to our own purging helper to let the user benefit most.
@@ -30,7 +30,7 @@ function acquia_purge_expire_cache($paths) {
 }
 
 /**
- * Implementation of hook_node_insert().
+ * Implements hook_node_insert().
  */
 function acquia_purge_node_insert($node) {
 
@@ -41,7 +41,7 @@ function acquia_purge_node_insert($node) {
 }
 
 /**
- * Implementation of hook_node_update().
+ * Implements hook_node_update().
  */
 function acquia_purge_node_update($node) {
 
@@ -52,7 +52,7 @@ function acquia_purge_node_update($node) {
 }
 
 /**
- * Implementation of hook_form_FORM_ID_alter() - system_performance_settings form.
+ * Implements hook_form_FORM_ID_alter() - system_performance_settings form.
  */
 function acquia_purge_form_system_performance_settings_alter(&$form, &$form_state, $form_id) {
 
@@ -96,7 +96,7 @@ function _acquia_purge_are_we_on_acquiacloud() {
  * @returns
  *  Array with string values mapping to all defined DNS domains for this site.
  */
-function _acquia_purge_get_domains () {
+function _acquia_purge_get_domains() {
   static $domains;
   if (is_null($domains)) {
     $domains = array();
@@ -119,7 +119,7 @@ function _acquia_purge_get_domains () {
       foreach (explode('ServerName', $server_name) as $testable) {
         foreach (explode(' ', trim($testable)) as $domain) {
           $domain = trim($domain);
-          if (strlen($domain) && !in_array($domain, $domains)) {
+          if (!empty($domain) && !in_array($domain, $domains)) {
             $domains[] = $domain;
           }
         }
@@ -128,7 +128,7 @@ function _acquia_purge_get_domains () {
       foreach (explode('ServerAlias', $server_alias) as $testable) {
         foreach (explode(' ', trim($testable)) as $domain) {
           $domain = trim($domain);
-          if (strlen($domain) && !in_array($domain, $domains)) {
+          if (!empty($domain) && !in_array($domain, $domains)) {
             $domains[] = $domain;
           }
         }
@@ -187,8 +187,8 @@ function _acquia_purge_get_site_group() {
 function acquia_purge_purge_node(&$node, $domains = NULL) {
 
   // Purge updated nodes from all domains in Varnish.
-  $paths = array('node/'. $node->nid);
-  if (isset($node->path['alias']) && strlen($node->path['alias'])) {
+  $paths = array('node/' . $node->nid);
+  if (isset($node->path['alias']) && !empty($node->path['alias'])) {
     $paths[] = $node->path['alias'];
   }
   if (isset($node->promote) && $node->promote) {
@@ -236,7 +236,7 @@ function acquia_purge_purge_path($path, $domains = NULL) {
 
   // Loop through each domain and generate a URL to send the PURGE header to.
   foreach ($domains as $domain) {
-    $headers = array ("Accept-Encoding: gzip", "X-Acquia-Purge:$site_name");
+    $headers = array("Accept-Encoding: gzip", "X-Acquia-Purge:$site_name");
     $uri = sprintf('http://%s%s%s', $domain, $base_path, $path);
 
     // Configure the curl resource.
@@ -257,7 +257,7 @@ function acquia_purge_purge_path($path, $domains = NULL) {
 
     // Notify the user if he requested this.
     if (variable_get('acquia_purge_reportpurges', TRUE)) {
-      drupal_set_message("Purged from Varnish: <b>$uri</b>", 'info');
+      drupal_set_message(t("Purged from Varnish: <b>@uri</b>", array('@uri' => $uri)), 'info');
     }
   }
 

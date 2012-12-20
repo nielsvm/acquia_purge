@@ -6,10 +6,10 @@
  */
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function acquia_purge_uninstall() {
-  
+
   // Remove the reporting variable.
   variable_del('acquia_purge_reportpurges');
 }
