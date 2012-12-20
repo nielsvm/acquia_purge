@@ -2,7 +2,7 @@ What?
 ================================================================================
 The Acquia Purge module fills in the gap for customers hosting on Acquia Cloud
 products such as Acquia Dev Cloud and Acquia Managed Cloud that are in need of
-an effective active purging solution for their site. This module offers a
+an effective proactive purging solution for their site. This module offers a
 turn-key experience in the sense that it automatically purges your content upon
 content updates and creation without any necessary technical configuration.
 
@@ -46,7 +46,7 @@ enabled allowing you to immediately test the purging when enabled.
 
 How?
 ================================================================================
-This module provide the means to purge a list of paths from Varnish without
+This module provides the means to purge a list of paths from Varnish without
 having to deal with any technical details and basically provides the following
 API level components that other modules or your custom tailored integration
 module can leverage:
@@ -61,5 +61,17 @@ one or several HTTP url's should expire from cache, for instance when a
 particular node updated it's title while it's also inside a node queue. In many
 of those cases the expire module will send out a signal to purge a set of URLs
 which the Acquia Purge module will perform for you. In any case you could also
-extend the expire module with our own custom needs and leverage the power of
+extend the expire module with your own custom needs and leverage the power of
 both modules.
+
+Future plans?
+================================================================================
+There are several ideas and plans on a relatively vague roadmap in addition to
+further testing, code cleanups and fixing bugs:
+ * Code cleanups and adherence to every relevant policy or standard required.
+ * Writing tests as far as this is technically possible without access to Varnish.
+ * Enabling full site cache clears from the performance page, requires Cloud API
+   access to be enabled for your subscription.
+ * More fine tuning and catching more purging cases out-of-the-box.
+ * Upstream contributions to improve the expire module even more.
+ * Module backport to D6, although possibilities work there like the purge module.
