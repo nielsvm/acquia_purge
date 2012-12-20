@@ -40,7 +40,7 @@ Installation?
 ================================================================================
 Installing the project is fairly simple, just download the project as any other
 Drupal.org project and enable it on whichever environment you are. Please *note*
-that the module only works when using your site on Acquia Hosting and stays
+that the module only works when using your site on Acquia Cloud and stays
 silent and harmless elsewhere. By default the cache purging notifications are
 enabled allowing you to immediately test the purging when enabled.
 
