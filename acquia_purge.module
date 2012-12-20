@@ -97,44 +97,75 @@ function _acquia_purge_are_we_on_acquiacloud() {
  */
 function _acquia_purge_get_domains() {
   static $domains;
+
+  // Statically cache the domains as fetching them once per request is enough.
   if (is_null($domains)) {
     $domains = array();
 
     // Add the current HTTP_HOST that we're connected to.
-    $domains[] = trim($_SERVER['HTTP_HOST']);
+    _acquia_purge_get_domains_add($_SERVER['HTTP_HOST'], $domains);
 
-    // Take an absolute URL (which should respect $base_url) and strip its domain.
+    // Strip an empty absolute URL (which respects $base_url) and make sure
+    // that domain is also in the list of domains to be purged.
     $base_domain = url('', array('absolute' => TRUE));
     $base_domain = str_replace('http://', '', str_replace('https://', '', $base_domain));
     $base_domain = str_replace('/', '', $base_domain);
-    if (!in_array($base_domain, $domains)) {
-      $domains[] = $base_domain;
-    }
+    _acquia_purge_get_domains_add($base_domain, $domains);
 
-    // Albeit quite a dirty way, get all domains defined for this site's vhost (@TODO).
-    if (file_exists('/etc/apache2/conf.d')) {
-      $site_name = _acquia_purge_get_site_name();
-      $server_name = shell_exec("grep -r 'ServerName' /etc/apache2/conf.d/$site_name*.conf");
-      foreach (explode('ServerName', $server_name) as $testable) {
-        foreach (explode(' ', trim($testable)) as $domain) {
-          $domain = trim($domain);
-          if (!empty($domain) && !in_array($domain, $domains)) {
-            $domains[] = $domain;
-          }
-        }
+    // Add the domain names the customer defined on Acquia Cloud. When this
+    // process would fail we have at least the current and/or $base_url domain.
+    _acquia_purge_get_domains_add_from_acloud($domains);
+  }
+
+  return $domains;
+}
+
+/**
+ * Add a domain to the list of domains after cleaning and checking for duplicates.
+ *
+ * @param $domain
+ *  The domain string to be added to the list.
+ * @param &$domains
+ *  A reference to the array of currently gathered domain names.
+ *
+ * @returns
+ *  Void, data will be added by reference.
+ */
+function _acquia_purge_get_domains_add($domain, &$domains) {
+  $domain = trim(strtolower($domain));
+  if (!empty($domain) && !in_array($domain, $domains)) {
+    $domains[] = $domain;
+  }
+}
+
+/**
+ * Expand the list of domains being gathered by those defined in Acquia Cloud.
+ *
+ * @param &$domains
+ *  A reference to the array of currently gathered domain names.
+ * @returns
+ *  Void, data will be added by reference.
+ * @warning
+ *  The current implementation of this function is subject to change. @TODO
+ */
+function _acquia_purge_get_domains_add_from_acloud(&$domains) {
+
+  // Albeit quite a dirty way, get all domains defined for this site's vhost.
+  if (file_exists('/etc/apache2/conf.d')) {
+    $site_name = _acquia_purge_get_site_name();
+    $server_name = shell_exec("grep -r 'ServerName' /etc/apache2/conf.d/$site_name*.conf");
+    foreach (explode('ServerName', $server_name) as $testable) {
+      foreach (explode(' ', trim($testable)) as $domain) {
+        _acquia_purge_get_domains_add($domain, $domains);
       }
-      $server_alias = shell_exec("grep -r 'ServerAlias' /etc/apache2/conf.d/$site_name*.conf");
-      foreach (explode('ServerAlias', $server_alias) as $testable) {
-        foreach (explode(' ', trim($testable)) as $domain) {
-          $domain = trim($domain);
-          if (!empty($domain) && !in_array($domain, $domains)) {
-            $domains[] = $domain;
-          }
-        }
+    }
+    $server_alias = shell_exec("grep -r 'ServerAlias' /etc/apache2/conf.d/$site_name*.conf");
+    foreach (explode('ServerAlias', $server_alias) as $testable) {
+      foreach (explode(' ', trim($testable)) as $domain) {
+        _acquia_purge_get_domains_add($domain, $domains);
       }
     }
   }
-  return $domains;
 }
 
 /**
