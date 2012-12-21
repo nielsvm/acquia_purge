@@ -1,5 +1,5 @@
 
-An important node on multi-site setups.
+An important note on multi-site setups.
 ================================================================================
 In most single codebase Drupal sites the automatic purging of your content
 should work flawlessly as all the domain names you configured on the "Domains"
