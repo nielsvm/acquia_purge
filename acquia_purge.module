@@ -8,6 +8,18 @@
  */
 
 /**
+ * Implements hook_permission().
+ */
+function acquia_purge_permission() {
+  return array(
+    'purge notification' =>  array(
+      'title' => t('Purge notification'),
+      'description' => t('Get a confirmation message on screen for all items that have been purged.'),
+    ),
+  );
+}
+
+/**
  * Implements hook_expire_cache().
  */
 function acquia_purge_expire_cache($paths) {
@@ -61,7 +73,7 @@ function acquia_purge_form_system_performance_settings_alter(&$form, &$form_stat
    */
   $checkbox = array();
   $checkbox['#title'] = t('Report cache purges');
-  $checkbox['#description'] = t('Whenever something in Drupal gets updated that could be remotely cached in Varnish the Acquia Purge module can report this to the screen to notify you. When you install and enable the expire module much more urls will be pro actively purged from your Acquia site.');
+  $checkbox['#description'] = t('Whenever something in Drupal gets updated that could be remotely cached in Varnish the Acquia Purge module can report this to the screen to notify you. Note that you will need to enable the <i>purge notification</i> permission first. When you install and enable the expire module much more urls will be pro actively purged from your Acquia site.');
   $checkbox['#default_value'] = variable_get('acquia_purge_reportpurges', TRUE);
   $checkbox['#type'] = 'checkbox';
   $checkbox['#weight'] = -4;
@@ -388,7 +400,7 @@ function acquia_purge_purge_path($path, $domains = NULL) {
     cache_clear_all($uri, 'cache_page');
 
     // Notify the user if he requested this.
-    if (variable_get('acquia_purge_reportpurges', TRUE)) {
+    if (variable_get('acquia_purge_reportpurges', TRUE) && user_access('purge notification')) {
       drupal_set_message(t("Purged from Varnish: <b>@uri</b>", array('@uri' => $uri)), 'info');
     }
   }
