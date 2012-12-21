@@ -16,6 +16,7 @@ Features:
  * Fully automatic domain detection as configured on the Domains pane on your
    Acquia Network workflow page. Each domain attached to your site and active
    environment will be automatically purged.
+ * Flexible multi-site support, more information in MULTISITE.txt.
  * Optional integration with the expire project, allowing you to purge a lot
    more context-sensitive URL's proactively like terms, menu links and many more.
 
