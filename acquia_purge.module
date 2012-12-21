@@ -91,7 +91,6 @@ function _acquia_purge_are_we_on_acquiacloud() {
   if (is_null($connected)) {
     $assertions = array(
       is_array(variable_get('acquia_hosting_site_info', FALSE)),
-      variable_get('drupal_http_request_fails', FALSE) === FALSE,
       (bool)_acquia_purge_get_site_name(),
       (bool)_acquia_purge_get_site_group(),
       function_exists('curl_init')
