@@ -112,6 +112,9 @@ function _acquia_purge_get_domains() {
     $base_domain = str_replace('/', '', $base_domain);
     _acquia_purge_get_domains_add($base_domain, $domains);
 
+    // Gather potentially defined domains in sites/sites.php, for this site.
+    _acquia_purge_get_domains_add_from_sitesphp($domains);
+
     // To better support multi-sites we only load in the configured Acquia Cloud
     // domain names when we are on the 'default' site as that would else flood
     // another site which we don't want to see happening, on <front> for example.
@@ -171,6 +174,84 @@ function _acquia_purge_get_domains_add_from_acloud(&$domains) {
         _acquia_purge_get_domains_add($domain, $domains);
       }
     }
+  }
+}
+
+/**
+ * Expand the list of domains being gathered by interpreting sites/sites.php.
+ *
+ * @param &$domains
+ *  A reference to the array of currently gathered domain names.
+ * @returns
+ *  Void, data will be added by reference.
+ * @warning
+ *  The way the sites/sites.php array was designed was to make it a
+ *  lookup map with the current active URI as lookup resource, it makes
+ *  that relatively easy to do. However, we want to get all domains that
+ *  point to the currently chosen site. As the array keys are in the
+ *  format of '<port>.<domain>.<path>' this is relatively hackish.
+ */
+function _acquia_purge_get_domains_add_from_sitesphp(&$domains) {
+  $sitedir = str_replace('sites/', '', conf_path());
+
+  // Only interpret the $sites array if the file sites/sites.php exists.
+  if (!file_exists('sites/sites.php')) {
+    return;
+  }
+
+  // Define the full list of TLD's we have to check against to determine if a
+  // embedded domain name in '<port>.<domain>.<path>' seems valid for us.
+  // @see http://xaviesteve.com/2094/internet-top-level-domains-in-php-javascript-array/
+  $tlds = array('aero','biz','cat','com','coop','edu','gov','info','int','jobs','mil','mobi','museum',
+    'name','net','org','travel','ac','ad','ae','af','ag','ai','al','am','an','ao','aq','ar','as','at','au','aw',
+    'az','ba','bb','bd','be','bf','bg','bh','bi','bj','bm','bn','bo','br','bs','bt','bv','bw','by','bz','ca',
+    'cc','cd','cf','cg','ch','ci','ck','cl','cm','cn','co','cr','cs','cu','cv','cx','cy','cz','de','dj','dk','dm',
+    'do','dz','ec','ee','eg','eh','er','es','et','eu','fi','fj','fk','fm','fo','fr','ga','gb','gd','ge','gf','gg',
+    'gh','gi','gl','gm','gn','gp','gq','gr','gs','gt','gu','gw','gy','hk','hm','hn','hr','ht','hu','id','ie','il',
+    'im','in','io','iq','ir','is','it','je','jm','jo','jp','ke','kg','kh','ki','km','kn','kp','kr','kw','ky','kz',
+    'la','lb','lc','li','lk','lr','ls','lt','lu','lv','ly','ma','mc','md','mg','mh','mk','ml','mm','mn','mo','mp',
+    'mq','mr','ms','mt','mu','mv','mw','mx','my','mz','na','nc','ne','nf','ng','ni','nl','no','np','nr','nu','nz',
+    'om','pa','pe','pf','pg','ph','pk','pl','pm','pn','pr','ps','pt','pw','py','qa','re','ro','ru','rw','sa','sb',
+    'sc','sd','se','sg','sh','si','sj','sk','sl','sm','sn','so','sr','st','su','sv','sy','sz','tc','td','tf','tg',
+    'th','tj','tk','tm','tn','to','tp','tr','tt','tv','tw','tz','ua','ug','uk','um','us','uy','uz','va','vc','ve',
+    'vg','vi','vn','vu','wf','ws','ye','yt','yu','za','zm','zr','zw');
+
+  // Include the file which will (re)propagate the $sites array for us.
+  $sites = array();
+  include('sites/sites.php');
+
+  // Protect ourselves against badly written code inside settings.php.
+  if ((!isset($sites)) || empty($sites)) {
+    return;
+  }
+
+  // Iterate and validate each record in the resulting $sites array.
+  foreach ($sites as $site => $directory) {
+
+    // Skip those that point to a different site directory then we are on.
+    if ($directory != $sitedir) {
+      continue;
+    }
+
+    // Split up $site that can be defined in the form of '<port>.<domain>.<path>'.
+    $site = explode('.', $site);
+
+    // Strip TCP port's in '<port>....'.
+    if (is_numeric($site[0])) {
+      unset($site[0]);
+    }
+
+    // We skip all $site records which don't end on a common known TLD, examples
+    // would be '8080.localhost', 'www.drupal.org.my.dir' and every other site
+    // that's defined with a path appended to it. It's unfortunate limitation
+    // but a very hard thing to support, so checking on TLD's is the only
+    // sensible thing we can do to support as much scenario's as possible.
+    if (!in_array(end($site), $tlds)) {
+      continue;
+    }
+
+    // What's left should be a 99.99% correct domain name we want to see purged.
+    _acquia_purge_get_domains_add(implode('.', $site), $domains);
   }
 }
 
