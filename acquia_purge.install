@@ -13,3 +13,39 @@ function acquia_purge_uninstall() {
   // Remove the reporting variable.
   variable_del('acquia_purge_reportpurges');
 }
+
+/**
+ * Implements hook_requirements().
+ */
+function acquia_purge_requirements($phase) {
+  $requirements = array();
+
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  // Report the status of Acquia Purge and what domains will be purged.
+  if ($phase == 'runtime') {
+    $status = array('title' => $t("Acquia Purge"), 'value' => '');
+
+    // Report the list of domains when we are on Acquia Cloud.
+    if (_acquia_purge_are_we_on_acquiacloud()) {
+      $domains = implode(', ', _acquia_purge_get_domains());
+
+      $status['severity'] = REQUIREMENT_OK;
+      $status['description'] = $t("Purging of content happens on the following
+        domains: <i>@domains</i>", array('@domains' => $domains));
+    }
+
+    // Report that purging will be silent as we are not on Acquia Cloud.
+    else {
+      $status['severity'] = REQUIREMENT_WARNING;
+      $status['description'] = $t("Currently your site is not running on Acquia
+        Cloud, content won't be purged and the module stays silent. Deploy your
+        site first to test it.");
+    }
+
+    $requirements['acquia_purge_status'] = $status;
+  }
+
+  return $requirements;
+}
