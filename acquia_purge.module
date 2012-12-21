@@ -243,7 +243,7 @@ function _acquia_purge_get_domains_add_from_sitesphp(&$domains) {
 
     // We skip all $site records which don't end on a common known TLD, examples
     // would be '8080.localhost', 'www.drupal.org.my.dir' and every other site
-    // that's defined with a path appended to it. It's unfortunate limitation
+    // that's defined with a path appended to it. It's an unfortunate limitation
     // but a very hard thing to support, so checking on TLD's is the only
     // sensible thing we can do to support as much scenario's as possible.
     if (!in_array(end($site), $tlds)) {
