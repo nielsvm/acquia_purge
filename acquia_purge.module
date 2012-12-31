@@ -137,7 +137,7 @@ function _acquia_purge_get_domains() {
     _acquia_purge_get_domains_add($base_domain, $domains);
 
     // Gather potentially defined domains in sites/sites.php, for this site.
-    _acquia_purge_get_domains_add_from_sitesphp($domains);
+    _acquia_purge_get_domains_add_sitesphp($domains);
 
     // To better support multi-sites we only load in the configured Acquia Cloud
     // domain names when we are on the 'default' site as that would else flood
@@ -147,7 +147,7 @@ function _acquia_purge_get_domains() {
       // Add the domain names the customer defined on Acquia Cloud. When this
       // process would fail we have at least the current and/or $base_url domain.
       if (_acquia_purge_are_we_on_acquiacloud()) {
-        _acquia_purge_get_domains_add_from_acloud($domains);
+        _acquia_purge_get_domains_add_acloud($domains);
       }
     }
   }
@@ -183,7 +183,7 @@ function _acquia_purge_get_domains_add($domain, &$domains) {
  * @warning
  *  The current implementation of this function is subject to change. @TODO
  */
-function _acquia_purge_get_domains_add_from_acloud(&$domains) {
+function _acquia_purge_get_domains_add_acloud(&$domains) {
 
   // Albeit quite a dirty way, get all domains defined for this site's vhost.
   if (file_exists('/etc/apache2/conf.d')) {
@@ -217,7 +217,7 @@ function _acquia_purge_get_domains_add_from_acloud(&$domains) {
  *  point to the currently chosen site. As the array keys are in the
  *  format of '<port>.<domain>.<path>' this is relatively hackish.
  */
-function _acquia_purge_get_domains_add_from_sitesphp(&$domains) {
+function _acquia_purge_get_domains_add_sitesphp(&$domains) {
   $sitedir = str_replace('sites/', '', conf_path());
 
   // Only interpret the $sites array if the file sites/sites.php exists.
