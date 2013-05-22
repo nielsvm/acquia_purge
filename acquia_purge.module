@@ -246,7 +246,7 @@ function _acquia_purge_get_domains_add_sitesphp(&$domains) {
   $sites = array();
   include('sites/sites.php');
 
-  // Protect ourselves against badly written code inside settings.php.
+  // Protect ourselves against badly written code inside sites.php.
   if ((!isset($sites)) || empty($sites)) {
     return;
   }
