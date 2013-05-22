@@ -10,13 +10,12 @@ Features:
  * Simple yet-effective proactive purging of nodes.
  * Turn-key installation, no configuration needed.
  * Optionally on-screen reporting of the purged resources.
- * Automatic purging of the front page when necessary.
- * Automatic purging of /rss.xml when necessary.
  * Transparent purging of the Drupal Page Cache as well.
  * Fully automatic domain detection as configured on the Domains pane on your
    Acquia Network workflow page. Each domain attached to your site and active
    environment will be automatically purged.
  * Flexible multi-site support, more information in MULTISITE.txt.
+ * Integration with Rules allowing you to purge arbitrary paths like /news.
  * Optional integration with the expire project, allowing you to purge a lot
    more context-sensitive URL's proactively like terms, menu links and many more.
 
@@ -64,6 +63,12 @@ of those cases the expire module will send out a signal to purge a set of URLs
 which the Acquia Purge module will perform for you. In any case you could also
 extend the expire module with your own custom needs and leverage the power of
 both modules.
+
+If the expire module doesn't suit your needs or when you don't have the
+technical resources to custom code this you can also purge arbitrary paths by
+using the rules integration. By simply defining your own condition - for
+instance when content of type news changes - you can add a "Purge a path from
+Varnish on Acquia Cloud" action that purges the path "news".
 
 Future plans?
 ================================================================================
