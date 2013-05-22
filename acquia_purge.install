@@ -1,8 +1,10 @@
 <?php
 
 /**
- * @file
- *   Installer file for the Acquia Purge module.
+ * @file acquia_purge.install
+ * Installer file for the Acquia Purge module.
+ * @author
+ * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**

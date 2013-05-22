@@ -1,10 +1,10 @@
 <?php
 
 /**
- * @file
- *   Automatically purge pages upon save or the full site from Varnish.
+ * @file acquia_purge.module
+ * Automatically purge pages upon save or the full site from Varnish.
  * @author
- *   Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
+ * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**
