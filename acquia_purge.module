@@ -364,6 +364,22 @@ function acquia_purge_purge_path($path, $domains = NULL) {
 
   // Refuse execution whenever we are outside Acquia Cloud.
   if (!_acquia_purge_are_we_on_acquiacloud()) {
+
+    // When our detection logic tells us we are not on Acquia Cloud we want to
+    // log a failed purge attempt and include debugging information (#2000824).
+    watchdog(
+      'acquia_purge',
+      "Failed attempt to purge '%path' because we don't seem to be on Acquia "
+        . "Cloud, debugging information: site-info-is-array='%site_info', curl-"
+        . "init-function-exists='%curl_init', env-vars=(%env-vars), sapi=%sapi",
+      array(
+        '%path' => $path,
+        '%site_info' => strip_tags(var_export(is_array(variable_get('acquia_hosting_site_info', FALSE)), TRUE)),
+        '%curl_init' => strip_tags(var_export(function_exists('curl_init'), TRUE)),
+        '%env-vars' => strip_tags(var_export($_ENV, TRUE)),
+        '%sapi' => php_sapi_name()),
+      WATCHDOG_WARNING);
+
     return FALSE;
   }
 
@@ -380,6 +396,10 @@ function acquia_purge_purge_path($path, $domains = NULL) {
   // Declare the base path and sitename in local scope to prevent duplicate calls.
   $base_path = base_path();
   $site_name = _acquia_purge_get_site_name();
+
+  // Log the path about to be purged and its domains.
+  watchdog('acquia_purge', 'Purged path "%path" on these domains: %domains.',
+    array('%path' => $path, '%domains' => implode(', ', $domains)));
 
   // Collect each execution result to be able to determine the return value.
   $results = array();

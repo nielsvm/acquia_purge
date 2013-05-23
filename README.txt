@@ -10,6 +10,7 @@ Features:
  * Simple yet-effective proactive purging of nodes.
  * Turn-key installation, no configuration needed.
  * Optionally on-screen reporting of the purged resources.
+ * Drupal watchdog logging to create a purged paths trail.
  * Transparent purging of the Drupal Page Cache as well.
  * Fully automatic domain detection as configured on the Domains pane on your
    Acquia Network workflow page. Each domain attached to your site and active
