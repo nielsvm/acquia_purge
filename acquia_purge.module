@@ -24,20 +24,23 @@ function acquia_purge_permission() {
  */
 function acquia_purge_expire_cache($paths) {
 
-  /**
-   * When the user enabled the expire module we strip the incoming URL's and
-   * pass it along to our own purging helper to let the user benefit most.
-   */
-  $stripped_paths = array();
-  $domains = _acquia_purge_get_domains();
-  foreach ($paths as $path) {
-    $stripped_path = $path;
-    foreach ($domains as $domain) {
-      $stripped_path = str_replace("http://$domain", '', $stripped_path);
-      $stripped_path = str_replace("https://$domain", '', $stripped_path);
+  // The expire module has a interestingly weird option named "Include base URL
+  // in expires" which gives us filthy paths with base URL's in it. If its
+  // enabled we do our best to strip and clean the paths.
+  if (variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL)) {
+    $stripped_paths = array();
+    $domains = _acquia_purge_get_domains();
+    foreach ($paths as $path) {
+      $stripped_path = $path;
+      foreach ($domains as $domain) {
+        $stripped_path = str_replace("http://$domain", '', $stripped_path);
+        $stripped_path = str_replace("https://$domain", '', $stripped_path);
+      }
+      $stripped_paths[] = $stripped_path;
     }
-    $stripped_paths[] = $stripped_path;
+    $paths = $stripped_paths;
   }
+
   acquia_purge_purge_paths($stripped_paths);
 }
 
