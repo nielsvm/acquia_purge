@@ -2,9 +2,9 @@
 
 /**
  * @file acquia_purge.rules.inc
- *   Integrate with the rules project by providing a purge action.
+ * Integrate with the rules project by providing a purge action.
  * @author
- *   Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
+ * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**
