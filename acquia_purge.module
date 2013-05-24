@@ -45,28 +45,6 @@ function acquia_purge_expire_cache($paths) {
 }
 
 /**
- * Implements hook_node_insert().
- */
-function acquia_purge_node_insert($node) {
-
-  // Pre-purge new nodes to be on the safe side, take all domains.
-  if (!module_exists('expire') && !module_exists('purge')) {
-    acquia_purge_purge_node($node);
-  }
-}
-
-/**
- * Implements hook_node_update().
- */
-function acquia_purge_node_update($node) {
-
-  // Purge updated nodes from all domains in Varnish.
-  if (!module_exists('expire') && !module_exists('purge')) {
-    acquia_purge_purge_node($node);
-  }
-}
-
-/**
  * Implements hook_form_FORM_ID_alter() - system_performance_settings form.
  */
 function acquia_purge_form_system_performance_settings_alter(&$form, &$form_state, $form_id) {
@@ -76,7 +54,7 @@ function acquia_purge_form_system_performance_settings_alter(&$form, &$form_stat
    */
   $checkbox = array();
   $checkbox['#title'] = t('Report cache purges');
-  $checkbox['#description'] = t('Whenever something in Drupal gets updated that could be remotely cached in Varnish the Acquia Purge module can report this to the screen to notify you. Note that you will need to enable the <i>purge notification</i> permission first. When you install and enable the expire module much more urls will be pro actively purged from your Acquia site.');
+  $checkbox['#description'] = t('Whenever something in Drupal gets updated that could be remotely cached in Varnish the Acquia Purge module can report this to the screen to notify you. Note that you will need to enable the <i>purge notification</i> permission first.');
   $checkbox['#default_value'] = variable_get('acquia_purge_reportpurges', TRUE);
   $checkbox['#type'] = 'checkbox';
   $checkbox['#weight'] = -4;

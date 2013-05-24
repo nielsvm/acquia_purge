@@ -1,4 +1,5 @@
 name = Acquia Purge
-description = "Top-notch Varnish purging on Acquia Cloud! Automatical purging becomes even more powerful when the expire module is enabled."
+description = "Top-notch Varnish purging on Acquia Cloud!"
 package = Acquia Network Connector
 core = 7.x
+dependencies[] = expire
