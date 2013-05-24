@@ -62,5 +62,26 @@ function acquia_purge_requirements($phase) {
     $requirements['acquia_purge_status'] = $status;
   }
 
+  // Detect the existence of the Boost module which is incompatible.
+  if (module_exists('boost')) {
+    $status = array('title' => $t("Acquia Purge"), 'value' => '');
+    $status['severity'] = REQUIREMENT_ERROR;
+    $status['description'] = $t("Your site has the boost module enabled and we
+      advise against using it on Acquia Cloud. Due its heavy usage of the files
+      on disk - which creates issues on our file system - and the complexity it
+      adds to your caching mechanism advise you to disable it.");
+    $requirements['acquia_purge_incompatible1'] = $status;
+  }
+
+  // Detect the existence of the Purge module which is incompatible for now.
+  if (module_exists('purge')) {
+    $status = array('title' => $t("Acquia Purge"), 'value' => '');
+    $status['severity'] = REQUIREMENT_ERROR;
+    $status['description'] = $t("Your site has the Purge module enabled which
+      is incompatible with this version of Acquia Purge. However stay tuned as
+      Acquia Purge will become a plugin to the Purge module.");
+    $requirements['acquia_purge_incompatible2'] = $status;
+  }
+
   return $requirements;
 }
