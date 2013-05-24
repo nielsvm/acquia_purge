@@ -1,24 +1,23 @@
 What?
 ================================================================================
-The Acquia Purge module fills in the gap for customers running on Acquia Cloud
-products such as Acquia Dev Cloud and Acquia Managed Cloud that are in need of
+The Acquia Purge module fills in the gap for customers running on Acquia hosting
+products such as Acquia Cloud and Acquia Cloud Enterprise that are in need of
 an effective proactive purging solution for their site. This module offers a
 turn-key experience in the sense that it automatically purges your content upon
 content updates and creation without any necessary technical configuration.
 
 Features:
- * Simple yet-effective proactive purging of nodes.
+ * Simple and effective purging based on the expire module.
  * Turn-key installation, no configuration needed.
- * Optionally on-screen reporting of the purged resources.
+ * On-screen reporting of the purged resources.
  * Drupal watchdog logging to create a purged paths trail.
- * Transparent purging of the Drupal Page Cache as well.
+ * Transparent purging of cached pages in Drupal's page cache.
  * Fully automatic domain detection as configured on the Domains pane on your
    Acquia Network workflow page. Each domain attached to your site and active
    environment will be automatically purged.
- * Flexible multi-site support, more information in MULTISITE.txt.
+ * Flexible multi-site support with domains overriding, see MULTISITE.txt.
  * Integration with Rules allowing you to purge arbitrary paths like /news.
- * Optional integration with the expire project, allowing you to purge a lot
-   more context-sensitive URL's proactively like terms, menu links and many more.
+ * Detailed status-report tests which advocates the best possible configuration.
 
 Why?
 ================================================================================
@@ -37,48 +36,66 @@ instance. This empowers your site to make significantly more use of the platform
 we provide and increases your cache effectiveness, thus allowing you to handle
 more load on the same hardware.
 
-Installation?
+How about the purge module then?
+--------------------------------------------------------------------------------
+The purge module has been created for this very purpose yet isn't currently
+designed with the Acquia platform in mind and makes it therefore difficult
+to setup purging. While the purge module contributor and I work together to
+improve version 2.x of Purge this module serves as the go-to point for the
+interim. This module will get a dependency on purge and become its plugin in the
+future.
+
+Installation
 ================================================================================
 Installing the project is fairly simple, just download the project as any other
 Drupal.org project and enable it on whichever environment you are. Please *note*
 that the module only works when using your site on Acquia Cloud and stays
 silent and harmless elsewhere. By default the cache purging notifications are
-enabled allowing you to immediately test the purging when enabled.
+enabled allowing you to immediately test the purging when enabled. You will also
+need to install the expire module.
 
-How?
+Maximizing the effects of proactive purging
 ================================================================================
-This module provides the means to purge a list of paths from Varnish without
-having to deal with any technical details and basically provides the following
-API level components that other modules or your custom tailored integration
-module can leverage:
+When you install this module together with the expire module about 90% of all
+changing objects within your site are detected, such as nodes, taxonomy tags
+and menu items. Although the expire module does a hard job on detecting
+everything in your site it might not always be aware of your site specific
+features like news sections or dynamic blocks on your front page.
+
+A couple of examples you could run into:
+ * Nodes of type news get purged yet the paged view on /news is missed. You
+   would probably also like to purge the first few sub pages, e.g.:
+   /news?page=1, /news?page=2, /news?page=3
+ * You have job descriptions in a tagcloud on your front page ("<front>") and
+   whenever new taxonomy tags are added to the jobs vocabulary the front page
+   is not purged because the expire module doesn't detect it for you.
+ * Whenever a new user account is added to Drupal the "about our team" page
+   on "team" is not being refreshed.
+
+These scenarios are examples of the remaining 10% of things that can't be auto
+detected with the expire module and for those custom needs the Acquia Purge
+module comes with rules integration built in. By defining a standard rule that
+listens to the event you need - for instance changing content of type X - you
+can fire the "Purge a path from Varnish on Acquia Cloud" action on paths like
+"news" and "news?page=1". By enabling the on-screen logging facility you can
+quickly test your rules or rely on your log files.
+
+Once it works and runs in production
+--------------------------------------------------------------------------------
+With Varnish load balancing your site and proactive purging in place you can
+start increasing the "Minimum cache lifetime" and "Expiration of cached pages"
+values. For instance by putting these settings to a couple of hours or even a
+day your web servers will only work for authenticated traffic and pages that
+have just been purged and thus increases the effective usage of what your
+platform provides significantly.
+
+API level integration
+--------------------------------------------------------------------------------
+In case you need code level integration for some reason we either advise you
+to contribute to the expire module or if your needs are very site specific, to
+leverage the API functions that Acquia Purge exposes. If you need it you can
+send your path or list of paths to these helper functions:
+
  * acquia_purge_purge_path($path, $domains = NULL)
  * acquia_purge_purge_paths($paths, $domains = NULL)
  * acquia_purge_purge_node(&$node, $domains = NULL)
-
-In addition to that the module works with or without the expire module, the
-choice is up to you. What's great about the expire project is that it provides a
-generic framework that other modules can integrate with whenever they feel like
-one or several HTTP url's should expire from cache, for instance when a
-particular node updated it's title while it's also inside a node queue. In many
-of those cases the expire module will send out a signal to purge a set of URLs
-which the Acquia Purge module will perform for you. In any case you could also
-extend the expire module with your own custom needs and leverage the power of
-both modules.
-
-If the expire module doesn't suit your needs or when you don't have the
-technical resources to custom code this you can also purge arbitrary paths by
-using the rules integration. By simply defining your own condition - for
-instance when content of type news changes - you can add a "Purge a path from
-Varnish on Acquia Cloud" action that purges the path "news".
-
-Future plans?
-================================================================================
-There are several ideas and plans on a relatively vague roadmap in addition to
-further testing, code cleanups and fixing bugs:
- * Code cleanups and adherence to every relevant policy or standard required.
- * Writing tests as far as this is technically possible without access to Varnish.
- * Enabling full site cache clears from the performance page, requires Cloud API
-   access to be enabled for your subscription.
- * More fine tuning and catching more purging cases out-of-the-box.
- * Upstream contributions to improve the expire module even more.
- * Module backport to D6, although possibilities work there like the purge module.

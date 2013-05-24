@@ -1,0 +1,9 @@
+
+Future plans
+================================================================================
+ * Code cleanups and adherence to every relevant policy or standard required.
+ * Upstream improvements and patches to expire.
+ * D6 backport if the necessity for that gets high.
+ * Become a plugin depending on Purge once Purge 2.X suits our needs and works.
+ * Improving domain detection with improvements to Acquia's platform internals.
+ * Show graphs on Varnish hit and miss rates.
