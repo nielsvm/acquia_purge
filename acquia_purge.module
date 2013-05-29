@@ -41,7 +41,7 @@ function acquia_purge_expire_cache($paths) {
     $paths = $stripped_paths;
   }
 
-  acquia_purge_purge_paths($stripped_paths);
+  acquia_purge_purge_paths($paths);
 }
 
 /**
