@@ -35,6 +35,7 @@ function acquia_purge_expire_cache($paths) {
       foreach ($domains as $domain) {
         $stripped_path = str_replace("http://$domain", '', $stripped_path);
         $stripped_path = str_replace("https://$domain", '', $stripped_path);
+        $stripped_path = ltrim($stripped_path, '/');
       }
       $stripped_paths[] = $stripped_path;
     }
@@ -377,6 +378,9 @@ function acquia_purge_purge_path($path, $domains = NULL) {
   foreach ($domains as $domain) {
     $headers = array("Accept-Encoding: gzip", "X-Acquia-Purge:$site_name");
     $uri = sprintf('http://%s%s%s', $domain, $base_path, $path);
+
+    // Replace theoretical occurrence of double slashes.
+    $uri = str_replace('//', '/', $uri);
 
     // Configure the curl resource.
     $curl = curl_init();
