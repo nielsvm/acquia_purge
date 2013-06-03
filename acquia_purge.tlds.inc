@@ -6,12 +6,14 @@
  * @description
  * Define the full list of TLD's we have to check against to determine if a
  * embedded domain name in '<port>.<domain>.<path>' seems valid for us.
- * http://xaviesteve.com/2094/internet-top-level-domains-in-php-javascript-array/
+ *
  * @see _acquia_purge_get_domains_add_sitesphp()
  * @author
  *   Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
+// Information has been taken from: http://xaviesteve.com/2094/
+//  internet-top-level-domains-in-php-javascript-array/
 $tlds = array('aero', 'biz', 'cat', 'com', 'coop', 'edu', 'gov', 'info', 'int',
   'jobs', 'mil', 'mobi', 'museum', 'name', 'net', 'org', 'travel', 'ac', 'ad',
   'ae', 'af', 'ag', 'ai', 'al', 'am', 'an', 'ao', 'aq', 'ar', 'as', 'at', 'au',

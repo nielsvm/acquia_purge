@@ -4,8 +4,8 @@ An important note on multi-site setups.
 In most single codebase Drupal sites the automatic purging of your content
 should work flawlessly as all the domain names you configured on the "Domains"
 section of your Acquia Cloud subscription are automatically purged. However on
-a multi-site setup this would mean that this module will purge content on other
-sites when your updating content on site A for example, this is unwanted behavior.
+a multi-site setup this would mean that this module will also purge content on
+different domains then what you are saving for, this is unwanted behavior.
 
 How domain detection works.
 ================================================================================
