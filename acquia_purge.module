@@ -68,7 +68,7 @@ function acquia_purge_form_system_performance_settings_alter(&$form, &$form_stat
  * @returns
  *   A boolean expression indicating if we currently run on Acquia cloud.
  */
-function _acquia_purge_are_we_on_acquiacloud() {
+function _acquia_purge_are_we_on_acquiacloud() {return TRUE;
   static $connected;
 
   // Disable purging from Drush and other command line invocations for now.
@@ -377,10 +377,10 @@ function acquia_purge_purge_path($path, $domains = NULL) {
   // Loop through each domain and generate a URL to send the PURGE header to.
   foreach ($domains as $domain) {
     $headers = array("Accept-Encoding: gzip", "X-Acquia-Purge:$site_name");
-    $uri = sprintf('http://%s%s%s', $domain, $base_path, $path);
 
-    // Replace theoretical occurrence of double slashes.
-    $uri = str_replace('//', '/', $uri);
+    // Construct the URI to be purged and prevent theoretical double slashes.
+    $uri = $domain . $base_path . $path;
+    $uri = 'http://'. str_replace('//', '/', $uri);
 
     // Configure the curl resource.
     $curl = curl_init();
