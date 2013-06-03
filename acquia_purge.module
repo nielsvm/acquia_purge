@@ -68,7 +68,7 @@ function acquia_purge_form_system_performance_settings_alter(&$form, &$form_stat
  * @returns
  *   A boolean expression indicating if we currently run on Acquia cloud.
  */
-function _acquia_purge_are_we_on_acquiacloud() {return TRUE;
+function _acquia_purge_are_we_on_acquiacloud() {
   static $connected;
 
   // Disable purging from Drush and other command line invocations for now.
