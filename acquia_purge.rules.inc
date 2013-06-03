@@ -21,7 +21,11 @@ function acquia_purge_rules_action_info() {
         'path' => array(
           'type' => 'text',
           'label' => t('Path'),
-          'description' => t('The Drupal path that needs to be purged as relative from the document root of the site. When provided multiple lines, multiple paths will be purged at once. Examples are "node/1" and "news" and there is no need to add a slash at the beginning or end.')
+          'description' => t('The Drupal path that needs to be purged as '
+          . 'relative from the document root of the site. When provided '
+          . 'multiple lines, multiple paths will be purged at once. Examples'
+          . ' are "node/1" and "news" and there is no need to add a slash at '
+          . 'the beginning or end.'),
         ),
       )
     ),
