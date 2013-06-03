@@ -32,21 +32,22 @@ function acquia_purge_rules_action_info() {
 function _acquia_purge_action_purge($configured_paths) {
   $paths = array();
 
-
   // As users can enter these paths, we are treating them as tainted input.
   foreach (explode("\n", $configured_paths) as $configured_path) {
-    $path = array();
 
-    // We split the trimmed path on / and reassemble the path to work around
-    // starting or trailing slashes and other nasty things.
-    foreach (explode('/', trim($configured_path)) as $path_indice) {
-      if (!empty($path_indice)) {
-        $path[] = $path_indice;
-      }
+    // We begin by copying a trimmed version of the given line.
+    $path = trim($configured_path);
+
+    // And we strip off starting or trailing slashes, not belonging to a path.
+    $path = trim($path, '/');
+
+    // And strip double slashes that slipped in accidentally.
+    $path = str_replace('//', '/', $path);
+
+    // Add the path if a non-empty string results and when it is new to the list.
+    if (!empty($path) && !in_array($path, $paths)) {
+      $paths[] = $path;
     }
-
-    // Reassemble the path and add it to the paths collection.
-    $paths[] = implode('/', $path);
   }
 
   // Relay the purging of these paths to our API helper and we are done here.
