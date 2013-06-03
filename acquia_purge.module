@@ -1,7 +1,9 @@
 <?php
 
 /**
- * @file acquia_purge.module
+ * @file
+ * acquia_purge.module
+ * @description
  * Automatically purge pages upon save or the full site from Varnish.
  * @author
  * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
@@ -380,7 +382,7 @@ function acquia_purge_purge_path($path, $domains = NULL) {
 
     // Construct the URI to be purged and prevent theoretical double slashes.
     $uri = $domain . $base_path . $path;
-    $uri = 'http://'. str_replace('//', '/', $uri);
+    $uri = 'http://' . str_replace('//', '/', $uri);
 
     // Configure the curl resource.
     $curl = curl_init();
