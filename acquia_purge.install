@@ -40,8 +40,10 @@ function acquia_purge_requirements($phase) {
       $domains = $t("Purging of content happens on the following domains:
         <i>@domains</i>. However it seems as if you are running a multi-site
         setup, <a href='!link' target='_blank'>read more here in case the
-        domains are incorrect</a>.", array('@domains' => $domains, '!link' =>
-          'http://drupalcode.org/sandbox/nielsvm/1871170.git/blob_plain/HEAD:/MULTISITE.txt'));
+        domains are incorrect</a>.", array(
+          '@domains' => $domains,
+          '!link' => 'http://drupalcode.org/sandbox/nielsvm/1871170.git'.
+            .'/blob_plain/HEAD:/MULTISITE.txt'));
     }
 
     // Create the status array.
