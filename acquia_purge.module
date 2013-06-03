@@ -16,7 +16,8 @@ function acquia_purge_permission() {
   return array(
     'purge notification' => array(
       'title' => t('Purge notification'),
-      'description' => t('Get a confirmation message on screen for all items that have been purged.'),
+      'description' => t('Get a confirmation message on screen for all items
+      that have been purged.'),
     ),
   );
 }
@@ -97,7 +98,7 @@ function _acquia_purge_are_we_on_acquiacloud() {
  * Get a list of defined domains that we can purge for.
  *
  * @returns
- *  Array with string values mapping to all defined DNS domains for this site.
+ *   Array with string values mapping to all defined DNS domains for this site.
  */
 function _acquia_purge_get_domains() {
   static $domains;
@@ -125,7 +126,8 @@ function _acquia_purge_get_domains() {
     // Strip an empty absolute URL (which respects $base_url) and make sure
     // that domain is also in the list of domains to be purged.
     $base_domain = url('', array('absolute' => TRUE));
-    $base_domain = str_replace('http://', '', str_replace('https://', '', $base_domain));
+    $base_domain = str_replace('https://', '', $base_domain);
+    $base_domain = str_replace('http://', '', $base_domain);
     $base_domain = str_replace('/', '', $base_domain);
     _acquia_purge_get_domains_add($base_domain, $domains);
 
@@ -149,12 +151,12 @@ function _acquia_purge_get_domains() {
 }
 
 /**
- * Add a domain to the list of domains after cleaning and checking for duplicates.
+ * Add a domain to the domain list after cleaning and checking for duplicates.
  *
  * @param string $domain
- * The domain string to be added to the list.
+ *   The domain string to be added to the list.
  * @param array &$domains
- * A reference to the array of currently gathered domain names.
+ *   A reference to the array of currently gathered domain names.
  *
  * @returns
  *  Void, data will be added by reference.
@@ -169,12 +171,12 @@ function _acquia_purge_get_domains_add($domain, &$domains) {
 /**
  * Expand the list of domains being gathered by those defined in Acquia Cloud.
  *
- * @param &$domains
- *  A reference to the array of currently gathered domain names.
+ * @param $domains
+ *   A reference to the array of currently gathered domain names.
  * @returns
- *  Void, data will be added by reference.
+ *   Void, data will be added by reference.
  * @warning
- *  The current implementation of this function is subject to change. @TODO
+ *   The current implementation of this function is subject to change. @TODO
  */
 function _acquia_purge_get_domains_add_acloud(&$domains) {
 
@@ -199,16 +201,16 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
 /**
  * Expand the list of domains being gathered by interpreting sites/sites.php.
  *
- * @param &$domains
- *  A reference to the array of currently gathered domain names.
+ * @param array $domains
+ *   A reference to the array of currently gathered domain names.
  * @returns
- *  Void, data will be added by reference.
+ *   Void, data will be added by reference.
  * @warning
- *  The way the sites/sites.php array was designed was to make it a
- *  lookup map with the current active URI as lookup resource, it makes
- *  that relatively easy to do. However, we want to get all domains that
- *  point to the currently chosen site. As the array keys are in the
- *  format of '<port>.<domain>.<path>' this is relatively hackish.
+ *   The way the sites/sites.php array was designed was to make it a
+ *   lookup map with the current active URI as lookup resource, it makes
+ *   that relatively easy to do. However, we want to get all domains that
+ *   point to the currently chosen site. As the array keys are in the
+ *   format of '<port>.<domain>.<path>' this is relatively hackish.
  */
 function _acquia_purge_get_domains_add_sitesphp(&$domains) {
   $sitedir = str_replace('sites/', '', conf_path());
@@ -220,12 +222,11 @@ function _acquia_purge_get_domains_add_sitesphp(&$domains) {
 
   // Define the full list of TLD's we have to check against to determine if a
   // embedded domain name in '<port>.<domain>.<path>' seems valid for us.
-  // @see http://xaviesteve.com/2094/internet-top-level-domains-in-php-javascript-array/
-  include(drupal_get_path('module', 'acquia_purge') . '/acquia_purge.tlds.inc');
+  include drupal_get_path('module', 'acquia_purge') . '/acquia_purge.tlds.inc';
 
   // Include the file which will (re)propagate the $sites array for us.
   $sites = array();
-  include('sites/sites.php');
+  include 'sites/sites.php';
 
   // Protect ourselves against badly written code inside sites.php.
   if ((!isset($sites)) || empty($sites)) {
@@ -240,7 +241,7 @@ function _acquia_purge_get_domains_add_sitesphp(&$domains) {
       continue;
     }
 
-    // Split up $site that can be defined in the form of '<port>.<domain>.<path>'.
+    // Split $site that can be defined in the form of '<port>.<domain>.<path>'.
     $site = explode('.', $site);
 
     // Strip TCP port's in '<port>....'.
@@ -266,7 +267,7 @@ function _acquia_purge_get_domains_add_sitesphp(&$domains) {
  * Determine the Acquia site name.
  *
  * @returns
- *  Either a boolean FALSE or a string identifying what site we are on.
+ *   Either a boolean FALSE or a string identifying what site we are on.
  */
 function _acquia_purge_get_site_name() {
   static $ah_site_name;
@@ -283,7 +284,7 @@ function _acquia_purge_get_site_name() {
  * Determine the Acquia site group.
  *
  * @returns
- *  Either a boolean FALSE or a string identifying what site group this is.
+ *   Either a boolean FALSE or a string identifying what site group this is.
  */
 function _acquia_purge_get_site_group() {
   static $ah_site_group;
@@ -299,14 +300,14 @@ function _acquia_purge_get_site_group() {
 /**
  * Purge the paths from a node from Varnish.
  *
- * @param &$node
- *  A Drupal node object that was just inserted or saved.
- * @param $domains
- *  Array containing all the domain names the record should be purged
- *  from. Optional, default list of domain names will be generated else.
+ * @param object $node
+ *   A Drupal node object that was just inserted or saved.
+ * @param array $domains
+ *   Array containing all the domain names the record should be purged
+ *   from. Optional, default list of domain names will be generated else.
  *
  * @returns
- *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ *   Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
  */
 function acquia_purge_purge_node(&$node, $domains = NULL) {
 
@@ -325,14 +326,14 @@ function acquia_purge_purge_node(&$node, $domains = NULL) {
 /**
  * Purge a certain Drupal path from Varnish.
  *
- * @param $path
- *  The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
- * @param $domains
- *  Array containing all the domain names the record should be purged
- *  from. Optional, default list of domain names will be generated else.
+ * @param string $path
+ *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ * @param array $domains
+ *   Array containing all the domain names the record should be purged
+ *  f rom. Optional, default list of domain names will be generated else.
  *
  * @returns
- *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ *   Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
  */
 function acquia_purge_purge_path($path, $domains = NULL) {
 
@@ -367,7 +368,7 @@ function acquia_purge_purge_path($path, $domains = NULL) {
     $path = '';
   }
 
-  // Declare the base path and sitename in local scope to prevent duplicate calls.
+  // Declare $base_path and $site_name, we use it inside our domain loop.
   $base_path = base_path();
   $site_name = _acquia_purge_get_site_name();
 
@@ -403,7 +404,8 @@ function acquia_purge_purge_path($path, $domains = NULL) {
     cache_clear_all($uri, 'cache_page');
 
     // Notify the user if he requested this.
-    if (variable_get('acquia_purge_reportpurges', TRUE) && user_access('purge notification')) {
+    if (variable_get('acquia_purge_reportpurges', TRUE)
+      && user_access('purge notification')) {
       drupal_set_message(t("Purged from Varnish: <b>@uri</b>", array('@uri' => $uri)), 'info');
     }
   }
@@ -414,14 +416,14 @@ function acquia_purge_purge_path($path, $domains = NULL) {
 /**
  * Purge a several Drupal paths from Varnish.
  *
- * @param $paths
- *  Array with Drupal paths (e.g. '<front>', 'user/1' or an aliased path).
- * @param $domains
- *  Array containing all the domain names the record should be purged
- *  from. Optional, default list of domain names will be generated else.
+ * @param string $paths
+ *   Array with Drupal paths (e.g. '<front>', 'user/1' or an aliased path).
+ * @param array $domains
+ *   Array containing all the domain names the record should be purged
+ *   from. Optional, default list of domain names will be generated else.
  *
  * @returns
- *  Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ *   Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
  */
 function acquia_purge_purge_paths($paths, $domains = NULL) {
   $results = array();
