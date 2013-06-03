@@ -14,7 +14,7 @@
  */
 function acquia_purge_permission() {
   return array(
-    'purge notification' =>  array(
+    'purge notification' => array(
       'title' => t('Purge notification'),
       'description' => t('Get a confirmation message on screen for all items that have been purged.'),
     ),
@@ -48,16 +48,18 @@ function acquia_purge_expire_cache($paths) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() - system_performance_settings form.
+ * Implements hook_form_FORM_ID_alter().
  */
 function acquia_purge_form_system_performance_settings_alter(&$form, &$form_state, $form_id) {
 
-  /**
-   * Add a checkbox to the performance form to allow users to enable/disable purge reporting.
-   */
+  // Add a checkbox to the system_performance_settings performance form to allow
+  // users to enable/disable purge reporting.
   $checkbox = array();
   $checkbox['#title'] = t('Report cache purges');
-  $checkbox['#description'] = t('Whenever something in Drupal gets updated that could be remotely cached in Varnish the Acquia Purge module can report this to the screen to notify you. Note that you will need to enable the <i>purge notification</i> permission first.');
+  $checkbox['#description'] = t('Whenever something in Drupal gets updated that
+    could be remotely cached in Varnish the Acquia Purge module can report this
+    to the screen to notify you. Note that you will need to enable the <i>purge
+    notification</i> permission first.');
   $checkbox['#default_value'] = variable_get('acquia_purge_reportpurges', TRUE);
   $checkbox['#type'] = 'checkbox';
   $checkbox['#weight'] = -4;
@@ -82,9 +84,9 @@ function _acquia_purge_are_we_on_acquiacloud() {
   if (is_null($connected)) {
     $assertions = array(
       is_array(variable_get('acquia_hosting_site_info', FALSE)),
-      (bool)_acquia_purge_get_site_name(),
-      (bool)_acquia_purge_get_site_group(),
-      function_exists('curl_init')
+      (bool) _acquia_purge_get_site_name(),
+      (bool) _acquia_purge_get_site_group(),
+      function_exists('curl_init'),
     );
     $connected = !in_array(FALSE, $assertions);
   }
@@ -132,11 +134,11 @@ function _acquia_purge_get_domains() {
 
     // To better support multi-sites we only load in the configured Acquia Cloud
     // domain names when we are on the 'default' site as that would else flood
-    // another site which we don't want to see happening, on <front> for example.
-    if ( ($conf_path = conf_path()) == 'sites/default' ) {
+    // another site which we don't want to happen, on <front> for example.
+    if (($conf_path = conf_path()) == 'sites/default') {
 
       // Add the domain names the customer defined on Acquia Cloud. When this
-      // process would fail we have at least the current and/or $base_url domain.
+      // process would fail we have at least the current + $base_url domain.
       if (_acquia_purge_are_we_on_acquiacloud()) {
         _acquia_purge_get_domains_add_acloud($domains);
       }
@@ -149,10 +151,10 @@ function _acquia_purge_get_domains() {
 /**
  * Add a domain to the list of domains after cleaning and checking for duplicates.
  *
- * @param $domain
- *  The domain string to be added to the list.
- * @param &$domains
- *  A reference to the array of currently gathered domain names.
+ * @param string $domain
+ * The domain string to be added to the list.
+ * @param array &$domains
+ * A reference to the array of currently gathered domain names.
  *
  * @returns
  *  Void, data will be added by reference.

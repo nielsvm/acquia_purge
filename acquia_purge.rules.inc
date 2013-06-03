@@ -27,7 +27,7 @@ function acquia_purge_rules_action_info() {
           . ' are "node/1" and "news" and there is no need to add a slash at '
           . 'the beginning or end.'),
         ),
-      )
+      ),
     ),
   );
 }
