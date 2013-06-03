@@ -13,7 +13,7 @@
  */
 
 // Information has been taken from: http://xaviesteve.com/2094/
-//  internet-top-level-domains-in-php-javascript-array/
+// internet-top-level-domains-in-php-javascript-array/
 $tlds = array('aero', 'biz', 'cat', 'com', 'coop', 'edu', 'gov', 'info', 'int',
   'jobs', 'mil', 'mobi', 'museum', 'name', 'net', 'org', 'travel', 'ac', 'ad',
   'ae', 'af', 'ag', 'ai', 'al', 'am', 'an', 'ao', 'aq', 'ar', 'as', 'at', 'au',
