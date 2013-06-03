@@ -171,8 +171,9 @@ function _acquia_purge_get_domains_add($domain, &$domains) {
 /**
  * Expand the list of domains being gathered by those defined in Acquia Cloud.
  *
- * @param $domains
+ * @param array $domains
  *   A reference to the array of currently gathered domain names.
+ *
  * @returns
  *   Void, data will be added by reference.
  * @warning
@@ -203,6 +204,7 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
  *
  * @param array $domains
  *   A reference to the array of currently gathered domain names.
+ * 
  * @returns
  *   Void, data will be added by reference.
  * @warning
