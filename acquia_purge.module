@@ -100,6 +100,29 @@ function _acquia_purge_are_we_on_acquiacloud() {
 }
 
 /**
+ * Get a list of load balancer IP addresses in front of this Acquia Cloud site.
+ *
+ * @warning
+ *   Please note that the returned IP addresses are internal addresses.
+ *
+ * @returns
+ *   Array with string values pointing to every Acquia Cloud load balancer.
+ */
+function _acquia_purge_get_balancers() {
+  static $balancers;
+
+  // Cache the results statically, preventing multiple lookups during runtime.
+  if (is_null($balancers)) {
+    $balancers = array();
+    foreach (variable_get('reverse_proxies', array()) as $ip_address) {
+      $balancers[] = $ip_address;
+    }
+  }
+
+  return $balancers;
+}
+
+/**
  * Get a list of defined domains that we can purge for.
  *
  * @returns
