@@ -35,7 +35,7 @@ function acquia_purge_ajax_processor() {
     // Raise error condition if history list remains empty.
     if (empty($status['purgehistory'])) {
       $status['error'] = t("The process stalled and nothing is getting purged,
-        failing paths will be retried over and over until the problem is solved.
+        failing purges will be retried endlessly until the problem is solved.
         Please check your log files.");
     }
 
