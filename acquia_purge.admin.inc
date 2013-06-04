@@ -34,19 +34,17 @@ function acquia_purge_ajax_processor() {
 
     // Raise error condition if history list remains empty.
     if (empty($status['purgehistory'])) {
-      $status['error'] = t("Nothing got purged, something is wrong...");
+      $status['error'] = t("The process stalled and nothing is getting purged,
+        failing paths will be retried over and over until the problem is solved.
+        Please check your log files.");
     }
 
     // We're done so lets release the lock.
     lock_release('acquia_purge_ajax_processor');
   }
-  else {
-    // Failed to acquire the lock, report this as error condition.
-    $status['error'] = t('Unable to acquia lock, something else is running');
-  }
 
   // Render the status widget and add it to the statistics array.
-  $status['widget'] = theme('acquia_purge_status_widget', $status);
+  $status['widget'] = theme('acquia_purge_status_bar_widget', $status);
 
   // Return the status array with statistics...
   return drupal_json_output($status);

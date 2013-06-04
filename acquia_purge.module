@@ -40,7 +40,7 @@ function acquia_purge_init() {
     // a message that announces the AJAX powered purging. Our JQuery logic that
     // we insert is smart enough to only load the GUI elements by detecting this
     // message. Please note that drupal_set_message() doesn't officially have a
-    // category for 'acquia_purge' messages, which is part of the trick.
+    // category for 'acquia_purge_messages' , which is part of the trick.
     if (variable_get('acquia_purge_reportpurges', TRUE)
       && user_access('purge notification')) {
       $message = t("Acquia Purge detected that changes have been made on your
@@ -49,7 +49,7 @@ function acquia_purge_init() {
         monitors the progress until your site is fully refreshed.");
 
       // Set the message and don't repeat it if it is already set.
-      drupal_set_message($message, 'acquia_purge', FALSE);
+      drupal_set_message($message, 'acquia_purge_messages', FALSE);
     }
   }
 }
