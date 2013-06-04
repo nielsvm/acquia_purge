@@ -347,7 +347,7 @@ function _acquia_purge_queue() {
  * @param string $path
  *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
  * @param string $domain
- *   The domain that has to be purged.
+ *   The domain on which the given path will be purged.
  * @param string $balancer_ip
  *   The IP address of the balancer from which the URI should be purged.
  *
@@ -398,11 +398,22 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   for ($i=0; $i < ACQUIA_PURGE_QUEUE_TRESHOLD; $i++) {
     if ($item = $queue->claimItem()) {
       $items[] = $item->data;
-      $queue->deleteItem($item);
 
       // Call the callback once provided and pass on the arguments to purge.
       if (!is_null($processor_callback)) {
-        call_user_func_array($processor_callback, $item->data);
+
+        // If the processor throws FALSE: release the item and try again later.
+        if (call_user_func_array($processor_callback, $item->data)) {
+          $queue->deleteItem($item);
+        }
+        else {
+          $queue->releaseItem($item);
+        }
+      }
+
+      // Without provided callback we assume success and delete the item.
+      else {
+        $queue->deleteItem($item);
       }
     }
   }
@@ -418,22 +429,129 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
 }
 
 /**
+ * Queue manager: process a single HTTP PURGE task.
+ *
+ * @param string $path
+ *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ * @param string $domain
+ *   The domain on which the given path will be purged.
+ * @param string $balancer_ip
+ *   The IP address of the balancer from which the URI should be purged.
+ *
+ * @returns
+ *   Boolean TRUE/FALSE indicating success or failure of the attempt.
+ */
+function _acquia_purge_queue_processpurge($path, $domain, $balancer_ip) {
+  $site_name = _acquia_purge_get_site_name();
+  $base_path = base_path();
+
+  // Refuse execution whenever we are outside Acquia Cloud. Once our detection
+  // logic failed to detect the Acquia environment we log debugging as much
+  // debugging information as makes sense (d.o #2000824) and return FALSE. The
+  // queue manager will keep on attempting to purge this item.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    watchdog(
+      'acquia_purge',
+      "Failed attempt to purge '%path' because we don't seem to be on Acquia "
+        . "Cloud, debugging information: site-info-is-array='%site_info', curl-"
+        . "init-function-exists='%curl_init', env-vars=(%env-vars), sapi=%sapi",
+      array(
+        '%path' => $path,
+        '%site_info' => strip_tags(var_export(is_array(variable_get('acquia_hosting_site_info', FALSE)), TRUE)),
+        '%curl_init' => strip_tags(var_export(function_exists('curl_init'), TRUE)),
+        '%env-vars' => strip_tags(var_export($_ENV, TRUE)),
+        '%sapi' => php_sapi_name()),
+      WATCHDOG_WARNING);
+    return FALSE;
+  }
+
+  // Rewrite '<front>' to a empty string, which will be the frontpage. By using
+  // substr() and str_replace() we still allow cases like '<front>?param=1'.
+  if (drupal_substr($path, 0, 7) === '<front>') {
+    $path = str_replace('<front>', '', $path);
+  }
+
+  // Construct a domain-based URL and delete potential records from cache_page.
+  $url = 'http://' . str_replace('//', '/', $domain . $base_path . $path);
+  cache_clear_all($url, 'cache_page');
+
+  // Construct the information that libCURL needs.
+  $uri = 'http://' . str_replace('//', '/', $balancer_ip . $base_path . $path);
+  $headers = array(
+    "Host: $domain",
+    'Accept-Encoding: gzip',
+    "X-Acquia-Purge:$site_name",
+  );
+
+  // Instantiate the cURL resource and configure its runtime parameters.
+  $curl = curl_init();
+  curl_setopt($curl, CURLOPT_URL, $uri);
+  curl_setopt($curl, CURLOPT_TIMEOUT, 3);
+  curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+  curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PURGE');
+  curl_setopt($curl, CURLOPT_FAILONERROR, TRUE);
+
+  // Attempt the request, store the outcome and close the cURL resource.
+  $status = curl_exec($curl);
+  curl_close($curl);
+
+  // Log the purge action to Drupal's watchdog() and our statistics helper to
+  // maintain both a low-level as a GUI level track-record of what happened.
+  if ($status == TRUE) {
+    watchdog(
+      'acquia_purge',
+      "Purged '%url' from load balancer %balancer_ip.",
+      array('%url' => $url, '%balancer_ip' => $balancer_ip),
+      WATCHDOG_INFO);
+    _acquia_purge_queue_stats($url);
+  }
+  else {
+    watchdog(
+      'acquia_purge',
+      "Failed attempt to purge '%url' from load balancer %balancer_ip for "
+        . "unknown reasons as curl_exec() returned false. Url re-queued!",
+      array('%url' => $url, '%balancer_ip' => $balancer_ip),
+      WATCHDOG_ERROR);
+  }
+
+  // Return the boolean success or failure state.
+  return $status;
+}
+
+/**
  * Queue manager: generate progress statistics on the purge queue.
+ *
+ * @param string $log_purged_url
+ *   This optional parameter allows purge processors to record URLs that got
+ *   purged successfully during runtime context. This facility is not persistent
+ *   trough requests and only intended for GUI elements and statistics.
  *
  * @returns
  *   Associative array with the keys 'running', 'total', 'remaining',
- *   'processed', 'percentage'.
+ *   'processed', 'percent' and 'purgehistory'.
  */
-function _acquia_purge_queue_stats() {
+function _acquia_purge_queue_stats($log_purged_url = FALSE) {
   $queue = _acquia_purge_queue();
+
+  // Initialize the $purgehistory runtime log and add a extra path if provided.
+  static $purgehistory;
+  if (is_null($purgehistory)) {
+    $purgehistory = array();
+  }
+  if ($log_purged_url) {
+    if (!in_array($log_purged_url, $purgehistory)) {
+      $purgehistory[] = $log_purged_url;
+    }
+  }
 
   // Initialize array with default values, except for the total counter.
   $info = array(
     'total' => variable_get('acquia_purge_queue_counter', 0),
     'remaining' => 0,
     'processed' => 0,
-    'percentage' => 100,
-    'running' => FALSE);
+    'percent' => 100,
+    'running' => FALSE,
+    'purgehistory' => $purgehistory);
 
   // Cut statistics gathering when the queue counter equals 0: not running.
   if ($info['total'] === 0) {
@@ -448,8 +566,8 @@ function _acquia_purge_queue_stats() {
   $info['processed'] = $info['total'] - $info['remaining'];
 
   // Calculate the percentage of the job.
-  $info['percentage'] = ($info['remaining']/$info['total']) * 100;
-  $info['percentage'] = (int) (100 - floor($info['percentage']));
+  $info['percent'] = ($info['remaining']/$info['total']) * 100;
+  $info['percent'] = (int) (100 - floor($info['percent']));
 
   return $info;
 }
@@ -464,7 +582,8 @@ function _acquia_purge_queue_stats() {
  *   from. Optional, default list of domain names will be generated else.
  *
  * @returns
- *   Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ *   Progress statistics from the queue manager. Associative array with the keys
+ *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
 function acquia_purge_purge_node(&$node, $domains = NULL) {
 
@@ -477,7 +596,9 @@ function acquia_purge_purge_node(&$node, $domains = NULL) {
     $paths[] = '<front>';
     $paths[] = 'rss.xml';
   }
-  acquia_purge_purge_paths($paths);
+
+  // Return the paths routine and return the statistics from the queue manager.
+  return acquia_purge_purge_paths($paths);
 }
 
 /**
@@ -490,84 +611,26 @@ function acquia_purge_purge_node(&$node, $domains = NULL) {
  *   from. Optional, default list of domain names will be generated else.
  *
  * @returns
- *   Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ *   Progress statistics from the queue manager. Associative array with the keys
+ *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
 function acquia_purge_purge_path($path, $domains = NULL) {
-
-  // Refuse execution whenever we are outside Acquia Cloud.
-  if (!_acquia_purge_are_we_on_acquiacloud()) {
-
-    // When our detection logic tells us we are not on Acquia Cloud we want to
-    // log a failed purge attempt and include debugging information (#2000824).
-    watchdog(
-      'acquia_purge',
-      "Failed attempt to purge '%path' because we don't seem to be on Acquia "
-        . "Cloud, debugging information: site-info-is-array='%site_info', curl-"
-        . "init-function-exists='%curl_init', env-vars=(%env-vars), sapi=%sapi",
-      array(
-        '%path' => $path,
-        '%site_info' => strip_tags(var_export(is_array(variable_get('acquia_hosting_site_info', FALSE)), TRUE)),
-        '%curl_init' => strip_tags(var_export(function_exists('curl_init'), TRUE)),
-        '%env-vars' => strip_tags(var_export($_ENV, TRUE)),
-        '%sapi' => php_sapi_name()),
-      WATCHDOG_WARNING);
-
-    return FALSE;
-  }
 
   // Get a list of domains ourselves when these are not given.
   if (is_null($domains)) {
     $domains = _acquia_purge_get_domains();
   }
 
-  // The special path '<front>' links to the default front page.
-  if ($path == '<front>') {
-    $path = '';
-  }
-
-  // Declare $base_path and $site_name, we use it inside our domain loop.
-  $base_path = base_path();
-  $site_name = _acquia_purge_get_site_name();
-
-  // Log the path about to be purged and its domains.
-  watchdog('acquia_purge', 'Purged path "%path" on these domains: %domains.',
-    array('%path' => $path, '%domains' => implode(', ', $domains)));
-
-  // Collect each execution result to be able to determine the return value.
-  $results = array();
-
-  // Loop through each domain and generate a URL to send the PURGE header to.
+  // Loop trough every domain and trough every balancer and queue the purge.
   foreach ($domains as $domain) {
-    $headers = array("Accept-Encoding: gzip", "X-Acquia-Purge:$site_name");
-
-    // Construct the URI to be purged and prevent theoretical double slashes.
-    $uri = $domain . $base_path . $path;
-    $uri = 'http://' . str_replace('//', '/', $uri);
-
-    // Configure the curl resource.
-    $curl = curl_init();
-    curl_setopt($curl, CURLOPT_URL, $uri);
-    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PURGE');
-    curl_setopt($curl, CURLOPT_FAILONERROR, TRUE);
-
-    // Execute the PURGE header and add up to the results.
-    $results[] = curl_exec($curl);
-
-    // Close the curl session.
-    curl_close($curl);
-
-    // To be certain we also clear any records from the cache_page bin.
-    cache_clear_all($uri, 'cache_page');
-
-    // Notify the user if he requested this.
-    if (variable_get('acquia_purge_reportpurges', TRUE)
-      && user_access('purge notification')) {
-      drupal_set_message(t("Purged from Varnish: <b>@uri</b>", array('@uri' => $uri)), 'info');
+    foreach (_acquia_purge_get_balancers() as $balancer_ip) {
+      _acquia_purge_queue_add($path, $domain, $balancer_ip);
     }
   }
 
-  return !in_array(FALSE, $results);
+  // Return the statistics array based returning useful information about the
+  // current statue of the purge queue.
+  return _acquia_purge_queue_stats();
 }
 
 /**
@@ -580,12 +643,26 @@ function acquia_purge_purge_path($path, $domains = NULL) {
  *   from. Optional, default list of domain names will be generated else.
  *
  * @returns
- *   Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
+ *   Progress statistics from the queue manager. Associative array with the keys
+ *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
 function acquia_purge_purge_paths($paths, $domains = NULL) {
-  $results = array();
-  foreach ($paths as $path) {
-    $results[] = acquia_purge_purge_path($path, $domains);
+
+  // Get a list of domains ourselves when these are not given.
+  if (is_null($domains)) {
+    $domains = _acquia_purge_get_domains();
   }
-  return !in_array(FALSE, $results);
+
+  // Loop trough every path, domain and balancer to queue the purge.
+  foreach ($paths as $path) {
+    foreach ($domains as $domain) {
+      foreach (_acquia_purge_get_balancers() as $balancer_ip) {
+        _acquia_purge_queue_add($path, $domain, $balancer_ip);
+      }
+    }
+  }
+
+  // Return the statistics array based returning useful information about the
+  // current statue of the purge queue.
+  return _acquia_purge_queue_stats();
 }
