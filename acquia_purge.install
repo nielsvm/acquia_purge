@@ -66,6 +66,12 @@ function acquia_purge_requirements($phase) {
     if (_acquia_purge_are_we_on_acquiacloud()) {
       $status['severity'] = REQUIREMENT_OK;
       $status['description'] = $domains;
+
+      // Include the status progress bar when active purges are going on.
+      $stats = _acquia_purge_queue_stats();
+      if ($stats['running']) {
+        $status['value'] = theme('acquia_purge_status_bar_widget', $stats);
+      }
     }
 
     // Report that purging will be silent as we are not on Acquia Cloud.
