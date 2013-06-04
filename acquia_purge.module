@@ -26,6 +26,24 @@ function acquia_purge_permission() {
 }
 
 /**
+ * Implements hook_menu().
+ */
+function acquia_purge_menu() {
+  $items = array();
+
+  // Declare the hidden AJAX processor path which we call client side.
+  $items['acquia_purge_ajax_processor'] = array(
+    'title' => 'Acquia Purge AJAX processor',
+    'page callback' => 'acquia_purge_ajax_processor',
+    'access callback' => '_acquia_purge_queue_is_user_purging',
+    'file' => 'acquia_purge.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
  * Implements hook_expire_cache().
  */
 function acquia_purge_expire_cache($paths) {
@@ -390,6 +408,18 @@ function _acquia_purge_queue_add($path, $domain, $balancer_ip) {
   // Bump the queue counter.
   $qcount++;
 
+  // Register the current user and its PHP session ID as queue owner.
+  static $owner_registered;
+  if (is_null($owner_registered)) {
+    global $user;
+    if (php_sapi_name() != 'cli') {
+      if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+        variable_set('acquia_purge_queue_owner', array($user->name, $user->sid));
+        $owner_registered = TRUE;
+      }
+    }
+  }
+
   // Store the queue counter in our state variable.
   variable_set('acquia_purge_queue_counter', $qcount);
 
@@ -449,6 +479,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
 
     // Once its back to 0, progress is 100% and no activity is assumed.
     variable_set('acquia_purge_queue_counter', 0);
+    variable_set('acquia_purge_queue_owner', array());
   }
 
   return $items;
@@ -596,6 +627,44 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
   $info['percent'] = (int) (100 - floor($info['percent']));
 
   return $info;
+}
+
+/**
+ * Queue manager: determines if the current owns a running purge session.
+ *
+ * @see _acquia_purge_queue_add()
+ * @returns
+ *   Boolean TRUE when the current user with the exact same session initiated
+ *   a purge session earlier and thus owns the purge session.
+ */
+function _acquia_purge_queue_is_user_purging() {
+  global $user;
+
+  // The very first check here is whether the user is authenticated.
+  if (!isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+    return FALSE;
+  }
+
+  // Retrieve the queue owner state.
+  $owner = variable_get('acquia_purge_queue_owner', array());
+
+  // Reject if no owner is registered at all.
+  if (count($owner) != 2) {
+    return FALSE;
+  }
+
+  // Compare the current user name with the owner.
+  if ($owner[0] != $user->name) {
+    return FALSE;
+  }
+
+  // Compare the current session ID with the owner.
+  if ($owner[1] != $user->sid) {
+    return FALSE;
+  }
+
+  // All tests passed, the current user is responsible for the triggered purge.
+  return TRUE;
 }
 
 /**

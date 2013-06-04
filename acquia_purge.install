@@ -24,6 +24,7 @@ function acquia_purge_uninstall() {
 
   // Remove traces from our usage of the Queue API.
   variable_del('acquia_purge_queue_counter');
+  variable_del('acquia_purge_queue_owner');
   $queue = DrupalQueue::get('acquia_purge', TRUE);
   $queue->deleteQueue();
 

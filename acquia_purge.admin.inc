@@ -7,6 +7,50 @@
  * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
+/**
+ * Menu callback; process a chunk of purge items via AJAX.
+ *
+ * @returns
+ *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
+ */
+function acquia_purge_ajax_processor() {
+  $status = _acquia_purge_queue_stats();
+
+  // Define a key 'error' that describes a potential error condition.
+  $status['error'] = FALSE;
+
+  // With ACQUIA_PURGE_QUEUE_TRESHOLD put on 10 and individual purge timeouts
+  // on 3 seconds the theory goes that a run should never exceed 30 seconds. To
+  // be on the safe side the lock we acquire expires after 60 seconds.
+  if (lock_acquire('acquia_purge_ajax_processor', 60)) {
+
+    // Pop items from the queue and immediately process them.
+    _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+
+    // Refresh the statistics post-run, so override most fields in $status.
+    foreach (_acquia_purge_queue_stats() as $key => $value) {
+      $status[$key] = $value;
+    }
+
+    // Raise error condition if history list remains empty.
+    if (empty($status['purgehistory'])) {
+      $status['error'] = t("Nothing got purged, something is wrong...");
+    }
+
+    // We're done so lets release the lock.
+    lock_release('acquia_purge_ajax_processor');
+  }
+  else {
+    // Failed to acquire the lock, report this as error condition.
+    $status['error'] = t('Unable to acquia lock, something else is running');
+  }
+
+  // Render the status widget and add it to the statistics array.
+  $status['widget'] = theme('acquia_purge_status_widget', $status);
+
+  // Return the status array with statistics...
+  return drupal_json_output($status);
+}
 
 /**
  * Returns HTML for the Acquia Purge status widget.
