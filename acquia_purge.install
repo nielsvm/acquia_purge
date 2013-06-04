@@ -10,9 +10,24 @@
  */
 
 /**
+ * Implements hook_install().
+ */
+function acquia_purge_install() {
+
+  // Install our queuing queue using Drupal's Queue API.
+  $queue = DrupalQueue::get('acquia_purge', TRUE);
+  $queue->createQueue();
+}
+
+/**
  * Implements hook_uninstall().
  */
 function acquia_purge_uninstall() {
+
+  // Remove traces from our usage of the Queue API.
+  variable_del('acquia_purge_queue_counter');
+  $queue = DrupalQueue::get('acquia_purge', TRUE);
+  $queue->deleteQueue();
 
   // Remove the reporting variable.
   variable_del('acquia_purge_reportpurges');
