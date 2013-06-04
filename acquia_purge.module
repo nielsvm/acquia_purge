@@ -22,7 +22,7 @@ function acquia_purge_init() {
     'acquia_purge_ajax_processor');
 
   // Abort loading the AJAX logic when hitting any of the excluded paths.
-  if (in_array($_GET['q'], $excluded_paths)) {
+  if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
     return;
   }
 
@@ -702,6 +702,11 @@ function _acquia_purge_queue_is_user_purging() {
 
   // Compare the current session ID with the owner.
   if ($owner[1] != $user->sid) {
+    return FALSE;
+  }
+
+  // Are we running on a Acquia Cloud environment?
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
     return FALSE;
   }
 
