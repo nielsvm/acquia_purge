@@ -373,15 +373,23 @@ function _acquia_purge_queue_add($path, $domain, $balancer_ip) {
 /**
  * Queue manager: pop X amount of items from the queue.
  *
+ * @param string $processor_callback
+ *   The name of a PHP function or callable that gets called to process a
+ *   individual item popped from the queue. The callback is given the path as
+ *   the first argument, the domain as second and the balancer IP as third. This
+ *   parameter is optional.
+ *
  * @warning
- *   Calling this function commits the caller into actually processing the items
- *   from the queue, not processing the result will lead into user confusion.
+ *   Calling this helper commits the caller into actually processing the items
+ *   popped from the queue, either by iterating the return value or by providing
+ *   a processing callback that processes individual values. Not processing the
+ *   result will lead into confusion and broken functionality.
  * @returns
  *   Non-associative array of which every value record represents one resulting
  *   HTTP PURGE request. Array items are non-associative arrays itself with the
  *   path as key #0, the domain as key #1 and the balancer ip address as key #2.
  */
-function _acquia_purge_queue_pop() {
+function _acquia_purge_queue_pop($processor_callback = NULL) {
   $qcount = variable_get('acquia_purge_queue_counter', 0);
   $queue = _acquia_purge_queue();
   $items = array();
@@ -391,6 +399,11 @@ function _acquia_purge_queue_pop() {
     if ($item = $queue->claimItem()) {
       $items[] = $item->data;
       $queue->deleteItem($item);
+
+      // Call the callback once provided and pass on the arguments to purge.
+      if (!is_null($processor_callback)) {
+        call_user_func_array($processor_callback, $item->data);
+      }
     }
   }
 
