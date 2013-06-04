@@ -2,9 +2,7 @@
 
 /**
  * @file
- * acquia_purge.module
- * @description
- * Automatically purge pages upon save or the full site from Varnish.
+ * Acquia Purge, Top-notch Varnish purging on Acquia Cloud!
  * @author
  * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */

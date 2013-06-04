@@ -2,8 +2,6 @@
 
 /**
  * @file
- * acquia_purge.tlds.inc
- * @description
  * Define the full list of TLD's we have to check against to determine if a
  * embedded domain name in '<port>.<domain>.<path>' seems valid for us.
  *
