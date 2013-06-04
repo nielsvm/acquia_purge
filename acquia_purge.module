@@ -454,7 +454,7 @@ function acquia_purge_purge_node(&$node, $domains = NULL) {
  *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
  * @param array $domains
  *   Array containing all the domain names the record should be purged
- *  f rom. Optional, default list of domain names will be generated else.
+ *   from. Optional, default list of domain names will be generated else.
  *
  * @returns
  *   Boolean TRUE indicating success, boolean FALSE indicating FAILURE.
