@@ -724,7 +724,7 @@ function acquia_purge_purge_path($path, $domains = NULL) {
   }
 
   // Return the statistics array based returning useful information about the
-  // current statue of the purge queue.
+  // current state of the purge queue.
   return _acquia_purge_queue_stats();
 }
 
