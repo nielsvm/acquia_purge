@@ -742,22 +742,15 @@ function acquia_purge_purge_path($path, $domains = NULL) {
  *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
 function acquia_purge_purge_paths($paths, $domains = NULL) {
+  $stats = array();
 
-  // Get a list of domains ourselves when these are not given.
-  if (is_null($domains)) {
-    $domains = _acquia_purge_get_domains();
-  }
-
-  // Loop trough every path, domain and balancer to queue the purge.
+  // Dispatch the paths to acquia_purge_purge_path().
   foreach ($paths as $path) {
-    foreach ($domains as $domain) {
-      foreach (_acquia_purge_get_balancers() as $balancer_ip) {
-        _acquia_purge_queue_add($path, $domain, $balancer_ip);
-      }
-    }
+
+    // Add the item to the queue and overwrite the stats array.
+    $stats = acquia_purge_purge_path($path, $domains);
   }
 
-  // Return the statistics array based returning useful information about the
-  // current statue of the purge queue.
-  return _acquia_purge_queue_stats();
+  // The latest version of the stats array is the most recent one.
+  return $stats;
 }
