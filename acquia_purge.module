@@ -81,21 +81,18 @@ function acquia_purge_form_system_performance_settings_alter(&$form, &$form_stat
 function _acquia_purge_are_we_on_acquiacloud() {
   static $connected;
 
-  // Disable purging from Drush and other command line invocations for now.
-  if (php_sapi_name() == 'cli') {
-    return FALSE;
-  }
-
   // Build our assertions logic and cache it statically.
   if (is_null($connected)) {
     $assertions = array(
       is_array(variable_get('acquia_hosting_site_info', FALSE)),
+      (bool) count(_acquia_purge_get_balancers()),
       (bool) _acquia_purge_get_site_name(),
       (bool) _acquia_purge_get_site_group(),
       function_exists('curl_init'),
     );
     $connected = !in_array(FALSE, $assertions);
   }
+
   return $connected;
 }
 
