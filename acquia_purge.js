@@ -240,14 +240,34 @@ Drupal.behaviors.AcquiaPurgeAjax = {
           },
           error: function(request) {
 
-            // Report the error occurred and tear the UI partly down.
-            if (uiActivated()) {
-              uiThrobberOff();
-              uiLogHistoryHide();
-              message = "Something went wrong while communicating with the "
-                + "server. Last known response was '"+ request['statusText']
-                +"' with HTTP code "+ request['status'] +".";
-              uiError(message);
+            // Sometimes requests randomly fail with HTTP 200 (OK), continue
+            // processing requests as it most probably just did its work.
+            if (Number(request['status']) == 200) {
+              if (uiActivated()) {
+                uiThrobberOff();
+              }
+              eventLoopRun();
+            }
+
+            // 403 responses indicate that the user does not have access to the
+            // AJAX back-end anymore, this happens when someone else initiated
+            // a purge sequence or when multiple progress bars fight each-other.
+            else if (Number(request['status']) == 403) {
+              if (uiActivated()) {
+                uiTearDown();
+              }
+            }
+
+            // Else, report the error occurred and tear the UI partly down.
+            else {
+              if (uiActivated()) {
+                uiThrobberOff();
+                uiLogHistoryHide();
+                message = "Something went wrong while communicating with the "
+                  + "server. Last known response was '"+ request['statusText']
+                  +"' with HTTP code "+ request['status'] +".";
+                uiError(message);
+              }
             }
           }
         });
