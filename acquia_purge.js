@@ -17,6 +17,10 @@ Drupal.behaviors.AcquiaPurgeAjax = {
       apbox_widget = '#apwidget';
       apbox_log = '#aplog';
 
+      // Declare a error counter and a error limit before we stop processing.
+      errorCounter = 0;
+      errorCounterLimit = 3;
+
       // Determine if on-screen reporting is enabled or not.
       function uiActivated() {
         if ($(apbox).length > 0) {
@@ -46,7 +50,8 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         apbox_log = apbox.find(apbox_log);
       }
 
-      // Set a visual error in the error container.
+      // Set a visual error in the error container. Returns true when processing
+      // could continue and returns false when the error limit has been reached.
       function uiError(message) {
         message = typeof message !== 'undefined' ? message : false;
         message_old = apbox_errors.html();
@@ -57,17 +62,22 @@ Drupal.behaviors.AcquiaPurgeAjax = {
           apbox_errors.html('&nbsp;');
           return;
         }
+        else {
+
+          // Increase the error counter.
+          errorCounter = errorCounter + 1;
+        }
 
         // Don't do anything when the new and old messages are the same.
         if (message == message_old) {
-          return;
+          return (errorCounter < errorCounterLimit) ? true : false;
         }
 
         // When the box is invisible: set the message and unfold.
         if (!apbox_errors.is(':visible')) {
           apbox_errors.html(message);
           apbox_errors.slideDown('slow');
-          return;
+          return (errorCounter < errorCounterLimit) ? true : false;
         }
 
         // The only resulting case is a message replacement, handle nicely.
@@ -78,6 +88,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         apbox_errors.find('.apn').slideDown('slow', function() {
           apbox_errors.html(message);
         });
+        return (errorCounter < errorCounterLimit) ? true : false;
       }
 
       // Enable the throbber on the widget container.
@@ -189,26 +200,34 @@ Drupal.behaviors.AcquiaPurgeAjax = {
               uiThrobberOff();
             }
 
-            // Handle error conditions and remove errors when they are gone.
-            if (uiActivated() && data['error']) {
-              uiError(data['error']);
-            }
-            else if (uiActivated() && (!data['error'])) {
-              uiError();
-            }
-
             // Report successfully purged URLs to the GUI's logging widget.
             if (uiActivated() && (data['purgehistory'].length > 0)) {
               uiLogHistory(data['purgehistory']);
             }
 
+            // Handle error conditions and remove errors when they are gone.
+            errorHandlerCallsForHalt = false;
+            if (uiActivated() && data['error']) {
+              if (!uiError(data['error'])) {
+                errorHandlerCallsForHalt = true;
+              }
+            }
+            else if (uiActivated() && (!data['error'])) {
+              uiError();
+            }
+
             // Follow up a next request with a 2 seconds pause.
             if (data['running']) {
-              if (data['locked']) {
-                setTimeout(function() {eventLoopRun();}, 10000);
+              if (!errorHandlerCallsForHalt) {
+                if (data['locked'] || data['error']) {
+                  setTimeout(function() {eventLoopRun();}, 10000);
+                }
+                else {
+                  setTimeout(function() {eventLoopRun();}, 1000);
+                }
               }
               else {
-                setTimeout(function() {eventLoopRun();}, 1000);
+                uiThrobberOff();
               }
             }
 

@@ -21,6 +21,7 @@ function acquia_purge_init() {
   $excluded_auto_purging_paths = array(
     '',
     'admin/reports/status',
+    'admin/reports/dblog',
     'acquia_purge_ajax_processor');
   if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
     return;
