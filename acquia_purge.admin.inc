@@ -17,7 +17,7 @@ function acquia_purge_ajax_processor() {
   $status = _acquia_purge_queue_stats();
 
   // Define a key 'error' that describes a potential error condition.
-  $status['error'] = FALSE;
+  $status['error'] = $status['locked'] = FALSE;
 
   // With ACQUIA_PURGE_QUEUE_TRESHOLD put on 10 and individual purge timeouts
   // on 3 seconds the theory goes that a run should never exceed 30 seconds. To
@@ -41,6 +41,11 @@ function acquia_purge_ajax_processor() {
 
     // We're done so lets release the lock.
     lock_release('acquia_purge_ajax_processor');
+  }
+
+  // Instead of raising a very visual error condition: indicate the lock.
+  else {
+    $status['locked'] = TRUE;
   }
 
   // Render the status widget and add it to the statistics array.
