@@ -16,12 +16,12 @@ define('ACQUIA_PURGE_QUEUE_TRESHOLD', 10);
  * Implements hook_init().
  */
 function acquia_purge_init() {
+
+  // Abort loading the AJAX logic when hitting any of the excluded paths.
   $excluded_auto_purging_paths = array(
     '',
     'admin/reports/status',
     'acquia_purge_ajax_processor');
-
-  // Abort loading the AJAX logic when hitting any of the excluded paths.
   if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
     return;
   }
