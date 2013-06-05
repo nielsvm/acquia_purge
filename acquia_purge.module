@@ -783,11 +783,8 @@ function _acquia_purge_trigger_client_side_purging() {
   // category for 'acquia_purge_messages' , which is part of the trick.
   if (variable_get('acquia_purge_reportpurges', TRUE)
     && user_access('purge notification')) {
-    $message = t("Acquia Purge detected that changes have been made on your
-      site that are not yet public because pages are still kept in various
-      caches. This message will soon be replaced by a progress bar that
-      monitors the progress until your site is fully refreshed.");
-
+    $message = t("Changes have been made that require pages to be refreshed from
+      your caches and load balancers. Please wait...");
 
     // Set the message and don't repeat it if it is already set.
     drupal_set_message($message, 'acquia_purge_messages', FALSE);
