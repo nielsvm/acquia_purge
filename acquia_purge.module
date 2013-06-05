@@ -624,6 +624,12 @@ function _acquia_purge_queue_processpurge($path, $domain, $balancer_ip) {
   // Execute the PURGE request and store the boolean result.
   $status = curl_exec($curl);
 
+  // Since we purge proactive chances are that items aren't even in cache yet,
+  // on which Varnish will result a HTTP 404 - not found. Mark those as valid.
+  if ((!$status) && (curl_getinfo($curl, CURLINFO_HTTP_CODE) == 404)) {
+    $status = TRUE;
+  }
+
   // When it succeeds we close the request, log it and feed it to our GUI.
   if ($status == TRUE) {
     curl_close($curl);
