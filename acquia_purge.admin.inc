@@ -117,7 +117,7 @@ function theme_acquia_purge_status_bar_widget($variables) {
     %remaining items to go...", array('%remaining' => $variables['remaining']));
   }
   else {
-    $message = t("Finished");
+    $message = t("Finished refreshing pages from cache.");
   }
 
   return theme('progress_bar', array(
