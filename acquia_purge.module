@@ -29,28 +29,9 @@ function acquia_purge_init() {
   // Detect if the current user instantiated a ongoing purge in the queues.
   if (_acquia_purge_queue_is_user_purging()) {
 
-    // Load the JQuery logic that will start triggering the purges using calls
-    // to our AJAX path in the background. Due the usage of lock acquiring on
-    // the back-end path we don't need to worry about request overlap at all as
-    // the script will also automatically stop once the server is done.
-    $module_path = drupal_get_path('module', 'acquia_purge');
-    drupal_add_js($module_path . '/acquia_purge.js');
+    // Trigger the client side candy so it starts doing its work.
+    _acquia_purge_trigger_client_side_purging();
 
-    // If the user has permission to it and has screen reporting enabled we set
-    // a message that announces the AJAX powered purging. Our JQuery logic that
-    // we insert is smart enough to only load the GUI elements by detecting this
-    // message. Please note that drupal_set_message() doesn't officially have a
-    // category for 'acquia_purge_messages' , which is part of the trick.
-    if (variable_get('acquia_purge_reportpurges', TRUE)
-      && user_access('purge notification')) {
-      $message = t("Acquia Purge detected that changes have been made on your
-        site that are not yet public because pages are still kept in various
-        caches. This message will soon be replaced by a progress bar that
-        monitors the progress until your site is fully refreshed.");
-
-      // Set the message and don't repeat it if it is already set.
-      drupal_set_message($message, 'acquia_purge_messages', FALSE);
-    }
   }
 }
 
@@ -456,6 +437,7 @@ function _acquia_purge_queue_add($path, $domain, $balancer_ip) {
     global $user;
     if (php_sapi_name() != 'cli') {
       if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+        _acquia_purge_trigger_client_side_purging();
         variable_set('acquia_purge_queue_owner', array($user->name, $user->sid));
         $owner_registered = TRUE;
       }
@@ -712,6 +694,44 @@ function _acquia_purge_queue_is_user_purging() {
 
   // All tests passed, the current user is responsible for the triggered purge.
   return TRUE;
+}
+
+/**
+ * Trigger client-side AJAX based purging during this request.
+ *
+ * @returns
+ *   Void, this function doesn't return anything.
+ */
+function _acquia_purge_trigger_client_side_purging() {
+
+  // To be sure we still want to check if a purge has been setup correctly.
+  if (!_acquia_purge_queue_is_user_purging()) {
+    return;
+  }
+
+  // Load the JQuery logic that will start triggering the purges using calls
+  // to our AJAX path in the background. Due the usage of lock acquiring on
+  // the back-end path we don't need to worry about request overlap at all as
+  // the script will also automatically stop once the server is done.
+  $module_path = drupal_get_path('module', 'acquia_purge');
+  drupal_add_js($module_path . '/acquia_purge.js');
+
+  // If the user has permission to it and has screen reporting enabled we set
+  // a message that announces the AJAX powered purging. Our JQuery logic that
+  // we insert is smart enough to only load the GUI elements by detecting this
+  // message. Please note that drupal_set_message() doesn't officially have a
+  // category for 'acquia_purge_messages' , which is part of the trick.
+  if (variable_get('acquia_purge_reportpurges', TRUE)
+    && user_access('purge notification')) {
+    $message = t("Acquia Purge detected that changes have been made on your
+      site that are not yet public because pages are still kept in various
+      caches. This message will soon be replaced by a progress bar that
+      monitors the progress until your site is fully refreshed.");
+
+
+    // Set the message and don't repeat it if it is already set.
+    drupal_set_message($message, 'acquia_purge_messages', FALSE);
+  }
 }
 
 /**
