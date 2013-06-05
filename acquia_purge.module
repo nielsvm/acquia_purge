@@ -164,6 +164,54 @@ function _acquia_purge_are_we_on_acquiacloud() {
 }
 
 /**
+ * Turn a PHP variable into a string with data type information that is suited
+ * for low-footprint usage in log entries (for debugging purposes).
+ *
+ * @param mixed $symbols
+ *   Arbitrary PHP variable, preferably a associative array.
+ *
+ * @returns
+ *   A one-line comma separated string with data types as var_dump() generates.
+ */
+function _acquia_purge_export_debug_symbols($symbols) {
+
+  // Capture a string using PHPs very own var_dump() using output buffering.
+  ob_start();
+  var_dump($symbols);
+  $symbols = ob_get_clean();
+
+  // Clean up and reduce the output footprint for both normal and xdebug output.
+  if (extension_loaded('xdebug')) {
+    $symbols = trim(html_entity_decode(strip_tags($symbols)));
+    $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
+    $symbols = str_replace("  '", '', $symbols);
+    $symbols = str_replace("' =>", ':', $symbols);
+    $symbols = implode(', ', explode("\n", $symbols));
+  }
+  else {
+    $symbols = strip_tags($symbols);
+    $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
+    $symbols = str_replace('  ["', '', $symbols);
+    $symbols = str_replace("\"]=>\n ", ':', $symbols);
+    $symbols = rtrim($symbols, "}\n");
+    $symbols = implode(', ', explode("\n", $symbols));
+  }
+
+  // To reduce bandwidth and storage needs we shorten data type indicators.
+  $symbols = str_replace(' string', 'S', $symbols);
+  $symbols = str_replace(' int', 'I', $symbols);
+  $symbols = str_replace(' float', 'F', $symbols);
+  $symbols = str_replace(' boolean', 'B', $symbols);
+  $symbols = str_replace(' bool', 'B', $symbols);
+  $symbols = str_replace(' null', 'NLL', $symbols);
+  $symbols = str_replace(' NULL', 'NLL', $symbols);
+  $symbols = str_replace('length=', 'l=', $symbols);
+
+  // Return the resulting string.
+  return $symbols;
+}
+
+/**
  * Get a list of load balancer IP addresses in front of this Acquia Cloud site.
  *
  * @warning
@@ -561,7 +609,7 @@ function _acquia_purge_queue_processpurge($path, $domain, $balancer_ip) {
   $headers = array(
     "Host: $domain",
     'Accept-Encoding: gzip',
-    "X-Acquia-Purge:$site_name",
+    "X-Acquia-Purge: $site_name",
   );
 
   // Instantiate the cURL resource and configure its runtime parameters.
@@ -572,13 +620,12 @@ function _acquia_purge_queue_processpurge($path, $domain, $balancer_ip) {
   curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'PURGE');
   curl_setopt($curl, CURLOPT_FAILONERROR, TRUE);
 
-  // Attempt the request, store the outcome and close the cURL resource.
+  // Execute the PURGE request and store the boolean result.
   $status = curl_exec($curl);
-  curl_close($curl);
 
-  // Log the purge action to Drupal's watchdog() and our statistics helper to
-  // maintain both a low-level as a GUI level track-record of what happened.
+  // When it succeeds we close the request, log it and feed it to our GUI.
   if ($status == TRUE) {
+    curl_close($curl);
     watchdog(
       'acquia_purge',
       "Purged '%url' from load balancer %balancer_ip.",
@@ -586,12 +633,24 @@ function _acquia_purge_queue_processpurge($path, $domain, $balancer_ip) {
       WATCHDOG_INFO);
     _acquia_purge_queue_stats($url);
   }
+
+  // When it fails it will reattempt later, collect debugging info and log it.
   else {
+
+    // Collect debugging information.
+    $debug = curl_getinfo($curl);
+    $debug['headers'] = implode('|', $headers);
+    unset($debug['certinfo']);
+    $debug = _acquia_purge_export_debug_symbols($debug);
+
+    // Close the cURL resource and log the failure with debugging symbols in it.
+    curl_close($curl);
     watchdog(
       'acquia_purge',
       "Failed attempt to purge '%url' from load balancer %balancer_ip for "
-        . "unknown reasons as curl_exec() returned false. Url re-queued!",
-      array('%url' => $url, '%balancer_ip' => $balancer_ip),
+        . "unknown reasons as curl_exec() returned false. Url re-queued! "
+        . "Debugging symbols: '%debug',",
+      array('%url' => $url, '%balancer_ip' => $balancer_ip, '%debug' => $debug),
       WATCHDOG_ERROR);
   }
 
