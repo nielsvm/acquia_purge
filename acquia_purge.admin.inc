@@ -21,8 +21,9 @@ function acquia_purge_ajax_processor() {
 
   // With ACQUIA_PURGE_QUEUE_TRESHOLD put on 10 and individual purge timeouts
   // on 3 seconds the theory goes that a run should never exceed 30 seconds. To
-  // be on the safe side the lock we acquire expires after 60 seconds.
-  if (lock_acquire('acquia_purge_ajax_processor', 60)) {
+  // be on the safe side the lock we acquire expires after
+  // ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT seconds.
+  if (lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
 
     // Pop items from the queue and immediately process them.
     _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');

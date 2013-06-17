@@ -102,7 +102,7 @@ function drush_acquia_purge_ap_forget() {
   }
 
   // Acquire a lock and ensure nobody else is purging something.
-  if (!lock_acquire('acquia_purge_ajax_processor', 60)) {
+  if (!lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
     return drush_set_error("Unable to acquire lock, ensure that all users "
       . "close their browser tabs as a different purge seems to be active!");
   }
@@ -128,7 +128,7 @@ function drush_acquia_purge_ap_process() {
   }
 
   // Acquire a lock and ensure nobody else is purging something.
-  if (!lock_acquire('acquia_purge_ajax_processor', 60)) {
+  if (!lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
     return drush_set_error("Unable to acquire lock, ensure that all users "
       . "close their browser tabs as a different purge seems to be active!");
   }

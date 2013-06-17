@@ -13,6 +13,11 @@
 define('ACQUIA_PURGE_QUEUE_TRESHOLD', 10);
 
 /**
+ * The amount of time in seconds used to lock purge processing.
+ */
+define('ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT', 60);
+
+/**
  * Implements hook_init().
  */
 function acquia_purge_init() {
