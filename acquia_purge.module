@@ -501,6 +501,25 @@ function _acquia_purge_queue_add($path, $domain, $balancer_ip) {
 }
 
 /**
+ * Queue manager: clear the queue and invalidate all running processes.
+ *
+ * @returns
+ *   Void.
+ */
+function _acquia_purge_queue_clear() {
+  $queue = _acquia_purge_queue();
+
+  // Claim all queue items and delete them immediately.
+  while ($item = $queue->claimItem()) {
+    $queue->deleteItem($item);
+  }
+
+  // Reset counter and ownership.
+  variable_set('acquia_purge_queue_counter', 0);
+  variable_set('acquia_purge_queue_owner', array());
+}
+
+/**
  * Queue manager: pop X amount of items from the queue.
  *
  * @param string $processor_callback
