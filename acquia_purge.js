@@ -136,7 +136,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         }
 
         // Iterate each URL and append it to the list items.
-        $.each(purges, function( key, url ) {
+        $.each(purges, function(key, url) {
 
           // Check the existing list and add the item if its new to us.
           alreadyInList = false;
