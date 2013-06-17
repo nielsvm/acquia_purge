@@ -53,3 +53,27 @@ function acquia_purge_drush_command() {
     ),
   );
 }
+
+/**
+ * Purge a specified path from your balancers.
+ *
+ * @param string $path
+ *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ */
+function drush_acquia_purge_ap_purge($path) {
+  return drush_set_error('Not yet implemented, sorry...');
+}
+
+/**
+ * Forget all scheduled purges and empty the queue.
+ */
+function drush_acquia_purge_ap_forget() {
+  return drush_set_error('Not yet implemented, sorry...');
+}
+
+/**
+ * Purge all queued items from the command line.
+ */
+function drush_acquia_purge_ap_process() {
+  return drush_set_error('Not yet implemented, sorry...');
+}
