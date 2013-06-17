@@ -95,7 +95,26 @@ function drush_acquia_purge_ap_purge($path = NULL) {
  * Forget all scheduled purges and empty the queue.
  */
 function drush_acquia_purge_ap_forget() {
-  return drush_set_error('Not yet implemented, sorry...');
+
+  // Stop invocation if we are not detecting Acquia Cloud heuristics.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
+  }
+
+  // Acquire a lock and ensure nobody else is purging something.
+  if (!lock_acquire('acquia_purge_ajax_processor', 60)) {
+    return drush_set_error("Unable to acquire lock, ensure that all users "
+      . "close their browser tabs as a different purge seems to be active!");
+  }
+
+  // Retrieve statistics, clear the queue and log to Drush.
+  $stats = _acquia_purge_queue_stats();
+  _acquia_purge_queue_clear();
+  drush_log(dt("Removed @remaining items from the queue.",
+    array('@remaining' => $stats['remaining'])), 'ok');
+
+  // We are done so lets release the lock.
+  lock_release('acquia_purge_ajax_processor');
 }
 
 /**
