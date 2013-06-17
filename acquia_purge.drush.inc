@@ -60,8 +60,59 @@ function acquia_purge_drush_command() {
  * @param string $path
  *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
  */
-function drush_acquia_purge_ap_purge($path) {
-  return drush_set_error('Not yet implemented, sorry...');
+function drush_acquia_purge_ap_purge($path = NULL) {
+
+  // Stop invocation if we are not detecting Acquia Cloud heuristics.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
+  }
+
+  // Check if the path was provided.
+  if (!is_string($path)) {
+    return drush_set_error("You haven't provided a path to be purged.");
+  }
+
+  // Block invocations with URL's instead of paths, we'll handle the URLs!
+  if (stristr($path, 'http:') || stristr($path, 'https:')) {
+    return drush_set_error("You can't provide a URL, only paths...");
+  }
+
+  // Acquire a lock and ensure nobody else is purging something.
+  if (!lock_acquire('acquia_purge_ajax_processor', 60)) {
+    return drush_set_error("Unable to acquire lock, ensure that all users "
+      . "close their browser tabs as a different purge seems to be active!");
+  }
+
+  // Strip the path and remove potentially added double paths.
+  $path = trim($path, '/');
+  $path = str_replace('//', '/', $path);
+
+  // If the path is empty, assume <front>.
+  if (empty($path)) {
+    $path = '<front>';
+  }
+
+  // Add the given path to the queue.
+  $stats = acquia_purge_purge_path($path);
+
+  // Calculate how many iterations we need and start processing accordingly!
+  $rounds = ceil($stats['total'] / ACQUIA_PURGE_QUEUE_TRESHOLD);
+  $log = array();
+  for ($i = 0; $i < $rounds; $i++) {
+    _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+
+    // Retrieve the statistics and log the purged urls.
+    $stats = _acquia_purge_queue_stats();
+    foreach ($stats['purgehistory'] as $logitem) {
+      if (!(in_array($logitem, $log))) {
+        drush_log(dt("Purged: @url", array('@url' => $logitem)), 'ok');
+        $log[] = $logitem;
+      }
+    }
+  }
+
+  // We are done so lets release the lock.
+  lock_release('acquia_purge_ajax_processor');
 }
 
 /**
