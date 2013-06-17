@@ -77,12 +77,6 @@ function drush_acquia_purge_ap_purge($path = NULL) {
     return drush_set_error("You can't provide a URL, only paths...");
   }
 
-  // Acquire a lock and ensure nobody else is purging something.
-  if (!lock_acquire('acquia_purge_ajax_processor', 60)) {
-    return drush_set_error("Unable to acquire lock, ensure that all users "
-      . "close their browser tabs as a different purge seems to be active!");
-  }
-
   // Strip the path and remove potentially added double paths.
   $path = trim($path, '/');
   $path = str_replace('//', '/', $path);
@@ -92,10 +86,41 @@ function drush_acquia_purge_ap_purge($path = NULL) {
     $path = '<front>';
   }
 
-  // Add the given path to the queue.
-  $stats = acquia_purge_purge_path($path);
+  // Add the given path to the queue and dispatch processing to ap-process.
+  acquia_purge_purge_path($path);
+  drush_acquia_purge_ap_process();
+}
 
-  // Calculate how many iterations we need and start processing accordingly!
+/**
+ * Forget all scheduled purges and empty the queue.
+ */
+function drush_acquia_purge_ap_forget() {
+  return drush_set_error('Not yet implemented, sorry...');
+}
+
+/**
+ * Purge all queued items from the command line.
+ */
+function drush_acquia_purge_ap_process() {
+
+  // Stop invocation if we are not detecting Acquia Cloud heuristics.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
+  }
+
+  // Acquire a lock and ensure nobody else is purging something.
+  if (!lock_acquire('acquia_purge_ajax_processor', 60)) {
+    return drush_set_error("Unable to acquire lock, ensure that all users "
+      . "close their browser tabs as a different purge seems to be active!");
+  }
+
+  // Retrieve the statistics and determine if processing is needed.
+  $stats = _acquia_purge_queue_stats();
+  if (!$stats['running']) {
+    return drush_set_error("The purge queue seems to be empty!");
+  }
+
+  // Calculate how many iterations we need and start processing accordingly.
   $rounds = ceil($stats['total'] / ACQUIA_PURGE_QUEUE_TRESHOLD);
   $log = array();
   for ($i = 0; $i < $rounds; $i++) {
@@ -113,18 +138,4 @@ function drush_acquia_purge_ap_purge($path = NULL) {
 
   // We are done so lets release the lock.
   lock_release('acquia_purge_ajax_processor');
-}
-
-/**
- * Forget all scheduled purges and empty the queue.
- */
-function drush_acquia_purge_ap_forget() {
-  return drush_set_error('Not yet implemented, sorry...');
-}
-
-/**
- * Purge all queued items from the command line.
- */
-function drush_acquia_purge_ap_process() {
-  return drush_set_error('Not yet implemented, sorry...');
 }
