@@ -40,13 +40,14 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         apbox_widget = apbox.find(apbox_widget);
 
         // Prepend the hidden errors container and reference it.
-        apbox.prepend("<div id='aperror' style='display: none;' "
-          + "class='messages error'>&nbsp;</div>");
+        html = "<div id='aperror' style='display: none;' class='messages ";
+        html = html + "error'>&nbsp;</div>";
+        apbox.prepend(html);
         apbox_errors = apbox.find(apbox_errors);
 
         // Append the unordered purge log to the container and reference it.
-        apbox.append("<div id='aplog' style='display: none;' "
-          + "><ul></ul></div>");
+        html = "<div id='aplog' style='display: none;'><ul></ul></div>";
+        apbox.append(html);
         apbox_log = apbox.find(apbox_log);
       }
 
@@ -81,9 +82,9 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         }
 
         // The only resulting case is a message replacement, handle nicely.
+        apn  = "<div class='apn' style='display:none;'>" + message + "</div>";
         apbox_errors.html("<div class='apo'>" + apbox_errors.html() + "</div>");
-        apbox_errors.append("<div class='apn' style='display:none;'>"
-          + message + "</div>");
+        apbox_errors.append(apn);
         apbox_errors.find('.apo').slideUp('slow');
         apbox_errors.find('.apn').slideDown('slow', function() {
           apbox_errors.html(message);
@@ -98,10 +99,10 @@ Drupal.behaviors.AcquiaPurgeAjax = {
 
         // Create the throbber when it doesn't exist.
         if (!($(throbber).length > 0)) {
-          apbox_errors.after("<div id='apthrobr' style='display:"
-            + "none;'>&nbsp;</div>");
+          html = "<div id='apthrobr' style='display: none;'>&nbsp;</div>";
+          apbox_errors.after(html);
           throbber = apbox.find('#apthrobr');
-          throbber.css('background-image', 'url('+ throbber_path +')');
+          throbber.css('background-image', 'url(' + throbber_path + ')');
           throbber.css('background-color', 'transparent');
           throbber.css('background-position', '0px -18px');
           throbber.css('background-repeat', 'no-repeat');
@@ -149,11 +150,11 @@ Drupal.behaviors.AcquiaPurgeAjax = {
             // List quota reached, skip effects.
             if (list_items.find('li').length == list_items_limit) {
               list_items.find('li').first().remove();
-              list_items.append("<li>"+ url +'</li>');
+              list_items.append("<li>" + url + '</li>');
               list_items.find('li').last().css('list-style', 'none');
             }
             else {
-              list_items.append("<li style='display:none;'>"+ url +'</li>');
+              list_items.append("<li style='display:none;'>" + url + '</li>');
               list_items.find('li').last().css('list-style', 'none');
               list_items.find('li').last().slideDown(1000);
             }
@@ -263,10 +264,11 @@ Drupal.behaviors.AcquiaPurgeAjax = {
               if (uiActivated()) {
                 uiThrobberOff();
                 uiLogHistoryHide();
-                message = "Something went wrong while communicating with the "
-                  + "server. Last known response was '"+ request['statusText']
-                  +"' with HTTP code "+ request['status'] +".";
-                uiError(message);
+                msg = "Something went wrong while communicating with the ";
+                msg = msg + "server. Last known response was '";
+                msg = msg + request['statusText'] + "' with HTTP code ";
+                msg = msg + request['status'] + ".";
+                uiError(msg);
               }
             }
           }

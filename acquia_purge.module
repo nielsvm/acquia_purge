@@ -550,7 +550,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   $items = array();
 
   // Retrieve as much items as defined in ACQUIA_PURGE_QUEUE_TRESHOLD.
-  for ($i=0; $i < ACQUIA_PURGE_QUEUE_TRESHOLD; $i++) {
+  for ($i = 0; $i < ACQUIA_PURGE_QUEUE_TRESHOLD; $i++) {
     if ($item = $queue->claimItem()) {
 
       // Check if the popped item matches the current Acquia environment and
@@ -757,7 +757,7 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
   $info['processed'] = $info['total'] - $info['remaining'];
 
   // Calculate the percentage of the job.
-  $info['percent'] = ($info['remaining']/$info['total']) * 100;
+  $info['percent'] = ($info['remaining'] / $info['total']) * 100;
   $info['percent'] = (int) (100 - floor($info['percent']));
 
   return $info;
