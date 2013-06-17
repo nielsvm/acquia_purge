@@ -14,8 +14,10 @@ function acquia_purge_drush_help($section) {
   switch ($section) {
     case 'meta:acquia_purge:title':
       return dt('Acquia Purge commands');
+
     case 'meta:acquia_purge:summary':
       return dt('Manage and create scheduled purges.');
+
   }
 }
 
@@ -31,7 +33,7 @@ function acquia_purge_drush_command() {
       'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
       'aliases' => array('app'),
       'arguments' => array(
-        'path' => 'The Drupal path to be purged, e.g.: "/news" or "<front>".'
+        'path' => 'The Drupal path to be purged, e.g.: "/news" or "<front>".',
       ),
       'examples' => array('drush app "/news"'),
     ),

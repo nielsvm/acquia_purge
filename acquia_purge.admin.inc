@@ -59,7 +59,7 @@ function acquia_purge_ajax_processor() {
 /**
  * Returns HTML for the Acquia Purge status widget.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - total: Total amount of actions initially queued for purging.
  *   - remaining: Remaining number of purge actions still to be processed.
@@ -85,7 +85,7 @@ function theme_acquia_purge_status_widget($variables) {
         'item_list',
         array(
           'items' => $variables['purgehistory'],
-          'title' => t('Recently refreshed:')))
+          'title' => t('Recently refreshed:'))),
     );
   }
 
@@ -99,7 +99,7 @@ function theme_acquia_purge_status_widget($variables) {
 /**
  * Returns HTML for the Acquia Purge progress bar widget.
  *
- * @param $variables
+ * @param array $variables
  *   An associative array containing:
  *   - total: Total amount of actions initially queued for purging.
  *   - remaining: Remaining number of purge actions still to be processed.

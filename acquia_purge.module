@@ -170,8 +170,7 @@ function _acquia_purge_are_we_on_acquiacloud() {
 }
 
 /**
- * Turn a PHP variable into a string with data type information that is suited
- * for low-footprint usage in log entries (for debugging purposes).
+ * Turn a PHP variable into a string with data type information for debugging.
  *
  * @param mixed $symbols
  *   Arbitrary PHP variable, preferably a associative array.
