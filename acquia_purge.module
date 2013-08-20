@@ -5,8 +5,6 @@
  * acquia_purge.module
  * @description
  * Automatically purge pages upon save or the full site from Varnish.
- * @author
- * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**
@@ -137,7 +135,8 @@ function _acquia_purge_get_domains() {
     // To better support multi-sites we only load in the configured Acquia Cloud
     // domain names when we are on the 'default' site as that would else flood
     // another site which we don't want to happen, on <front> for example.
-    if (($conf_path = conf_path()) == 'sites/default') {
+    $conf_path = conf_path();
+    if ($conf_path == 'sites/default') {
 
       // Add the domain names the customer defined on Acquia Cloud. When this
       // process would fail we have at least the current + $base_url domain.
@@ -204,7 +203,7 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
  *
  * @param array $domains
  *   A reference to the array of currently gathered domain names.
- * 
+ *
  * @returns
  *   Void, data will be added by reference.
  * @warning
@@ -216,6 +215,7 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
  */
 function _acquia_purge_get_domains_add_sitesphp(&$domains) {
   $sitedir = str_replace('sites/', '', conf_path());
+  $tlds = array();
 
   // Only interpret the $sites array if the file sites/sites.php exists.
   if (!file_exists('sites/sites.php')) {

@@ -1,3 +1,6 @@
+ ACQUIA PURGE - README FILE - Niels van Mourik <niels.vanmourik@acquia.com>
+--------------------------------------------------------------------------------
+
 What?
 ================================================================================
 The Acquia Purge module fills in the gap for customers running on Acquia hosting

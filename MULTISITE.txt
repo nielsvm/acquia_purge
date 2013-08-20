@@ -1,3 +1,5 @@
+ ACQUIA PURGE - MULTISITE NOTES - Niels van Mourik <niels.vanmourik@acquia.com>
+--------------------------------------------------------------------------------
 
 An important note on multi-site setups.
 ================================================================================
