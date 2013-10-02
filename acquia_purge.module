@@ -553,22 +553,6 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   for ($i = 0; $i < ACQUIA_PURGE_QUEUE_TRESHOLD; $i++) {
     if ($item = $queue->claimItem()) {
 
-      // Check if the popped item matches the current Acquia environment and
-      // if it does not, disregard it from the queue to prevent needles purges.
-      if (!isset($item->data[3])) {
-        $item->data[3] = '';
-      }
-      if ($item->data[3] !== $site_name) {
-
-        // Delete this item from the queue, decrease the loop counter and
-        // skip onto the next item by extending the loop here. This essentially
-        // deletes everything not for this environment until it reaches a valid
-        // record again, the progress bar will show noticeable a jump probably.
-        $queue->deleteItem($item);
-        $i--;
-        continue;
-      }
-
       // Add this item to the items list released back or being processed.
       $items[] = $item->data;
 
