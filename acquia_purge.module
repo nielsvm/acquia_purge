@@ -512,11 +512,7 @@ function _acquia_purge_queue_add($path, $domain, $balancer_ip) {
  */
 function _acquia_purge_queue_clear() {
   $queue = _acquia_purge_queue();
-
-  // Claim all queue items and delete them immediately.
-  while ($item = $queue->claimItem()) {
-    $queue->deleteItem($item);
-  }
+  $queue->deleteQueue();
 
   // Reset counter and ownership.
   variable_set('acquia_purge_queue_counter', 0);
