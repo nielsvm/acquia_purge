@@ -1,6 +1,21 @@
 
 Future plans
 ================================================================================
+ * INSTALL.txt
+ * progressbar: feedback visual take-over
+ * progressbar:
+ * dry run mode.
+ * curl multi stuff?
+ * ap-diagnosis
+ * Diagnosis helper that does hook_requirement + ap-diagnosis, checks:
+    * Are we on Acquia Cloud?
+    * Purge or Varnish modules at play? Boost module?
+    * Is page_cache_maximum_age < 21600 (6 hours)
+    * Is page cache itself enabled at all?
+    * What is implemented for the page cache backend?
+    * More then 500*ACQUIA_PURGE_QUEUE_TRESHOLD items in queue? Raise flag.
+    * More then 6 domains? Predict issues, trigger DOMAINS.TXT reference.
+    * More then 10 balancers? Will get risky...
  * Code cleanups and adherence to every relevant policy or standard required.
  * Upstream improvements and patches to expire.
  * D6 backport if the necessity for that gets high.
