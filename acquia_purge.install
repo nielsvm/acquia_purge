@@ -2,15 +2,31 @@
 
 /**
  * @file
- * acquia_purge.install
- * @description
- * Installer file for the Acquia Purge module.
+ * Installation file for the Acquia Purge module.
+ * @author
+ * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
+
+/**
+ * Implements hook_install().
+ */
+function acquia_purge_install() {
+
+  // Install our queuing queue using Drupal's Queue API.
+  $queue = DrupalQueue::get('acquia_purge', TRUE);
+  $queue->createQueue();
+}
 
 /**
  * Implements hook_uninstall().
  */
 function acquia_purge_uninstall() {
+
+  // Remove traces from our usage of the Queue API.
+  variable_del('acquia_purge_queue_counter');
+  variable_del('acquia_purge_queue_owner');
+  $queue = DrupalQueue::get('acquia_purge', TRUE);
+  $queue->deleteQueue();
 
   // Remove the reporting variable.
   variable_del('acquia_purge_reportpurges');
@@ -51,6 +67,12 @@ function acquia_purge_requirements($phase) {
     if (_acquia_purge_are_we_on_acquiacloud()) {
       $status['severity'] = REQUIREMENT_OK;
       $status['description'] = $domains;
+
+      // Include the status progress bar when active purges are going on.
+      $stats = _acquia_purge_queue_stats();
+      if ($stats['running']) {
+        $status['value'] = theme('acquia_purge_status_bar_widget', $stats);
+      }
     }
 
     // Report that purging will be silent as we are not on Acquia Cloud.

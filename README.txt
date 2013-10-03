@@ -1,6 +1,3 @@
- ACQUIA PURGE - README FILE - Niels van Mourik <niels.vanmourik@acquia.com>
---------------------------------------------------------------------------------
-
 What?
 ================================================================================
 The Acquia Purge module fills in the gap for customers running on Acquia hosting
@@ -14,11 +11,13 @@ Features:
  * Turn-key installation, no configuration needed.
  * On-screen reporting of the purged resources.
  * Drupal watchdog logging to create a purged paths trail.
+ * Queue (API) based processing ensuring scalability and accuracy.
  * Transparent purging of cached pages in Drupal's page cache.
  * Fully automatic domain detection as configured on the Domains pane on your
    Acquia Network workflow page. Each domain attached to your site and active
    environment will be automatically purged.
  * Flexible multi-site support with domains overriding, see MULTISITE.txt.
+ * Drush support with ap-purge, ap-process and ap-forget to manage the queue.
  * Integration with Rules allowing you to purge arbitrary paths like /news.
  * Detailed status-report tests which advocates the best possible configuration.
 
