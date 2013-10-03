@@ -164,7 +164,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
 
       // Build off the log history viewer and hide its items.
       function uiLogHistoryHide() {
-        apbox_log.fadeTo(4000, 0).slideUp(2000);
+        apbox_log.fadeTo(2000, 0).slideUp(2000);
       }
 
       // Tear the user interface down and hide it for the user.
@@ -173,8 +173,8 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         uiLogHistoryHide();
         uiError();
 
-        // Hide ourselves after 10 seconds.
-        setTimeout(function() {apbox.slideUp(3000);}, 10000);
+        // Hide ourselves after 4 seconds.
+        setTimeout(function() {apbox.slideUp(1000);}, 4000);
       }
 
       // Make a request back home and trigger a couple of purges each run.

@@ -1033,8 +1033,9 @@ function _acquia_purge_trigger_client_side_purging() {
   // category for 'acquia_purge_messages' , which is part of the trick.
   if (variable_get('acquia_purge_reportpurges', TRUE)
     && user_access('purge notification')) {
-    $message = t("Changes have been made that require pages to be refreshed from
-      your caches and load balancers. Please wait...");
+    $message = t("There have been changes to content, and these needs to be
+      refreshed throughout the system. There may be a delay before the changes
+      appear to all website visitors.");
 
     // Set the message and don't repeat it if it is already set.
     drupal_set_message($message, 'acquia_purge_messages', FALSE);

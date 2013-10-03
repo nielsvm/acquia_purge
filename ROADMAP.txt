@@ -8,7 +8,6 @@ Roadmap (in non-prioritized order)
   * 2019247: More automatic purging from cron/drush?
   * 2014455: Widget hides preliminary when purging less than 10 urls.
   * 2014461: DSM message should be hidden by default and only show up once the JS is loaded.
-  * 2002812: DSM message refinement: https://drupal.org/node/2002812#comment-7860191
   * Provide a INSTALL.txt and cleanup MULTISITE.txt to prevent misuse better.
   * Better built-in fire-prevention and self-diagnostics:
     * Drush 'ap-diagnosis'

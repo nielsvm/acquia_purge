@@ -112,11 +112,11 @@ function theme_acquia_purge_status_bar_widget($variables) {
 
   // Determine status messages based on what the statistics tells us.
   if ($variables['running']) {
-    $message = t("Pages are being refreshed on your site, please wait!
+    $message = t("Site content is being refreshed, please wait a moment...
     %remaining items to go...", array('%remaining' => $variables['remaining']));
   }
   else {
-    $message = t("Finished refreshing pages from cache...");
+    $message = t("Content changes are now visible for everybody!");
   }
 
   return theme('progress_bar', array(
