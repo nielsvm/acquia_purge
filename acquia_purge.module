@@ -94,26 +94,58 @@ function acquia_purge_menu() {
  * Implements hook_expire_cache().
  */
 function acquia_purge_expire_cache($paths) {
+  static $patterns;
 
-  // The expire module has a interestingly weird option named "Include base URL
-  // in expires" which gives us filthy paths with base URL's in it. If its
-  // enabled we do our best to strip and clean the paths.
-  if (variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL)) {
-    $stripped_paths = array();
-    $domains = _acquia_purge_get_domains();
-    foreach ($paths as $path) {
-      $stripped_path = $path;
-      foreach ($domains as $domain) {
-        $stripped_path = str_replace("http://$domain", '', $stripped_path);
-        $stripped_path = str_replace("https://$domain", '', $stripped_path);
-        $stripped_path = ltrim($stripped_path, '/');
+  // The expire module is unreliable API-wise as it often gives absolute URLs
+  // in various scenarios. In the past we tested for 'expire_include_base_url'
+  // but that doesn't always seem to help. We therefore generate a list of
+  // possible http://domainname patterns to strip out. See #2049235 on d.o.
+  $schemes = array('http://', 'https://');
+  if (is_null($patterns)) {
+    foreach (_acquia_purge_get_domains() as $domain) {
+      foreach ($schemes as $scheme) {
+        $patterns[] = "$scheme$domain";
       }
-      $stripped_paths[] = $stripped_path;
     }
-    $paths = $stripped_paths;
   }
 
-  acquia_purge_purge_paths($paths);
+  // Iterate the given paths and strip everything out we can think off.
+  $new_paths = array();
+  foreach ($paths as $path) {
+    foreach ($patterns as $pattern) {
+      $path = str_replace($pattern, '', $path);
+    }
+    $path = ltrim($path, '/');
+    if (!in_array($path, $new_paths)) {
+      $new_paths[] = $path;
+    }
+  }
+  $paths = $new_paths;
+
+  // This should help for many cases, but not always. Detect if any of the paths
+  // still contain http:// or https://.
+  $paths_clean = TRUE;
+  foreach ($paths as $path) {
+    foreach ($schemes as $scheme) {
+      if (strpos($path, $scheme) !== FALSE) {
+        $paths_clean = FALSE;
+        break;
+        break;
+      }
+    }
+  }
+
+  // If the "cleaned" paths are still dirty we warn the user and abort purging.
+  if (!$paths_clean) {
+    drupal_set_message(t("Please disable the 'Include base URL in expires'
+      setting as it is incompatible with the Acquia Purge module. "), 'error');
+  }
+
+  // If everything is validated, schedule the items for purging which will be
+  // triggered automatically on the next page load for the current user.
+  else {
+    acquia_purge_purge_paths($paths);
+  }
 }
 
 /**
