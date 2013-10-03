@@ -1,24 +1,28 @@
 
-Future plans
+Roadmap (in non-prioritized order)
 ================================================================================
- * INSTALL.txt
- * progressbar: feedback visual take-over
- * progressbar:
- * dry run mode.
- * curl multi stuff?
- * ap-diagnosis
- * Don't start purging with running batches?!
- * Diagnosis helper that does hook_requirement + ap-diagnosis, checks:
-    * Are we on Acquia Cloud?
-    * Purge or Varnish modules at play? Boost module?
-    * Is page_cache_maximum_age < 21600 (6 hours)
-    * Is page cache itself enabled at all?
-    * What is implemented for the page cache backend?
-    * More then 6 domains? Predict issues, trigger DOMAINS.TXT reference.
-    * More then 10 balancers? Will get risky...
- * Code cleanups and adherence to every relevant policy or standard required.
- * Upstream improvements and patches to expire.
- * D6 backport if the necessity for that gets high.
- * Become a plugin depending on Purge once Purge 2.X suits our needs and works.
- * Improving domain detection with improvements to Acquia's platform internals.
- * Show graphs on Varnish hit and miss rates.
+  * 2100327: add experimental HTTPS support.
+  * 2035289: Bulk update of Nodes triggers a lot of Purges.
+  * 2049235: AJAX processor is displayed when adding a video with Media.module.
+  * 2019247: How do you Purge when entities are updated via Drush?
+  * 2019247: More automatic purging from cron/drush?
+  * 2014455: Widget hides preliminary when purging less than 10 urls.
+  * 2014461: DSM message should be hidden by default and only show up once the JS is loaded.
+  * 2002812: DSM message refinement: https://drupal.org/node/2002812#comment-7860191
+  * Provide a INSTALL.txt and cleanup MULTISITE.txt to prevent misuse better.
+  * Better built-in fire-prevention and self-diagnostics:
+    * Drush 'ap-diagnosis'
+    * Single-item status report representation.
+    * At minimum the self-diagnostics should test for:
+      * Are we on Acquia Cloud?
+      * Purge or Varnish modules enabled? Boost module?
+      * Is page_cache_maximum_age < 21600 (6 hours)
+      * Disabled page cache / anonymous page caching.
+      * What class handles Drupal page caching to detect issues with fake class.
+      * Detect 5> domains and trigger INSTALL/MULTISITE reference.
+      * Detect 4> load balancers.
+  * Improving domain detection with improvements to Acquia's platform internals.
+  * Integrate Varnish hit/miss statistics to better visualize the effectiveness.
+  * D8 port and a D6 backport if demand is high enough for it.
+  * Expire 2 impact analysis.
+  * Become a plugin depending on Purge once Purge 2.X suits our needs and works.
