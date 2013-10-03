@@ -56,8 +56,8 @@ function acquia_purge_requirements($phase) {
         setup, <a href='!link' target='_blank'>read more here in case the
         domains are incorrect</a>.", array(
           '@domains' => $domains,
-          '!link' => 'http://drupalcode.org/sandbox/nielsvm/1871170.git' .
-          '/blob_plain/HEAD:/MULTISITE.txt'));
+          '!link' => 'http://drupalcode.org/project/acquia_purge.git/blob_' .
+          'plain/refs/heads/7.x-1.x:/MULTISITE.txt'));
     }
 
     // Create the status array.
