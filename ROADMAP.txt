@@ -10,6 +10,7 @@ Roadmap (in non-prioritized order)
   * 2014461: DSM message should be hidden by default and only show up once the JS is loaded.
   * 2002812: DSM message refinement: https://drupal.org/node/2002812#comment-7860191
   * Provide a INSTALL.txt and cleanup MULTISITE.txt to prevent misuse better.
+  * Forget the *acquia-sites.com domain as soon as others have been detected.
   * Better built-in fire-prevention and self-diagnostics:
     * Drush 'ap-diagnosis'
     * Single-item status report representation.
