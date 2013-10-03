@@ -19,10 +19,8 @@ function acquia_purge_ajax_processor() {
   // Define a key 'error' that describes a potential error condition.
   $status['error'] = $status['locked'] = FALSE;
 
-  // With ACQUIA_PURGE_QUEUE_TRESHOLD put on 10 and individual purge timeouts
-  // on 3 seconds the theory goes that a run should never exceed 30 seconds. To
-  // be on the safe side the lock we acquire expires after
-  // ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT seconds.
+  // Lock acquiring assures us that nothing is purging the same paths at the
+  // same time. All ways that trigger purging (ajax, drush) respect the locks.
   if (lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
 
     // Pop items from the queue and immediately process them.

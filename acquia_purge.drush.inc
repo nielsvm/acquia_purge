@@ -103,19 +103,13 @@ function drush_acquia_purge_ap_forget() {
     return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
   }
 
-  // Acquire a lock and ensure nobody else is purging something.
-  if (!lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
-    return drush_set_error("Unable to acquire lock, ensure that all users "
-      . "close their browser tabs as a different purge seems to be active!");
-  }
-
   // Retrieve statistics, clear the queue and log to Drush.
   $stats = _acquia_purge_queue_stats();
   _acquia_purge_queue_clear();
   drush_log(dt("Removed @remaining items from the queue.",
     array('@remaining' => $stats['remaining'])), 'ok');
 
-  // We are done so lets release the lock.
+  // If there was a lock acquired, free it up as the queue will be empty now.
   lock_release('acquia_purge_ajax_processor');
 }
 
@@ -142,10 +136,9 @@ function drush_acquia_purge_ap_process() {
   }
 
   // Calculate how many iterations we need and start processing accordingly.
-  $rounds = ceil($stats['total'] / ACQUIA_PURGE_QUEUE_TRESHOLD);
   $log = array();
-  for ($i = 0; $i < $rounds; $i++) {
-    _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+  do {
+    $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
 
     // Retrieve the statistics and log the purged urls.
     $stats = _acquia_purge_queue_stats();
@@ -155,7 +148,8 @@ function drush_acquia_purge_ap_process() {
         $log[] = $logitem;
       }
     }
-  }
+
+  } while (count($items));
 
   // We are done so lets release the lock.
   lock_release('acquia_purge_ajax_processor');
