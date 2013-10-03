@@ -136,10 +136,9 @@ function drush_acquia_purge_ap_process() {
   }
 
   // Calculate how many iterations we need and start processing accordingly.
-  $rounds = ceil($stats['total'] / ACQUIA_PURGE_QUEUE_TRESHOLD);
   $log = array();
-  for ($i = 0; $i < $rounds; $i++) {
-    _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+  do {
+    $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
 
     // Retrieve the statistics and log the purged urls.
     $stats = _acquia_purge_queue_stats();
@@ -149,7 +148,8 @@ function drush_acquia_purge_ap_process() {
         $log[] = $logitem;
       }
     }
-  }
+
+  } while (count($items));
 
   // We are done so lets release the lock.
   lock_release('acquia_purge_ajax_processor');
