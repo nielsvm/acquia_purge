@@ -1047,17 +1047,12 @@ function _acquia_purge_trigger_client_side_purging() {
  *
  * @param object $node
  *   A Drupal node object that was just inserted or saved.
- * @param array $domains
- *   Array containing all the domain names the record should be purged
- *   from. Optional, default list of domain names will be generated else.
  *
  * @returns
  *   Progress statistics from the queue manager. Associative array with the keys
  *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
-function acquia_purge_purge_node(&$node, $domains = NULL) {
-
-  // Purge updated nodes from all domains in Varnish.
+function acquia_purge_purge_node(&$node) {
   $paths = array('node/' . $node->nid);
   if (isset($node->path['alias']) && !empty($node->path['alias'])) {
     $paths[] = $node->path['alias'];
