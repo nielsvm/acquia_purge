@@ -27,6 +27,14 @@ function acquia_purge_drush_help($section) {
 function acquia_purge_drush_command() {
   return array(
 
+    // Define the 'ap-diagnosis' command.
+    'ap-diagnosis' => array(
+      'description' => 'Perform a series of diagnostic self-tests.',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
+      'aliases' => array('apd'),
+      'examples' => array('drush apd'),
+    ),
+
     // Define the 'ap-purge' command.
     'ap-purge' => array(
       'description' => 'Purge a specified path from your balancers.',
@@ -54,6 +62,43 @@ function acquia_purge_drush_command() {
       'examples' => array('drush appr'),
     ),
   );
+}
+
+/**
+ * Perform a series of diagnostic self-tests.
+ */
+function drush_acquia_purge_ap_diagnosis() {
+  $oldverbosity = drush_get_context('DRUSH_VERBOSE');
+
+  // Load the requirement constants.
+  require_once DRUPAL_ROOT . '/includes/install.inc';
+
+  // Define a mapping between install.inc's requirement states and drush_log().
+  $severitymap = array(
+    REQUIREMENT_INFO => 'notice',
+    REQUIREMENT_OK   => 'ok',
+    REQUIREMENT_WARNING => 'warning',
+    REQUIREMENT_ERROR   => 'error'
+  );
+
+  // Tell Drush to be verbose.
+  drush_set_context('DRUSH_VERBOSE', TRUE);
+
+  // Iterate the tests and call drush_log with the appropriate message type.
+  foreach (_acquia_purge_get_diagnosis() as $test) {
+    drush_log($test['value_plain'], $severitymap[$test['severity']]);
+
+    if ($test['severity'] >= REQUIREMENT_WARNING ) {
+      print "-------------------------------------------------------------\n";
+      foreach (explode("\n", $test['description_plain']) as $line) {
+        printf("%s\n", trim($line));
+      }
+      print "\n";
+    }
+  }
+
+  // Set back the old verbosity state.
+  drush_set_context('DRUSH_VERBOSE', $oldverbosity);
 }
 
 /**
