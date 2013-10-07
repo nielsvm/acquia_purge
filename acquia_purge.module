@@ -329,15 +329,17 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
           $result['severity'] : REQUIREMENT_INFO;
         $result['value_plain'] = isset($result['value_plain']) ?
           $result['value_plain'] : $result['value'];
+        $result['value_plain'] = array(
+              '@title' => $result['title'],
+              '@value' => $result['value_plain']);
         $result['value'] = array(
               '@title' => $result['title'],
-              '@value' => $result['value']
-        );
+              '@value' => $result['value']);
         $tests["acquia_purge_$name"] = array(
           'title' => $t('Acquia Purge'),
           'name' => $result['name'],
           'value' => $t('<b>@title</b><br />@value', $result['value']),
-          'value_plain' => $t('@title: @value', $result['value']),
+          'value_plain' => $t('@title: @value', $result['value_plain']),
           'description' => $result['description'],
           'description_plain' => strip_tags($result['description']),
           'severity' => $result['severity'],
