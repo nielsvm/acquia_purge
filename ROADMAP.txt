@@ -9,15 +9,8 @@ Roadmap (in non-prioritized order)
   * Provide a INSTALL.txt and cleanup MULTISITE.txt to prevent misuse better.
   * Better built-in fire-prevention and self-diagnostics:
     * Drush 'ap-diagnosis'
-    * Single-item status report representation.
     * At minimum the self-diagnostics should test for:
-      * Are we on Acquia Cloud?
-      * Purge or Varnish modules enabled? Boost module?
-      * Is page_cache_maximum_age < 21600 (6 hours)
-      * Disabled page cache / anonymous page caching.
       * What class handles Drupal page caching to detect issues with fake class.
-      * Detect 5> domains and trigger INSTALL/MULTISITE reference.
-      * Detect 4> load balancers.
   * Improving domain detection with improvements to Acquia's platform internals.
   * Integrate Varnish hit/miss statistics to better visualize the effectiveness.
   * D8 port and a D6 backport if demand is high enough for it.
