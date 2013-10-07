@@ -299,7 +299,7 @@ function _acquia_purge_get_balancers() {
  * @returns
  *  Array that complies to the format as seen in hook_requirements().
  */
-function _acquia_purge_get_diagnosis($verbosity = REQUIREMENT_INFO) {
+function _acquia_purge_get_diagnosis($verbosity = -1) {
   static $tests;
 
   // Initialize $tests and gather test results, cache everything statically.
@@ -307,6 +307,9 @@ function _acquia_purge_get_diagnosis($verbosity = REQUIREMENT_INFO) {
     $module_path = drupal_get_path('module', 'acquia_purge');
     $tests = array();
     $t = get_t();
+
+    // Load the requirement constants.
+    require_once DRUPAL_ROOT . '/includes/install.inc';
 
     // Require the file that contains our tests: acquia_purge.diagnostics.inc.
     require_once $module_path . '/acquia_purge.diagnostics.inc';
@@ -318,17 +321,26 @@ function _acquia_purge_get_diagnosis($verbosity = REQUIREMENT_INFO) {
       if (strpos($function, '_acquia_purge_get_diagnosis_') === 0) {
         $name = str_replace('_acquia_purge_get_diagnosis_', '', $function);
         $result = $function($t);
+        $result['name'] = isset($result['title'])
+          ? $result['title'] : ucfirst($name);
+        $result['description'] = isset($result['description'])
+          ? $result['description'] : NULL;
+        $result['severity'] = isset($result['severity']) ?
+          $result['severity'] : REQUIREMENT_INFO;
+        $result['value_plain'] = isset($result['value_plain']) ?
+          $result['value_plain'] : $result['value'];
+        $result['value'] = array(
+              '@title' => $result['title'],
+              '@value' => $result['value']
+        );
         $tests["acquia_purge_$name"] = array(
           'title' => $t('Acquia Purge'),
-          'name' => isset($result['title']) ? $result['title'] : ucfirst($name),
-          'value' => $t('<b>@title</b><br />@value',
-            array(
-              '@title' => $result['title'],
-              '@value' => $result['value'])),
-          'description' => isset($result['description']) ?
-            $result['description'] : NULL,
-          'severity' => isset($result['severity']) ?
-            $result['severity'] : REQUIREMENT_INFO,
+          'name' => $result['name'],
+          'value' => $t('<b>@title</b><br />@value', $result['value']),
+          'value_plain' => $t('@title: @value', $result['value']),
+          'description' => $result['description'],
+          'description_plain' => strip_tags($result['description']),
+          'severity' => $result['severity'],
         );
       }
     }
