@@ -302,12 +302,16 @@ function _acquia_purge_get_diagnosis_status($t) {
   $stats = _acquia_purge_queue_stats();
   $test = array(
     'severity' => REQUIREMENT_INFO,
+    'value_plain' => $t('Idle, accepting purges'),
     'value' => $stats['running'] ? $t('Running') : $t('Idle, accepting purges'),
     'title' => $t('Status'));
 
   // Explain why page caching needs to be enabled.
   if ($stats['running']) {
     $test['description'] = theme('acquia_purge_status_bar_widget', $stats);
+    $test['value_plain'] = $t("Site content is being refreshed, please wait "
+      . "a moment... @remaining items to go...",
+      array('@remaining' => $stats['remaining']));
   }
 
   return $test;
