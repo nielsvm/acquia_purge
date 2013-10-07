@@ -1103,15 +1103,15 @@ function acquia_purge_purge_path($path) {
  *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
 function acquia_purge_purge_paths($paths) {
-  $stats = array();
 
   // Dispatch the paths to acquia_purge_purge_path().
   foreach ($paths as $path) {
 
-    // Add the item to the queue and overwrite the stats array.
-    $stats = acquia_purge_purge_path($path);
+    // Add the item to the queue.
+    _acquia_purge_queue_add($path);
   }
 
-  // The latest version of the stats array is the most recent one.
-  return $stats;
+  // Return the statistics array based returning useful information about the
+  // current state of the purge queue.
+  return _acquia_purge_queue_stats();
 }
