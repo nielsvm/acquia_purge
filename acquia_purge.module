@@ -290,6 +290,61 @@ function _acquia_purge_get_balancers() {
 }
 
 /**
+ * Perform a series of self-tests against the site and our purging conditions.
+ *
+ * @param int $verbosity
+ *   Optional, the level of diagnostics presented. Test results that match or
+ *   are higher than the given level are returned.
+ *
+ * @returns
+ *  Array that complies to the format as seen in hook_requirements().
+ */
+function _acquia_purge_get_diagnosis($verbosity = REQUIREMENT_INFO) {
+  static $tests;
+
+  // Initialize $tests and gather test results, cache everything statically.
+  if (is_null($tests)) {
+    $module_path = drupal_get_path('module', 'acquia_purge');
+    $tests = array();
+    $t = get_t();
+
+    // Require the file that contains our tests: acquia_purge.diagnostics.inc.
+    require_once $module_path . '/acquia_purge.diagnostics.inc';
+
+    // Similar to hooks, functions starting with "_acquia_purge_get_diagnosis_"
+    // will be regarded as individual tests and called to gather results.
+    $functions = get_defined_functions();
+    foreach ($functions['user'] as $function) {
+      if (strpos($function, '_acquia_purge_get_diagnosis_') === 0) {
+        $name = str_replace('_acquia_purge_get_diagnosis_', '', $function);
+        $result = $function($t);
+        $tests["acquia_purge_$name"] = array(
+          'title' => $t('Acquia Purge'),
+          'name' => isset($result['title']) ? $result['title'] : ucfirst($name),
+          'value' => $t('<b>@title</b><br />@value',
+            array(
+              '@title' => $result['title'],
+              '@value' => $result['value'])),
+          'description' => isset($result['description']) ?
+            $result['description'] : NULL,
+          'severity' => isset($result['severity']) ?
+            $result['severity'] : REQUIREMENT_INFO,
+        );
+      }
+    }
+  }
+
+  // Return test results that match or are higher than the verbosity level.
+  $results = array();
+  foreach ($tests as $name => $result) {
+    if ($result['severity'] >= $verbosity) {
+      $results[$name] = $result;
+    }
+  }
+  return $results;
+}
+
+/**
  * Get a list of defined domains that we can purge for.
  *
  * @returns
