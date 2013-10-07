@@ -36,76 +36,22 @@ function acquia_purge_uninstall() {
  * Implements hook_requirements().
  */
 function acquia_purge_requirements($phase) {
-  $requirements = array();
-
-  // Ensure translations don't break during installation.
-  $t = get_t();
-
-  // Report the status of Acquia Purge and what domains will be purged.
   if ($phase == 'runtime') {
+    $requirements = _acquia_purge_get_diagnosis();
 
-    // Define the message string on the collected domains.
-    $domains = implode(', ', _acquia_purge_get_domains());
-    if (conf_path() == 'sites/default') {
-      $domains = $t("Purging of content happens on the following domains:
-        <i>@domains</i>", array('@domains' => $domains));
-    }
-    else {
-      $domains = $t("Purging of content happens on the following domains:
-        <i>@domains</i>. However it seems as if you are running a multi-site
-        setup, <a href='!link' target='_blank'>read more here in case the
-        domains are incorrect</a>.", array(
-          '@domains' => $domains,
-          '!link' => 'http://drupalcode.org/project/acquia_purge.git/blob_' .
-          'plain/refs/heads/7.x-1.x:/MULTISITE.txt'));
-    }
-
-    // Create the status array.
-    $status = array('title' => $t("Acquia Purge"), 'value' => '');
-
-    // Report the list of domains when we are on Acquia Cloud.
-    if (_acquia_purge_are_we_on_acquiacloud()) {
-      $status['severity'] = REQUIREMENT_OK;
-      $status['description'] = $domains;
-
-      // Include the status progress bar when active purges are going on.
-      $stats = _acquia_purge_queue_stats();
-      if ($stats['running']) {
-        $status['value'] = theme('acquia_purge_status_bar_widget', $stats);
+    // Remove REQUIREMENT_OK results, as all good things become too noisy.
+    foreach ($requirements as $name => $result) {
+      if ($result['severity'] === REQUIREMENT_OK) {
+        unset($requirements[$name]);
       }
     }
 
-    // Report that purging will be silent as we are not on Acquia Cloud.
-    else {
-      $status['severity'] = REQUIREMENT_WARNING;
-      $status['description'] = $t("Currently your site is not running on Acquia
-        Cloud, content won't be purged and the module stays silent. Deploy your
-        site first to test it.");
+    // Remove the status test once ERROR level results have been detected.
+    if (count(_acquia_purge_get_diagnosis(REQUIREMENT_ERROR))) {
+      unset($requirements['acquia_purge_status']);
     }
 
-    $requirements['acquia_purge_status'] = $status;
+    return $requirements;
   }
-
-  // Detect the existence of the Boost module which is incompatible.
-  if (module_exists('boost')) {
-    $status = array('title' => $t("Acquia Purge"), 'value' => '');
-    $status['severity'] = REQUIREMENT_ERROR;
-    $status['description'] = $t("Your site has the boost module enabled and we
-      advise against using it on Acquia Cloud. Due its heavy usage of the files
-      on disk - which creates issues on our file system - and the complexity it
-      adds to your caching mechanism advise you to disable it.");
-    $requirements['acquia_purge_incompatible1'] = $status;
-  }
-
-  // Detect the existence of the Purge module which is incompatible for now.
-  if (module_exists('purge')) {
-    $status = array('title' => $t("Acquia Purge"), 'value' => '');
-    $status['severity'] = REQUIREMENT_ERROR;
-    $status['description'] = $t("Your site has the Purge module enabled which
-      is incompatible with this version of Acquia Purge. However stay tuned as
-      Acquia Purge will become a plugin to the Purge module.");
-    $requirements['acquia_purge_incompatible2'] = $status;
-  }
-
-  return $requirements;
+  return array();
 }
