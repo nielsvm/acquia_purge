@@ -895,14 +895,14 @@ function _acquia_purge_queue_processpurge_requests($requests) {
         $results[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
       }
 
-      // Close the resource and delete its property.
-      curl_close($rqst->curl);
-      unset($rqst->curl);
-
       // Remove the handle if parallel processing occurred.
       if (!$single_mode) {
         curl_multi_remove_handle($curl_multi, $rqst->curl);
       }
+
+      // Close the resource and delete its property.
+      curl_close($rqst->curl);
+      unset($rqst->curl);
     }
   }
 
