@@ -1039,6 +1039,12 @@ function _acquia_purge_trigger_client_side_purging() {
 
     // Set the message and don't repeat it if it is already set.
     drupal_set_message($message, 'acquia_purge_messages', FALSE);
+
+    // Add inline CSS to initially hide the message (see d.o. 2014461). A
+    // separate file that could be cached would be non-sense for this one line
+    // declaration as this statement only occurs for authenticated users.
+    drupal_add_css('.acquia_purge_messages {display:none;}',
+      array('type' => 'inline'));
   }
 }
 

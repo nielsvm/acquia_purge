@@ -49,6 +49,9 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         html = "<div id='aplog' style='display: none;'><ul></ul></div>";
         apbox.append(html);
         apbox_log = apbox.find(apbox_log);
+
+        // As the apbox container is hidden by default, reveal our loading UI.
+        apbox.show();
       }
 
       // Set a visual error in the error container. Returns true when processing
