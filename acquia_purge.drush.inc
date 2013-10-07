@@ -89,11 +89,11 @@ function drush_acquia_purge_ap_diagnosis() {
     drush_log($test['value_plain'], $severitymap[$test['severity']]);
 
     if ($test['severity'] >= REQUIREMENT_WARNING ) {
-      print "-------------------------------------------------------------\n";
+      $rows = array();
       foreach (explode("\n", $test['description_plain']) as $line) {
-        printf("%s\n", trim($line));
+        $rows[] = trim($line);
       }
-      print "\n";
+      printf("%s\n\n\n", implode(' ', $rows));
     }
   }
 
