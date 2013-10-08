@@ -181,7 +181,7 @@ function _acquia_purge_get_diagnosis_domains($t) {
   elseif ($domains_c < 4) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
-  elseif (($domains_c > 4) && ($domains_c < 6)) {
+  elseif (($domains_c >= 4) && ($domains_c < 6)) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t('Because you have @no domain names there is a'
       . ' <b>high risk</b> that purging your site will put stress on your'
