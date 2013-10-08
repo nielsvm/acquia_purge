@@ -37,7 +37,6 @@ define('ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT', 60);
  * Implements hook_init().
  */
 function acquia_purge_init() {
-
   // Abort loading the AJAX logic when hitting any of the excluded paths.
   $excluded_auto_purging_paths = array(
     '',
@@ -305,6 +304,7 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
   // Initialize $tests and gather test results, cache everything statically.
   if (is_null($tests)) {
     $module_path = drupal_get_path('module', 'acquia_purge');
+    $prefix = '_acquia_purge_get_diagnosis_';
     $tests = array();
     $t = get_t();
 
@@ -318,29 +318,34 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
     // will be regarded as individual tests and called to gather results.
     $functions = get_defined_functions();
     foreach ($functions['user'] as $function) {
-      if (strpos($function, '_acquia_purge_get_diagnosis_') === 0) {
-        $name = str_replace('_acquia_purge_get_diagnosis_', '', $function);
-        $result = $function($t);
-        $result['name'] = isset($result['title']) ? $result['title'] : $name;
-        $result['description'] = isset($result['description']) ? $result['description'] : NULL;
-        $result['severity'] = isset($result['severity']) ? $result['severity'] : REQUIREMENT_INFO;
-        $result['value_plain'] = isset($result['value_plain']) ? $result['value_plain'] : $result['value'];
-        $result['value_plain'] = array(
-          '@title' => $result['title'],
-          '@value' => $result['value_plain']);
-        $result['value'] = array(
-          '@title' => $result['title'],
-          '@value' => $result['value']);
-        $tests["acquia_purge_$name"] = array(
-          'title' => $t('Acquia Purge'),
-          'name' => $result['name'],
-          'value' => $t('<b>@title</b><br />@value', $result['value']),
-          'value_plain' => $t('@title: @value', $result['value_plain']),
-          'severity' => $result['severity'],
-          'description' => $result['description'],
-          'description_plain' => strip_tags($result['description']),
-        );
+      if ($function === '_acquia_purge_get_diagnosis_logged') {
+        continue;
       }
+      elseif (strpos($function, $prefix) !== 0) {
+        continue;
+      }
+
+      // Add the test and its resulting data to the tests array.
+      $tst = str_replace($prefix, 'acquia_purge_', $function);
+      $tests[$tst] = $function($t);
+
+      // Overwrite or assure data integrity on most of the fields.
+      $tests[$tst]['name'] = isset($tests[$tst]['title']) ? $tests[$tst]['title'] : $tst;
+      $tests[$tst]['description'] = isset($tests[$tst]['description']) ? $tests[$tst]['description'] : NULL;
+      $tests[$tst]['description_plain'] = strip_tags($tests[$tst]['description']);
+      $tests[$tst]['severity'] = isset($tests[$tst]['severity']) ? $tests[$tst]['severity'] : REQUIREMENT_INFO;
+      $tests[$tst]['value_plain'] = isset($tests[$tst]['value_plain']) ? $tests[$tst]['value_plain'] : $tests[$tst]['value'];
+      $tests[$tst]['value_plain'] = $t('@title: @value', array(
+        '@title' => $tests[$tst]['title'],
+        '@value' => $tests[$tst]['value_plain'],
+        )
+      );
+      $tests[$tst]['value'] = $t('<b>@title</b><br />@value', array(
+        '@title' => $tests[$tst]['title'],
+        '@value' => $tests[$tst]['value'],
+        )
+      );
+      $tests[$tst]['title'] = $t('Acquia Purge');
     }
   }
 
@@ -352,6 +357,44 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
     }
   }
   return $results;
+}
+
+/**
+ * Log diagnostic test results to watchdog.
+ *
+ * @param array $items
+ *   Associative array with test results or an individual test result array.
+ *
+ * @see _acquia_purge_get_diagnosis()
+ * @returns
+ *  Void,
+ */
+function _acquia_purge_get_diagnosis_logged($items) {
+  $severitymap = array(
+    REQUIREMENT_INFO => WATCHDOG_INFO,
+    REQUIREMENT_OK   => WATCHDOG_INFO,
+    REQUIREMENT_WARNING => WATCHDOG_ERROR,
+    REQUIREMENT_ERROR   => WATCHDOG_CRITICAL,
+  );
+
+  // Wrap single a single test result into a workable array.
+  if (isset($items['severity'])) {
+    $items = array($items);
+  }
+
+  // Iterate the items and report them to the watchdog log.
+  foreach ($items as $item) {
+    $description = $item['description_plain'];
+    if (empty($description)) {
+      $description = $item['value_plain'];
+    }
+    watchdog(
+      'acquia_purge',
+      $description,
+      array(),
+      $severitymap[$item['severity']]
+    );
+  }
 }
 
 /**
