@@ -178,6 +178,12 @@ function _acquia_purge_get_diagnosis_domains($t) {
     $test['description'] = $t('No domains have been detected which implies that'
       . ' something is seriously wrong. Pending purges will not be processed.');
   }
+  elseif ((php_sapi_name() === 'cli') && in_array('default', $domains)) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('The domain name "default" has been found'
+      . ' indicating that you are running via Drush. Either you will need to'
+      . ' specify your domains or provide --uri for the right site.');
+  }
   elseif ($domains_c < 4) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
