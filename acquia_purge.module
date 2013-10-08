@@ -399,7 +399,7 @@ function _acquia_purge_get_domains() {
     // To better support multi-sites we only load in the configured Acquia Cloud
     // domain names when we are on the 'default' site as that would else flood
     // another site which we don't want to happen, on <front> for example.
-    if (($conf_path = conf_path()) == 'sites/default') {
+    if (conf_path() == 'sites/default') {
 
       // Add the domain names the customer defined on Acquia Cloud. When this
       // process would fail we have at least the current + $base_url domain.
@@ -496,6 +496,7 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
  */
 function _acquia_purge_get_domains_add_sitesphp(&$domains) {
   $sitedir = str_replace('sites/', '', conf_path());
+  $tlds = array();
 
   // Only interpret the $sites array if the file sites/sites.php exists.
   if (!file_exists('sites/sites.php')) {
@@ -619,7 +620,6 @@ function _acquia_purge_queue() {
  *   The total amount of items in the queue (int).
  */
 function _acquia_purge_queue_add($path) {
-  $site_name = _acquia_purge_get_site_name();
   $qcount = variable_get('acquia_purge_queue_counter', 0);
   $queue = _acquia_purge_queue();
 
@@ -682,8 +682,6 @@ function _acquia_purge_queue_clear() {
  *   path in key #0.
  */
 function _acquia_purge_queue_pop($processor_callback = NULL) {
-  $site_name = _acquia_purge_get_site_name();
-  $qcount = variable_get('acquia_purge_queue_counter', 0);
   $queue = _acquia_purge_queue();
   $items = array();
 
