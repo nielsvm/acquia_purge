@@ -303,7 +303,7 @@ function _acquia_purge_get_diagnosis_status($t) {
   $status = $t('Idle, accepting purges');
   if ($stats['running']) {
     $status = $t('Active ongoing purges, @remaining items to go...', array(
-        '@remaining' => $stats['remaining']
+        '@remaining' => $stats['remaining'],
       )
     );
   }
