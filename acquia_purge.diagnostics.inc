@@ -27,9 +27,9 @@ function _acquia_purge_get_diagnosis_acquiacloud($t) {
   }
   else {
     $test['value'] = $t('Third-party environment.');
-    $test['description'] = $t('You are not running on Acquia Cloud, this is a
-      mandatory requirement for this module. The module will not process
-      scheduled purges, once deployed scheduled purges will be processed.');
+    $test['description'] = $t('You are not running on Acquia Cloud, this is a'
+      . ' mandatory requirement for this module. The module will not process'
+      . ' scheduled purges, once deployed scheduled purges will be processed.');
     $test['severity'] = REQUIREMENT_ERROR;
   }
   return $test;
@@ -60,19 +60,19 @@ function _acquia_purge_get_diagnosis_balancers($t) {
   if (!$balancers_c) {
     $test['value'] = $t('No load balancers detected.');
     $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t('You should be assigned more then one load
-      balancer, please contact Acquia Support!');
+    $test['description'] = $t('There are no load balancers detected which makes'
+      . ' it impossible to purge your site. Please contact Acquia Support!');
   }
   elseif ($balancers_c < 2) {
-    $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t('You have only one load balancer, this means you
-      are hosting without hot-spare balancer. Please contact Acquia Support.');
+    $test['severity'] = REQUIREMENT_WARNING;
+    $test['description'] = $t('You have only one load balancer, this means your'
+      . ' site can not be failed over by us. Please contact Acquia Support.');
   }
   elseif ($balancers_c >= 6) {
     $test['severity'] = REQUIREMENT_WARNING;
-    $test['description'] = $t('Your website is running behind @no load
-      balancers, which might put drastic stress on your database. Please pay
-      attention to the number of items in the queue table.',
+    $test['description'] = $t('Your website is running behind @no load'
+      . ' balancers, which will put severe stress on your database. Please pay'
+      . ' attention to the number of items in the queue table.',
       array('@no' => $balancers_c));
   }
   else {
@@ -105,38 +105,39 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
   if (variable_get('expire_include_base_url', FALSE)) {
     $test['value'] = 'expire';
     $test['severity'] = REQUIREMENT_WARNING;
-    $test['description'] = $t("We detected that you enabled the 'Include base
-      URL in expires' setting offered by the expire module, this is known to
-      (potentially) cause issues. The setting causes hook_expire_cache() to
-      be given full urls that breaks its own API and Acquia Purge isn't always
-      able to strip these. Check your logs to see if purges execute properly.");
+    $test['description'] = $t("We detected that you enabled the 'Include base"
+      . " URL in expires'-setting offered by the expire module, this is known"
+      . " to (potentially) cause issues. The setting causes hook_expire_cache()"
+      . " to be given full urls that breaks its own API and Acquia Purge is not"
+      . " always able to strip these. Check your logs to see if purges execute"
+      . " properly.");
   }
 
   // Detect the existence of the Boost module which is incompatible.
   if (module_exists('boost')) {
     $test['value'] = 'boost';
     $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t("Your site has the boost module enabled which is
-      known to cause issues on Acquia Cloud. Because of its heavy interactions
-      with the underlying file system it will destabilize your site.");
+    $test['description'] = $t('Your site has the boost module enabled which is'
+      . ' known to cause issues on Acquia Cloud. Because of its heavy'
+      . ' interactions with the file system it will destabilize your site.');
   }
 
   // Detect the existence of the Purge module which is incompatible for now.
   if (module_exists('purge')) {
     $test['value'] = 'purge';
     $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t("Your site has the Purge module enabled which
-      is incompatible with this version of Acquia Purge. However, this module
-      will become dependent on it in the future once both modules play well.");
+    $test['description'] = $t('Your site has the Purge module enabled which'
+      . ' is incompatible with this version of Acquia Purge. However, this'
+      . ' module will depend on it in the future. Please, remove it for now!');
   }
 
   // Detect if the Varnish module is enabled, which isn't necessary.
   if (module_exists('varnish')) {
     $test['value'] = 'varnish';
     $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t("Your site runs with the varnish module enabled,
-      which is known to not work on Acquia Cloud. As Acquia Purge does its work
-      already for you we strongly encourage you to disable it.");
+    $test['description'] = $t('Your site runs with the varnish module enabled,'
+      . ' which is known to not work on Acquia Cloud. As Acquia Purge does its'
+      . ' work already for you we strongly encourage you to remove it.');
   }
 
   return $test;
@@ -163,37 +164,38 @@ function _acquia_purge_get_diagnosis_domains($t) {
   $test = array(
     'value' => implode(', ', $domains),
     'title' => $t('Purged domains'),
-    'description' => $t('The domains for which content gets cleared from your
-      load balancers. Every domain name multiplies the purging work to be done,
-      it is therefore important to <a href="!link" target="_blank">specify your
-      domains</a> when the automatically detected list is too long or
-      incorrect.', array('!link' => $domains_link)),
+    'description' => $t('The domains for which content gets cleared from your'
+      . ' load balancers. Every domain name multiplies the purging work to be'
+      . ' done, it is therefore important to <a href="!link" target="_blank">'
+      . 'specify your domains</a> when the automatically detected list exceeds'
+      . ' 4 domains or when it is incorrect.', array('!link' => $domains_link)),
   );
 
   // Start evaluating the list of domain names.
   if (!$domains_c) {
     $test['value'] = $t('0 domains detected.');
     $test['severity'] = REQUIREMENT_ERROR;
+    $test['description'] = $t('No domains have been detected which implies that'
+      . ' something is seriously wrong. Pending purges will not be processed.');
   }
   elseif ($domains_c < 4) {
     $test['severity'] = REQUIREMENT_OK;
   }
   elseif (($domains_c > 4) && ($domains_c < 6)) {
     $test['severity'] = REQUIREMENT_WARNING;
-    $test['description'] = $t('The domains for which content gets cleared from
-      your load balancers. Because you have @no domain names there is a
-      <b>high risk</b> that purging your site will put stress on your database
-      server, it is <b>strongly recommended</b> to <a href="!link"
-      target="_blank">specify your domains</a> to not exceed 4 domains.',
+    $test['description'] = $t('Because you have @no domain names there is a'
+      . ' <b>high risk</b> that purging your site will put stress on your'
+      . ' database, it is <b>strongly recommended</b> to <a href="!link"'
+      . ' target="_blank">specify your domains</a> to not exceed 4 domains.',
       array('!link' => $domains_link, '@no' => $domains_c));
   }
   else {
     $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t('The domains for which content gets cleared from
-      your load balancers. Because you have @no domain names there is a
-      <b>very high risk</b> that purging your site will put stress on your database
-      server, it is <b>urgently recommended</b> to <a href="!link"
-      target="_blank">specify your domains</a> to not exceed 4 domains.',
+    $test['description'] = $t('Because you have @no domain names there is a'
+      . ' <b>very high risk</b> that purging your site will put stress on your'
+      . ' database, it is <b>strongly recommended</b> to <a href="!link"'
+      . ' target="_blank">specify your domains</a> to not exceed 4 domains. To'
+      . ' prevent system failure, pending purges will not be processed',
       array('!link' => $domains_link, '@no' => $domains_c));
   }
   return $test;
@@ -218,17 +220,14 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
     'severity' => $cache ? REQUIREMENT_OK : REQUIREMENT_ERROR,
     'value' => $cache ? $t('Enabled') : $t('Disabled'),
     'title' => $t('Cache pages for anonymous users'));
-
-  // Explain why page caching needs to be enabled.
   if (!$cache) {
-    $test['description'] = $t('Drupal page caching for anonymous visitors is of
-      extreme importance to every website that gets visitors, including low
-      traffic sites visited by search engines for instance. Once it is enabled
-      your load balancer will be instructed to start caching pages to offload
-      traffic from your web servers, the more traffic served directly from your
-      load balancer, the better!');
+    $test['description'] = $t('Your site has Drupal page caching disabled,'
+      . ' which is of extreme importance to every website that gets traffic.'
+      . ' Once enabled your load balancer will be instructed to start serving'
+      . ' pages from its cache to offload traffic from your web servers. The'
+      . ' more traffic served from your load balancer, the faster your'
+      . ' site will be!');
   }
-
   return $test;
 }
 
@@ -250,29 +249,25 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
   $test = array(
     'value' => $t('@age hours', array('@age' => round($age / 60 / 60, 2))),
     'title' => $t('Expiration of cached pages'));
+  $slowmsg = $t('The "expiration of cached pages"-setting of your'
+    . ' website is set to @age, which is below the 6 hours that is advised in'
+    . ' combination with the Acquia Purge module. The setting determines how'
+    . ' long external caches (like our load balancers) are instructed to keep'
+    . ' a cached copy of content. With your current setting your load'
+    . ' balancer is not effective and your web servers will likely be under'
+    . ' constant stress, causing a slow site and resources being wasted.',
+    array('@age' => $test['value']));
 
   // Everything below 1 hour is way too short.
   if ($age < 3600) {
     $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t('This is a Drupal core setting that determines
-      how long external caches (like load balancers) are instructed to keep a
-      cached copy of all content served directly by Drupal. Your current setting
-      is far below the 6 hours that is advised in combination with Acquia Purge
-      and causes your web servers to serve the majority of traffic instead of
-      your load balancer. The higher this setting and the more accurate your
-      site gets automatically purged, the better it will perform!');
+    $test['description'] = $slowmsg;
   }
 
   // Above 6 hours is safe, so everybody below will be warned!
   elseif (($age > 3600) && ($age < 21600)) {
     $test['severity'] = REQUIREMENT_WARNING;
-    $test['description'] = $t('This is a Drupal core setting that determines
-      how long external caches (like load balancers) are instructed to keep a
-      cached copy of all content served directly by Drupal. Your current setting
-      is below the 6 hours that is advised in combination with Acquia Purge
-      and causes your web servers to serve the majority of traffic instead of
-      your load balancer. The higher this setting and the more accurate your
-      site gets automatically purged, the better it will perform!');
+    $test['description'] = $slowmsg;
   }
 
   // Everything above 6 hours is good although longer is still better obviously.
@@ -297,19 +292,24 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_status($t) {
+  $test = array('title' => $t('Status'), 'severity' => REQUIREMENT_INFO);
   $stats = _acquia_purge_queue_stats();
-  $test = array(
-    'severity' => REQUIREMENT_INFO,
-    'value_plain' => $t('Idle, accepting purges'),
-    'value' => $stats['running'] ? $t('Running') : $t('Idle, accepting purges'),
-    'title' => $t('Status'));
 
-  // Explain why page caching needs to be enabled.
+  // Determine the status message.
+  $status = $t('Idle, accepting purges');
+  if ($stats['running']) {
+    $status = $t('Active ongoing purges, @remaining items to go...', array(
+        '@remaining' => $stats['remaining']
+      )
+    );
+  }
+
+  // Set the status on the plain-text and HTML versions.
+  $test['value'] = $test['value_plain'] = $status;
+
+  // Insert a HTML status widget into the description field if its running.
   if ($stats['running']) {
     $test['description'] = theme('acquia_purge_status_bar_widget', $stats);
-    $test['value_plain'] = $t("Site content is being refreshed, please wait "
-      . "a moment... @remaining items to go...",
-      array('@remaining' => $stats['remaining']));
   }
 
   return $test;
