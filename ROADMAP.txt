@@ -8,7 +8,7 @@ Roadmap (in non-prioritized order)
   * 2014455: Widget hides preliminary when purging less than 10 urls.
   * Provide a INSTALL.txt and cleanup MULTISITE.txt to prevent misuse better.
   * Better built-in fire-prevention and self-diagnostics:
-    * Drush 'ap-diagnosis'
+    * Tie _acquia_purge_queue_processpurge() DIRECTLY to the diagnostics.
     * At minimum the self-diagnostics should test for:
       * What class handles Drupal page caching to detect issues with fake class.
   * Improving domain detection with improvements to Acquia's platform internals.
