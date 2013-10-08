@@ -319,28 +319,24 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
       if (strpos($function, '_acquia_purge_get_diagnosis_') === 0) {
         $name = str_replace('_acquia_purge_get_diagnosis_', '', $function);
         $result = $function($t);
-        $result['name'] = isset($result['title'])
-          ? $result['title'] : ucfirst($name);
-        $result['description'] = isset($result['description'])
-          ? $result['description'] : NULL;
-        $result['severity'] = isset($result['severity']) ?
-          $result['severity'] : REQUIREMENT_INFO;
-        $result['value_plain'] = isset($result['value_plain']) ?
-          $result['value_plain'] : $result['value'];
+        $result['name'] = isset($result['title']) ? $result['title'] : ucfirst($name);
+        $result['description'] = isset($result['description']) ? $result['description'] : NULL;
+        $result['severity'] = isset($result['severity']) ? $result['severity'] : REQUIREMENT_INFO;
+        $result['value_plain'] = isset($result['value_plain']) ? $result['value_plain'] : $result['value'];
         $result['value_plain'] = array(
-              '@title' => $result['title'],
-              '@value' => $result['value_plain']);
+          '@title' => $result['title'],
+          '@value' => $result['value_plain']);
         $result['value'] = array(
-              '@title' => $result['title'],
-              '@value' => $result['value']);
+          '@title' => $result['title'],
+          '@value' => $result['value']);
         $tests["acquia_purge_$name"] = array(
           'title' => $t('Acquia Purge'),
           'name' => $result['name'],
           'value' => $t('<b>@title</b><br />@value', $result['value']),
           'value_plain' => $t('@title: @value', $result['value_plain']),
+          'severity' => $result['severity'],
           'description' => $result['description'],
           'description_plain' => strip_tags($result['description']),
-          'severity' => $result['severity'],
         );
       }
     }
@@ -808,12 +804,12 @@ function _acquia_purge_queue_processpurge($path) {
         $rqst->balancer = $balancer_ip;
         $rqst->domain = $domain;
         $rqst->path = str_replace('//', '/', $base_path . $path);
-        $rqst->uri = $rqst->scheme .'://'. $rqst->domain . $rqst->path;
-        $rqst->uribal = $rqst->scheme .'://'. $rqst->balancer. $rqst->path;
+        $rqst->uri = $rqst->scheme . '://' . $rqst->domain . $rqst->path;
+        $rqst->uribal = $rqst->scheme . '://' . $rqst->balancer . $rqst->path;
         $rqst->headers = array(
-          'Host: '. $rqst->domain,
+          'Host: ' . $rqst->domain,
           'Accept-Encoding: gzip',
-          'X-Acquia-Purge: '. _acquia_purge_get_site_name(),
+          'X-Acquia-Purge: ' . _acquia_purge_get_site_name(),
         );
         $requests[] = $rqst;
       }
@@ -852,9 +848,13 @@ function _acquia_purge_queue_processpurge($path) {
         "Failed attempt to purge '%url' from load balancer %balancer for "
           . "unknown reasons as curl failed. The path item is re-queued! "
           . "Debugging symbols: '%debug',",
-        array('%url' => $rqst->uri, '%balancer' => $rqst->balancer,
-          '%debug' => $rqst->error_debug),
-        WATCHDOG_ERROR);
+        array(
+          '%url' => $rqst->uri,
+          '%balancer' => $rqst->balancer,
+          '%debug' => $rqst->error_debug
+        ),
+        WATCHDOG_ERROR
+      );
     }
   }
 
