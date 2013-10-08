@@ -827,23 +827,12 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
 function _acquia_purge_queue_processpurge($path) {
   $base_path = base_path();
 
-  // Refuse execution whenever we are outside Acquia Cloud. Once our detection
-  // logic failed to detect the Acquia environment we log debugging as much
-  // debugging information as makes sense (d.o #2000824) and return FALSE. The
-  // queue manager will keep on attempting to purge this item.
-  if (!_acquia_purge_are_we_on_acquiacloud()) {
-    watchdog(
-      'acquia_purge',
-      "Failed attempt to purge '%path' because we don't seem to be on Acquia "
-        . "Cloud, debugging information: site-info-is-array='%site_info', curl-"
-        . "init-function-exists='%curl_init', env-vars=(%env-vars), sapi=%sapi",
-      array(
-        '%path' => $path,
-        '%site_info' => strip_tags(var_export(is_array(variable_get('acquia_hosting_site_info', FALSE)), TRUE)),
-        '%curl_init' => strip_tags(var_export(function_exists('curl_init'), TRUE)),
-        '%env-vars' => strip_tags(var_export($_ENV, TRUE)),
-        '%sapi' => php_sapi_name()),
-      WATCHDOG_WARNING);
+  // Ask our built-in diagnostics system to preliminary find issues that are so
+  // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
+  // will cause purging to cease and log messages to be written. Because we
+  // return FALSE, the queued items will be purged later in better weather.
+  if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+    _acquia_purge_get_diagnosis_logged($err);
     return FALSE;
   }
 
