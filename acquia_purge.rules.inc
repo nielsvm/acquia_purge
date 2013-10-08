@@ -3,8 +3,6 @@
 /**
  * @file
  * Rules integration that provides a purge action as rule action.
- * @author
- * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**

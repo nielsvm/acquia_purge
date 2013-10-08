@@ -3,8 +3,6 @@
 /**
  * @file
  * Admin page callbacks and theme functions for the Acquia Purge module.
- * @author
- * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**

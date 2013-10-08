@@ -6,8 +6,6 @@
  * embedded domain name in '<port>.<domain>.<path>' seems valid for us.
  *
  * @see _acquia_purge_get_domains_add_sitesphp()
- * @author
- *   Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 // Information has been taken from: http://xaviesteve.com/2094/

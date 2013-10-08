@@ -3,8 +3,6 @@
 /**
  * @file
  * Drush integration providing common maintenance tasks.
- * @author
- * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**

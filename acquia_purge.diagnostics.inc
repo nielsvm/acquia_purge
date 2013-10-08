@@ -3,8 +3,6 @@
 /**
  * @file
  * Self-test diagnostic test functions for _acquia_purge_get_diagnosis().
- * @author
- * Niels van Mourik - Acquia Client Advisory <niels.vanmourik@acquia.com>
  */
 
 /**
