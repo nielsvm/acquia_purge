@@ -76,7 +76,7 @@ function drush_acquia_purge_ap_diagnosis() {
     REQUIREMENT_INFO => 'notice',
     REQUIREMENT_OK   => 'ok',
     REQUIREMENT_WARNING => 'warning',
-    REQUIREMENT_ERROR   => 'error'
+    REQUIREMENT_ERROR   => 'error',
   );
 
   // Tell Drush to be verbose.
@@ -86,7 +86,7 @@ function drush_acquia_purge_ap_diagnosis() {
   foreach (_acquia_purge_get_diagnosis() as $test) {
     drush_log($test['value_plain'], $severitymap[$test['severity']]);
 
-    if ($test['severity'] >= REQUIREMENT_WARNING ) {
+    if ($test['severity'] >= REQUIREMENT_WARNING) {
       $rows = array();
       foreach (explode("\n", $test['description_plain']) as $line) {
         $rows[] = trim($line);
