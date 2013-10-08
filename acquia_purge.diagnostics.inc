@@ -8,10 +8,10 @@
 /**
  * Test whether the current hosting environment is Acquia Cloud.
  *
- * @param $t
+ * @param string $t
  *   Name of the t() function to call.
  *
- * @return
+ * @returns
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -38,10 +38,10 @@ function _acquia_purge_get_diagnosis_acquiacloud($t) {
 /**
  * Test the amount of load balancers configured.
  *
- * @param $t
+ * @param string $t
  *   Name of the t() function to call.
  *
- * @return
+ * @returns
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -53,7 +53,7 @@ function _acquia_purge_get_diagnosis_balancers($t) {
   $balancers_c = count($balancers);
   $test = array(
     'value' => implode(', ', $balancers),
-    'title' => $t('Load balancers')
+    'title' => $t('Load balancers'),
   );
 
   // Determine whether the amount of load balancers is healthy.
@@ -84,10 +84,10 @@ function _acquia_purge_get_diagnosis_balancers($t) {
 /**
  * Test against known conflicting modules such as varnish, boost and purge.
  *
- * @param $t
+ * @param string $t
  *   Name of the t() function to call.
  *
- * @return
+ * @returns
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -98,7 +98,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
   $test = array(
     'severity' => REQUIREMENT_OK,
     'value' => $t('No issues detected.'),
-    'title' => $t('Module conflicts')
+    'title' => $t('Module conflicts'),
   );
 
   // Detect expire's "Include base URL in expires" setting, which causes issues.
@@ -145,10 +145,10 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
 /**
  * Test whether the amount of domain names is healthy.
  *
- * @param $t
+ * @param string $t
  *   Name of the t() function to call.
  *
- * @return
+ * @returns
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -167,7 +167,7 @@ function _acquia_purge_get_diagnosis_domains($t) {
       load balancers. Every domain name multiplies the purging work to be done,
       it is therefore important to <a href="!link" target="_blank">specify your
       domains</a> when the automatically detected list is too long or
-      incorrect.', array('!link' => $domains_link))
+      incorrect.', array('!link' => $domains_link)),
   );
 
   // Start evaluating the list of domain names.
@@ -202,10 +202,10 @@ function _acquia_purge_get_diagnosis_domains($t) {
 /**
  * Test if anonymous page caching is enabled.
  *
- * @param $t
+ * @param string $t
  *   Name of the t() function to call.
  *
- * @return
+ * @returns
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -235,10 +235,10 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
 /**
  * Test if the page_cache_maximum_age setting is configured in a healthy way.
  *
- * @param $t
+ * @param string $t
  *   Name of the t() function to call.
  *
- * @return
+ * @returns
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -248,7 +248,7 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
 function _acquia_purge_get_diagnosis_page_cache_age($t) {
   $age = variable_get('page_cache_maximum_age', 0);
   $test = array(
-    'value' => $t('@age hours', array('@age' => round($age/60/60, 2))),
+    'value' => $t('@age hours', array('@age' => round($age / 60 / 60, 2))),
     'title' => $t('Expiration of cached pages'));
 
   // Everything below 1 hour is way too short.
@@ -286,10 +286,10 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
 /**
  * Report on the current status of the system.
  *
- * @param $t
+ * @param string $t
  *   Name of the t() function to call.
  *
- * @return
+ * @returns
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
