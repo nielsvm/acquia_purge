@@ -124,10 +124,12 @@ function acquia_purge_expire_cache($paths) {
   // still contain http:// or https://.
   $paths_clean = TRUE;
   foreach ($paths as $path) {
+    if (!$paths_clean) {
+      break;
+    }
     foreach ($schemes as $scheme) {
       if (strpos($path, $scheme) !== FALSE) {
         $paths_clean = FALSE;
-        break;
         break;
       }
     }
