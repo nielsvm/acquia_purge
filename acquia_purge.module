@@ -321,7 +321,7 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
       if (strpos($function, '_acquia_purge_get_diagnosis_') === 0) {
         $name = str_replace('_acquia_purge_get_diagnosis_', '', $function);
         $result = $function($t);
-        $result['name'] = isset($result['title']) ? $result['title'] : ucfirst($name);
+        $result['name'] = isset($result['title']) ? $result['title'] : $name;
         $result['description'] = isset($result['description']) ? $result['description'] : NULL;
         $result['severity'] = isset($result['severity']) ? $result['severity'] : REQUIREMENT_INFO;
         $result['value_plain'] = isset($result['value_plain']) ? $result['value_plain'] : $result['value'];
@@ -800,7 +800,7 @@ function _acquia_purge_queue_processpurge($path) {
   foreach (_acquia_purge_get_balancers() as $balancer_ip) {
     foreach (_acquia_purge_get_domains() as $domain) {
       foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
-        $rqst = new Stdclass();
+        $rqst = new stdClass();
         $rqst->scheme = $scheme;
         $rqst->rtype = 'PURGE';
         $rqst->balancer = $balancer_ip;
