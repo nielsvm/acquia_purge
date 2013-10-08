@@ -85,13 +85,8 @@ function drush_acquia_purge_ap_diagnosis() {
   // Iterate the tests and call drush_log with the appropriate message type.
   foreach (_acquia_purge_get_diagnosis() as $test) {
     drush_log($test['value_plain'], $severitymap[$test['severity']]);
-
     if ($test['severity'] >= REQUIREMENT_WARNING) {
-      $rows = array();
-      foreach (explode("\n", $test['description_plain']) as $line) {
-        $rows[] = trim($line);
-      }
-      printf("%s\n\n\n", implode(' ', $rows));
+      printf("%s\n\n\n", $test['description_plain']);
     }
   }
 
