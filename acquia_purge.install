@@ -37,15 +37,15 @@ function acquia_purge_requirements($phase) {
   if ($phase == 'runtime') {
     $requirements = _acquia_purge_get_diagnosis();
 
-    // Remove REQUIREMENT_OK results, as all good things become too noisy.
+    // Remove ACQUIA_PURGE_SEVLEVEL_OK results, they'll be too noisy.
     foreach ($requirements as $name => $result) {
-      if ($result['severity'] === REQUIREMENT_OK) {
+      if ($result['severity'] === ACQUIA_PURGE_SEVLEVEL_OK) {
         unset($requirements[$name]);
       }
     }
 
     // Remove the status test once ERROR level results have been detected.
-    if (count(_acquia_purge_get_diagnosis(REQUIREMENT_ERROR))) {
+    if (count(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
       unset($requirements['acquia_purge_status']);
     }
 

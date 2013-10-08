@@ -34,6 +34,26 @@ define('ACQUIA_PURGE_REQUEST_TIMEOUT', 2);
 define('ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT', 60);
 
 /**
+ * Diagnostic severity levels: Informational.
+ */
+define('ACQUIA_PURGE_SEVLEVEL_INFO', -1);
+
+/**
+ * Diagnostic severity levels: Good condition.
+ */
+define('ACQUIA_PURGE_SEVLEVEL_OK', 0);
+
+/**
+ * Diagnostic severity levels: Warning condition, proceed but flag warning.
+ */
+define('ACQUIA_PURGE_SEVLEVEL_WARNING', 1);
+
+/**
+ * Requirement severity: Error condition, do not purge items in the queue.
+ */
+define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
+
+/**
  * Implements hook_init().
  */
 function acquia_purge_init() {
@@ -298,7 +318,7 @@ function _acquia_purge_get_balancers() {
  * @returns
  *  Array that complies to the format as seen in hook_requirements().
  */
-function _acquia_purge_get_diagnosis($verbosity = -1) {
+function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
   static $tests;
 
   // Initialize $tests and gather test results, cache everything statically.
@@ -307,9 +327,6 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
     $prefix = '_acquia_purge_get_diagnosis_';
     $tests = array();
     $t = get_t();
-
-    // Load the requirement constants.
-    require_once DRUPAL_ROOT . '/includes/install.inc';
 
     // Require the file that contains our tests: acquia_purge.diagnostics.inc.
     require_once $module_path . '/acquia_purge.diagnostics.inc';
@@ -333,7 +350,7 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
       $tests[$tst]['name'] = isset($tests[$tst]['title']) ? $tests[$tst]['title'] : $tst;
       $tests[$tst]['description'] = isset($tests[$tst]['description']) ? $tests[$tst]['description'] : NULL;
       $tests[$tst]['description_plain'] = strip_tags($tests[$tst]['description']);
-      $tests[$tst]['severity'] = isset($tests[$tst]['severity']) ? $tests[$tst]['severity'] : REQUIREMENT_INFO;
+      $tests[$tst]['severity'] = isset($tests[$tst]['severity']) ? $tests[$tst]['severity'] : ACQUIA_PURGE_SEVLEVEL_INFO;
       $tests[$tst]['value_plain'] = isset($tests[$tst]['value_plain']) ? $tests[$tst]['value_plain'] : $tests[$tst]['value'];
       $tests[$tst]['value_plain'] = $t('@title: @value', array(
         '@title' => $tests[$tst]['title'],
@@ -371,10 +388,10 @@ function _acquia_purge_get_diagnosis($verbosity = -1) {
  */
 function _acquia_purge_get_diagnosis_logged($items) {
   $severitymap = array(
-    REQUIREMENT_INFO => WATCHDOG_INFO,
-    REQUIREMENT_OK   => WATCHDOG_INFO,
-    REQUIREMENT_WARNING => WATCHDOG_ERROR,
-    REQUIREMENT_ERROR   => WATCHDOG_CRITICAL,
+    ACQUIA_PURGE_SEVLEVEL_INFO    => WATCHDOG_INFO,
+    ACQUIA_PURGE_SEVLEVEL_OK      => WATCHDOG_INFO,
+    ACQUIA_PURGE_SEVLEVEL_WARNING => WATCHDOG_ERROR,
+    ACQUIA_PURGE_SEVLEVEL_ERROR   => WATCHDOG_CRITICAL,
   );
 
   // Wrap single a single test result into a workable array.

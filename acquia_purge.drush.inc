@@ -68,15 +68,12 @@ function acquia_purge_drush_command() {
 function drush_acquia_purge_ap_diagnosis() {
   $oldverbosity = drush_get_context('DRUSH_VERBOSE');
 
-  // Load the requirement constants.
-  require_once DRUPAL_ROOT . '/includes/install.inc';
-
   // Define a mapping between install.inc's requirement states and drush_log().
   $severitymap = array(
-    REQUIREMENT_INFO => 'notice',
-    REQUIREMENT_OK   => 'ok',
-    REQUIREMENT_WARNING => 'warning',
-    REQUIREMENT_ERROR   => 'error',
+    ACQUIA_PURGE_SEVLEVEL_INFO => 'notice',
+    ACQUIA_PURGE_SEVLEVEL_OK   => 'ok',
+    ACQUIA_PURGE_SEVLEVEL_WARNING => 'warning',
+    ACQUIA_PURGE_SEVLEVEL_ERROR   => 'error',
   );
 
   // Tell Drush to be verbose.
@@ -85,7 +82,7 @@ function drush_acquia_purge_ap_diagnosis() {
   // Iterate the tests and call drush_log with the appropriate message type.
   foreach (_acquia_purge_get_diagnosis() as $test) {
     drush_log($test['value_plain'], $severitymap[$test['severity']]);
-    if ($test['severity'] >= REQUIREMENT_WARNING) {
+    if ($test['severity'] >= ACQUIA_PURGE_SEVLEVEL_WARNING) {
       printf("%s\n\n\n", $test['description_plain']);
     }
   }

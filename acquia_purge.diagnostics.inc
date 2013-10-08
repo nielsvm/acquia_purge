@@ -16,21 +16,21 @@
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_acquiacloud($t) {
   $site = _acquia_purge_get_site_name();
   $test = array('title' => $t('Hosting environment'));
   if (_acquia_purge_are_we_on_acquiacloud()) {
     $test['value'] = $t('Acquia Cloud: @site', array('@site' => $site));
-    $test['severity'] = REQUIREMENT_OK;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
   else {
     $test['value'] = $t('Third-party environment.');
     $test['description'] = $t('You are not running on Acquia Cloud, this is a'
       . ' mandatory requirement for this module. The module will not process'
       . ' scheduled purges, once deployed scheduled purges will be processed.');
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
   }
   return $test;
 }
@@ -46,7 +46,7 @@ function _acquia_purge_get_diagnosis_acquiacloud($t) {
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_balancers($t) {
   $balancers = _acquia_purge_get_balancers();
@@ -59,24 +59,24 @@ function _acquia_purge_get_diagnosis_balancers($t) {
   // Determine whether the amount of load balancers is healthy.
   if (!$balancers_c) {
     $test['value'] = $t('No load balancers detected.');
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('There are no load balancers detected which makes'
       . ' it impossible to purge your site. Please contact Acquia Support!');
   }
   elseif ($balancers_c < 2) {
-    $test['severity'] = REQUIREMENT_WARNING;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t('You have only one load balancer, this means your'
       . ' site can not be failed over by us. Please contact Acquia Support.');
   }
   elseif ($balancers_c >= 6) {
-    $test['severity'] = REQUIREMENT_WARNING;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t('Your website is running behind @no load'
       . ' balancers, which will put severe stress on your database. Please pay'
       . ' attention to the number of items in the queue table.',
       array('@no' => $balancers_c));
   }
   else {
-    $test['severity'] = REQUIREMENT_OK;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
   return $test;
 }
@@ -92,11 +92,11 @@ function _acquia_purge_get_diagnosis_balancers($t) {
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_conflicts($t) {
   $test = array(
-    'severity' => REQUIREMENT_OK,
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('No issues detected.'),
     'title' => $t('Module conflicts'),
   );
@@ -104,7 +104,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
   // Detect expire's "Include base URL in expires" setting, which causes issues.
   if (variable_get('expire_include_base_url', FALSE)) {
     $test['value'] = 'expire';
-    $test['severity'] = REQUIREMENT_WARNING;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t("We detected that you enabled the 'Include base"
       . " URL in expires'-setting offered by the expire module, this is known"
       . " to (potentially) cause issues. The setting causes hook_expire_cache()"
@@ -116,7 +116,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
   // Detect the existence of the Boost module which is incompatible.
   if (module_exists('boost')) {
     $test['value'] = 'boost';
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your site has the boost module enabled which is'
       . ' known to cause issues on Acquia Cloud. Because of its heavy'
       . ' interactions with the file system it will destabilize your site.');
@@ -125,7 +125,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
   // Detect the existence of the Purge module which is incompatible for now.
   if (module_exists('purge')) {
     $test['value'] = 'purge';
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your site has the Purge module enabled which'
       . ' is incompatible with this version of Acquia Purge. However, this'
       . ' module will depend on it in the future. Please, remove it for now!');
@@ -134,7 +134,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
   // Detect if the Varnish module is enabled, which isn't necessary.
   if (module_exists('varnish')) {
     $test['value'] = 'varnish';
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your site runs with the varnish module enabled,'
       . ' which is known to not work on Acquia Cloud. As Acquia Purge does its'
       . ' work already for you we strongly encourage you to remove it.');
@@ -154,7 +154,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_domains($t) {
   $domains_link = 'http://drupalcode.org/project/acquia_purge.git/blob_plain/';
@@ -174,15 +174,15 @@ function _acquia_purge_get_diagnosis_domains($t) {
   // Start evaluating the list of domain names.
   if (!$domains_c) {
     $test['value'] = $t('0 domains detected.');
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('No domains have been detected which implies that'
       . ' something is seriously wrong. Pending purges will not be processed.');
   }
   elseif ($domains_c < 4) {
-    $test['severity'] = REQUIREMENT_OK;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
   elseif (($domains_c > 4) && ($domains_c < 6)) {
-    $test['severity'] = REQUIREMENT_WARNING;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t('Because you have @no domain names there is a'
       . ' <b>high risk</b> that purging your site will put stress on your'
       . ' database, it is <b>strongly recommended</b> to <a href="!link"'
@@ -190,7 +190,7 @@ function _acquia_purge_get_diagnosis_domains($t) {
       array('!link' => $domains_link, '@no' => $domains_c));
   }
   else {
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Because you have @no domain names there is a'
       . ' <b>very high risk</b> that purging your site will put stress on your'
       . ' database, it is <b>strongly recommended</b> to <a href="!link"'
@@ -212,15 +212,16 @@ function _acquia_purge_get_diagnosis_domains($t) {
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_page_cache($t) {
   $cache = variable_get('cache', 0);
   $test = array(
-    'severity' => $cache ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $cache ? $t('Enabled') : $t('Disabled'),
     'title' => $t('Cache pages for anonymous users'));
   if (!$cache) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your site has Drupal page caching disabled,'
       . ' which is of extreme importance to every website that gets traffic.'
       . ' Once enabled your load balancer will be instructed to start serving'
@@ -242,7 +243,7 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_page_cache_age($t) {
   $age = variable_get('page_cache_maximum_age', 0);
@@ -260,19 +261,19 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
 
   // Everything below 1 hour is way too short.
   if ($age < 3600) {
-    $test['severity'] = REQUIREMENT_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $slowmsg;
   }
 
   // Above 6 hours is safe, so everybody below will be warned!
   elseif (($age > 3600) && ($age < 21600)) {
-    $test['severity'] = REQUIREMENT_WARNING;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $slowmsg;
   }
 
   // Everything above 6 hours is good although longer is still better obviously.
   else {
-    $test['severity'] = REQUIREMENT_OK;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
 
   return $test;
@@ -289,11 +290,14 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: REQUIREMENT_INFO, _OK, _WARNING, _ERROR
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_status($t) {
-  $test = array('title' => $t('Status'), 'severity' => REQUIREMENT_INFO);
   $stats = _acquia_purge_queue_stats();
+  $test = array(
+    'title' => $t('Status'),
+    'severity' => ACQUIA_PURGE_SEVLEVEL_INFO,
+  );
 
   // Determine the status message.
   $status = $t('Idle, accepting purges');
