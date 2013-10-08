@@ -65,8 +65,8 @@ function _acquia_purge_get_diagnosis_balancers($t) {
   }
   elseif ($balancers_c < 2) {
     $test['severity'] = REQUIREMENT_ERROR;
-    $test['description'] = $t('This situation should not occur, please contact
-      Acquia Support!');
+    $test['description'] = $t('You have only one load balancer, this means you
+      are hosting without hot-spare balancer. Please contact Acquia Support.');
   }
   elseif ($balancers_c >= 6) {
     $test['severity'] = REQUIREMENT_WARNING;
