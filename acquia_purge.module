@@ -851,7 +851,7 @@ function _acquia_purge_queue_processpurge($path) {
         array(
           '%url' => $rqst->uri,
           '%balancer' => $rqst->balancer,
-          '%debug' => $rqst->error_debug
+          '%debug' => $rqst->error_debug,
         ),
         WATCHDOG_ERROR
       );
