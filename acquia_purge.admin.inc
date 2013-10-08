@@ -29,11 +29,21 @@ function acquia_purge_ajax_processor() {
       $status[$key] = $value;
     }
 
-    // Raise error condition if history list remains empty.
-    if (empty($status['purgehistory'])) {
-      $status['error'] = t("The process stalled and nothing is getting purged,
-        failing purges will be retried endlessly until the problem is solved.
-        Please check your log files.");
+    // Ask our built-in diagnostics system to preliminary find issues that are
+    // so risky we can expect problems. Everything starting with
+    // ACQUIA_PURGE_SEVLEVEL_ERROR will cause purging to cease and log messages
+    // to be written. Warn the user on any of them.
+    if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+      $error = current($e);
+      $status['error'] = $error['description_plain'];
+    }
+
+    // If no obvious errors were found by the diagnostics system, check if the
+    // history list is remaining empty: another bad symptom.
+    elseif (empty($status['purgehistory'])) {
+      $status['error'] = t("The system seems to be having difficulties
+        refreshing recent content changes. Your work won't be lost, but please
+        do ask your technical administrator to check the logs.");
     }
 
     // We're done so lets release the lock.
