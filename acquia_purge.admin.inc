@@ -35,7 +35,7 @@ function acquia_purge_ajax_processor() {
     // to be written. Warn the user on any of them.
     if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
       $error = current($e);
-      $status['error'] = $error['description_plain'];
+      $status['error'] = $error['description'];
     }
 
     // If no obvious errors were found by the diagnostics system, check if the
