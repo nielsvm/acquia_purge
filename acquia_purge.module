@@ -125,15 +125,24 @@ function acquia_purge_expire_cache($paths) {
     }
     $items = theme('item_list', array('items' => $items));
 
-    // Make clear to the user that we cannot continue purging.
-    drupal_set_message(
-      t("<p>The system cannot publicly refresh the changes you just made,
-        because of the following error conditions:</p>!items<p>Please
-        contact your system administrator or development partner!</p>",
-        array('!items' => $items)
-      ),
-      'warning'
-    );
+    // Warn the user on-screen that purging cannot continue.
+    if (variable_get('acquia_purge_reportpurges', TRUE)
+      && user_access('purge notification')) {
+      drupal_set_message(
+        t("<p>The system cannot publicly refresh the changes you just made,
+          because of the following error conditions:</p>!items<p>Please
+          contact your system administrator or development partner!</p>",
+          array('!items' => $items)
+        ),
+        'warning'
+      );
+    }
+
+    // Or fail silently to the logs.
+    else {
+      _acquia_purge_get_diagnosis_logged($err);
+    }
+
     return;
   }
 
