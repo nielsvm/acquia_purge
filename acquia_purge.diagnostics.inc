@@ -134,7 +134,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
   // Detect if the Varnish module is enabled, which isn't necessary.
   if (module_exists('varnish')) {
     $test['value'] = 'varnish';
-    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t('Your site runs with the varnish module enabled,'
       . ' which is known to not work on Acquia Cloud. As Acquia Purge does its'
       . ' work already for you we strongly encourage you to remove it.');
