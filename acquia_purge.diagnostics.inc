@@ -184,24 +184,24 @@ function _acquia_purge_get_diagnosis_domains($t) {
       . ' indicating that you are running via Drush. Either you will need to'
       . ' specify your domains or provide --uri for the right site.');
   }
-  elseif ($domains_c < 4) {
+  elseif ($domains_c <= 6) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
-  elseif (($domains_c >= 4) && ($domains_c < 6)) {
+  elseif (($domains_c > 6) && ($domains_c <= 8)) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t('Because you have @no domain names there is a'
       . ' <b>high risk</b> that purging your site will put stress on your'
-      . ' database, it is <b>strongly recommended</b> to <a href="!link"'
-      . ' target="_blank">specify your domains</a> to not exceed 4 domains.',
+      . ' servers, it is <b>strongly recommended</b> to <a href="!link"'
+      . ' target="_blank">specify your domains</a> to not exceed 6 domains.',
       array('!link' => $domains_link, '@no' => $domains_c));
   }
   else {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Because you have @no domain names there is a'
       . ' <b>very high risk</b> that purging your site will put stress on your'
-      . ' database, it is <b>strongly recommended</b> to <a href="!link"'
-      . ' target="_blank">specify your domains</a> to not exceed 4 domains. To'
-      . ' prevent system failure, pending purges will not be processed',
+      . ' servers, it is <b>strongly recommended</b> to <a href="!link"'
+      . ' target="_blank">specify your domains</a> to not exceed 6 domains. To'
+      . ' prevent system failure, pending purges will not be processed!',
       array('!link' => $domains_link, '@no' => $domains_c));
   }
   return $test;
