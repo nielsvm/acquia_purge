@@ -252,29 +252,48 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_page_cache_age($t) {
-  $age = variable_get('page_cache_maximum_age', 0);
-  $test = array(
-    'value' => $t('@age hours', array('@age' => round($age / 60 / 60, 2))),
-    'title' => $t('Expiration of cached pages'));
-  $slowmsg = $t('The "expiration of cached pages"-setting of your'
-    . ' website is set to @age, which is below the 6 hours that is advised in'
-    . ' combination with the Acquia Purge module. The setting determines how'
-    . ' long external caches (like our load balancers) are instructed to keep'
-    . ' a cached copy of content. With your current setting your load'
-    . ' balancer is not effective and your web servers will likely be under'
-    . ' constant stress, causing a slow site and resources being wasted.',
-    array('@age' => $test['value']));
+  $age = (int)variable_get('page_cache_maximum_age', 0);
+  $test = array('title' => $t('Expiration of cached pages'));
 
-  // Everything below 1 hour is way too short.
-  if ($age < 3600) {
-    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
-    $test['description'] = $slowmsg;
+  // Set the value label.
+  $test['value'] = $t('Disabled');
+  if ($age !== 0) {
+    $test['value'] = array('@age' => round($age / 60 / 60, 2));
+    $test['value'] = $t('@age hours', $test['value']);
   }
 
-  // Above 6 hours is safe, so everybody below will be warned!
-  elseif (($age > 3600) && ($age < 21600)) {
+  // Determine what "find out more" link we can provide.
+  $link = 'http://blog.merge.nl/20120118/how-does-caching-work-drupal';
+  if (user_access('administer site configuration')) {
+    $link = url('admin/config/development/performance');
+  }
+
+  // Users without a TTL configured won't put our module to much use.
+  if ($age === 0) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('The "<a href="!link" target="_blank">expiration'
+    . ' of cached pages</a>"-setting of your website is disabled, while we'
+    . ' strongly recommend to put it to 6 hours or longer in combination with'
+    . ' the Acquia Purge module. The setting determines how long external'
+    . ' caches (like our load balancers) are instructed to keep a cached copy'
+    . ' of content. With your current setting your load balancer is not being'
+    . ' used and your web servers will likely be under constant stress,'
+    . ' causing a slow site and  system resources being wasted.',
+    array('!link' => $link));
+  }
+
+  // We have picked 6 hours as a safe zone to be in, everything above is better!
+  elseif ($age < 21600) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
-    $test['description'] = $slowmsg;
+    $test['description'] = $t('The "<a href="!link" target="_blank">expiration'
+    . ' of cached pages</a>"-setting of your website is set to @age, while we'
+    . ' strongly recommend to put it to 6 hours or longer in combination with'
+    . ' the Acquia Purge module. The setting determines how long external'
+    . ' caches (like our load balancers) are instructed to keep a cached copy'
+    . ' of content. With your current configuration, your load balancer is not'
+    . ' used effectively and your web servers will likely be under stress,'
+    . ' causing a slow site and system resources being wasted.',
+    array('!link' => $link, '@age' => $test['value']));
   }
 
   // Everything above 6 hours is good although longer is still better obviously.
