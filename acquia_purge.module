@@ -113,6 +113,30 @@ function acquia_purge_menu() {
 function acquia_purge_expire_cache($paths) {
   static $patterns;
 
+  // Ask our built-in diagnostics system to preliminary find issues that are so
+  // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
+  // will cause purging to cease and we've got to tell the end user.
+  if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+
+    // Stack all found error messages (can be one too) in a HTML item list.
+    $items = array();
+    foreach ($err as $error) {
+      $items[] = '<p>' . $error['description'] . '</p>';
+    }
+    $items = theme('item_list', array('items' => $items));
+
+    // Make clear to the user that we cannot continue purging.
+    drupal_set_message(
+      t("<p>The system cannot publicly refresh the changes you just made,
+        because of the following error conditions:</p>!items<p>Please
+        contact your system administrator or development partner!</p>",
+        array('!items' => $items)
+      ),
+      'warning'
+    );
+    return;
+  }
+
   // The expire module is unreliable API-wise as it often gives absolute URLs
   // in various scenarios. In the past we tested for 'expire_include_base_url'
   // but that doesn't always seem to help. We therefore generate a list of
