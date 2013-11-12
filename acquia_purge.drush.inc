@@ -33,6 +33,14 @@ function acquia_purge_drush_command() {
       'examples' => array('drush apd'),
     ),
 
+    // Define the 'ap-domains' command.
+    'ap-domains' => array(
+      'description' => 'List all domains Acquia Purge will purge against.',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
+      'aliases' => array('apdo'),
+      'examples' => array('drush apdo'),
+    ),
+
     // Define the 'ap-purge' command.
     'ap-purge' => array(
       'description' => 'Purge a specified path from your balancers.',
@@ -89,6 +97,15 @@ function drush_acquia_purge_ap_diagnosis() {
 
   // Set back the old verbosity state.
   drush_set_context('DRUSH_VERBOSE', $oldverbosity);
+}
+
+/**
+ * List all detected domain names that Acquia Purge will purge.
+ */
+function drush_acquia_purge_ap_domains() {
+  foreach (_acquia_purge_get_domains() as $domain) {
+    printf("%s\n", $domain);
+  }
 }
 
 /**
