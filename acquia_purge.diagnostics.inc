@@ -157,8 +157,8 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_domains($t) {
-  $domains_link = 'http://drupalcode.org/project/acquia_purge.git/blob_plain/';
-  $domains_link .= 'refs/heads/7.x-1.x:/MULTISITE.txt';
+  $domains_link = drupal_get_path('module', 'acquia_purge') . '/MULTISITE.txt';
+  $domains_link = url($domains_link);
   $domains = _acquia_purge_get_domains();
   $domains_c = count($domains);
   $test = array(
