@@ -149,15 +149,17 @@ function acquia_purge_expire_cache($paths) {
   // The expire module is unreliable API-wise as it often gives absolute URLs
   // in various scenarios. In the past we tested for 'expire_include_base_url'
   // but that doesn't always seem to help. We therefore generate a list of
-  // possible http://domainname patterns to strip out. See #2049235 on d.o.
+  // possible http://domainname patterns to strip out. D.o: #2049235, #2133001.
   $schemes = array('http://', 'https://');
   if (is_null($patterns)) {
     foreach (_acquia_purge_get_domains() as $domain) {
       foreach ($schemes as $scheme) {
+        $patterns[] = "$scheme$domain" . base_path();
         $patterns[] = "$scheme$domain";
       }
     }
   }
+
 
   // Iterate the given paths and strip everything out we can think off.
   $new_paths = array();
@@ -481,7 +483,7 @@ function _acquia_purge_get_domains() {
     $base_domain = url('', array('absolute' => TRUE));
     $base_domain = str_replace('https://', '', $base_domain);
     $base_domain = str_replace('http://', '', $base_domain);
-    $base_domain = str_replace('/', '', $base_domain);
+    $base_domain = str_replace(base_path(), '', $base_domain);
     _acquia_purge_get_domains_add($base_domain, $domains);
 
     // Gather potentially defined domains in sites/sites.php, for this site.
