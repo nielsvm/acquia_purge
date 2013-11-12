@@ -60,6 +60,14 @@ function acquia_purge_drush_command() {
       'examples' => array('drush apf'),
     ),
 
+    // Define the 'ap-list' command.
+    'ap-list' => array(
+      'description' => 'List all the items that are in the queue.',
+      'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
+      'aliases' => array('apl'),
+      'examples' => array('drush apl'),
+    ),
+
     // Define the 'ap-process' command.
     'ap-process' => array(
       'description' => 'Purge all queued items from the command line.',
@@ -103,6 +111,12 @@ function drush_acquia_purge_ap_diagnosis() {
  * List all detected domain names that Acquia Purge will purge.
  */
 function drush_acquia_purge_ap_domains() {
+
+  // Stop invocation if we are not detecting Acquia Cloud heuristics.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
+  }
+
   foreach (_acquia_purge_get_domains() as $domain) {
     printf("%s\n", $domain);
   }
@@ -163,6 +177,28 @@ function drush_acquia_purge_ap_forget() {
 
   // If there was a lock acquired, free it up as the queue will be empty now.
   lock_release('acquia_purge_ajax_processor');
+}
+
+/**
+ * List all the items that are in the queue.
+ */
+function drush_acquia_purge_ap_list() {
+
+  // Stop invocation if we are not detecting Acquia Cloud heuristics.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
+  }
+
+  // Directly query the queue table and print all records.
+  $items = db_select('queue', 'q')
+    ->fields("q", array("data"))
+    ->condition('name', 'acquia_purge')
+    ->execute();
+  while($item = $items->fetchAssoc()) {
+    if ($item = unserialize(current($item))) {
+      printf(" - '%s'\n", current($item));
+    }
+  }
 }
 
 /**
