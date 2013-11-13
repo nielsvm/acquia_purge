@@ -53,8 +53,8 @@ Frequently asked questions
   on every page that shows progress, as soon as its done it will go away. Users
   triggering purges without that permission will still secretely load the file
   and trigger back-end purge calls till data is processed. If you really need
-  period queue processing you can call "drush --uri=http://... ap-process" from
-  cron to cleanup the queue.
+  periodic queue processing you can call "drush --uri=http://... ap-process"
+  from cron to process remaining queue items.
 
  Why do I need "Acquia Purge" instead of "Purge", Purge works fine here!
 --------------------------------------------------------------------------------
