@@ -169,7 +169,6 @@ function acquia_purge_expire_cache($paths) {
     }
   }
 
-
   // Iterate the given paths and strip everything out we can think off.
   $new_paths = array();
   foreach ($paths as $path) {

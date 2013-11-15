@@ -252,7 +252,7 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_page_cache_age($t) {
-  $age = (int)variable_get('page_cache_maximum_age', 0);
+  $age = (int) variable_get('page_cache_maximum_age', 0);
   $test = array('title' => $t('Expiration of cached pages'));
 
   // Set the value label.

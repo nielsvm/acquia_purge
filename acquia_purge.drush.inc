@@ -194,7 +194,7 @@ function drush_acquia_purge_ap_list() {
     ->fields("q", array("data"))
     ->condition('name', 'acquia_purge')
     ->execute();
-  while($item = $items->fetchAssoc()) {
+  while ($item = $items->fetchAssoc()) {
     if ($item = unserialize(current($item))) {
       printf(" - '%s'\n", current($item));
     }
