@@ -7,7 +7,7 @@ Frequently asked questions
 
  My site runs behind a Amazon Elastic Load Balancer (ELB), will it work?
 --------------------------------------------------------------------------------
-  yes it will work without any required action. ELBs spread the traffic across
+  Yes it will work without any required action. ELBs spread the traffic across
   your two load balancers active-active and Acquia Purge always purges both
   your primary as your passive load balancer.
 
@@ -51,7 +51,7 @@ Frequently asked questions
   for that particular user whilst he/she is logged in and purges exists. When
   the "purge notification"-permission is granted the user will see a progressbar
   on every page that shows progress, as soon as its done it will go away. Users
-  triggering purges without that permission will still secretely load the file
+  triggering purges without that permission will still secretly load the file
   and trigger back-end purge calls till data is processed. If you really need
   periodic queue processing you can call "drush --uri=http://... ap-process"
   from cron to process remaining queue items.
