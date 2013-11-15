@@ -104,6 +104,16 @@ function acquia_purge_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  // Allow administrators to manually queue purge paths on the performance page.
+  $items['admin/config/development/performance/manualpurge'] = array(
+    'type'              => MENU_LOCAL_TASK,
+    'title'             => 'Manually purge',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('acquia_purge_manualpurge_form'),
+    'access arguments'  => array('administer site configuration'),
+    'file' => 'acquia_purge.admin.inc',
+  );
+
   return $items;
 }
 

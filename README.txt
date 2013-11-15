@@ -20,6 +20,7 @@ Features:
  * Support for both Domain Access and multi-site setups.
  * Detailed watchdog logging on everything that happens.
  * Atomic operation based on AJAX and the Queue API.
+ * Manual purge feature for emergency administration needs.
  * Drush: ap-diagnosis, ap-domains, ap-forget, ap-list, ap-process, ap-purge.
 
 Why do I need this?
