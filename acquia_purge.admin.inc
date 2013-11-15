@@ -11,56 +11,56 @@
  * @returns
  *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
  */
-// function acquia_purge_ajax_processor() {
-//   $status = _acquia_purge_queue_stats();
-//
-//   // Define a key 'error' that describes a potential error condition.
-//   $status['error'] = $status['locked'] = FALSE;
-//
-//   // Lock acquiring assures us that nothing is purging the same paths at the
-//   // same time. All ways that trigger purging (ajax, drush) respect the locks.
-//   if (lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
-//
-//     // Pop items from the queue and immediately process them.
-//     _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
-//
-//     // Refresh the statistics post-run, so override most fields in $status.
-//     foreach (_acquia_purge_queue_stats() as $key => $value) {
-//       $status[$key] = $value;
-//     }
-//
-//     // Ask our built-in diagnostics system to preliminary find issues that are
-//     // so risky we can expect problems. Everything starting with
-//     // ACQUIA_PURGE_SEVLEVEL_ERROR will cause purging to cease and log messages
-//     // to be written. Warn the user on any of them.
-//     if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
-//       $error = current($e);
-//       $status['error'] = $error['description'];
-//     }
-//
-//     // If no obvious errors were found by the diagnostics system, check if the
-//     // history list is remaining empty: another bad symptom.
-//     elseif (empty($status['purgehistory'])) {
-//       $status['error'] = t("The system seems to be having difficulties
-//         refreshing recent content changes. Your work won't be lost, but please
-//         do ask your technical administrator to check the logs.");
-//     }
-//
-//     // We're done so lets release the lock.
-//     lock_release('acquia_purge_ajax_processor');
-//   }
-//
-//   // Instead of raising a very visual error condition: indicate the lock.
-//   else {
-//     $status['locked'] = TRUE;
-//   }
-//
-//   // Render the status widget and add it to the statistics array.
-//   $status['widget'] = theme('acquia_purge_status_bar_widget', $status);
-//
-//   // Return the status array with statistics...
-//   return drupal_json_output($status);
-// }
+function acquia_purge_ajax_processor() {
+  $status = _acquia_purge_queue_stats();
+
+  // Define a key 'error' that describes a potential error condition.
+  $status['error'] = $status['locked'] = FALSE;
+
+  // Lock acquiring assures us that nothing is purging the same paths at the
+  // same time. All ways that trigger purging (ajax, drush) respect the locks.
+  if (lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+
+    // Pop items from the queue and immediately process them.
+    _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+
+    // Refresh the statistics post-run, so override most fields in $status.
+    foreach (_acquia_purge_queue_stats() as $key => $value) {
+      $status[$key] = $value;
+    }
+
+    // Ask our built-in diagnostics system to preliminary find issues that are
+    // so risky we can expect problems. Everything starting with
+    // ACQUIA_PURGE_SEVLEVEL_ERROR will cause purging to cease and log messages
+    // to be written. Warn the user on any of them.
+    if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+      $error = current($e);
+      $status['error'] = $error['description'];
+    }
+
+    // If no obvious errors were found by the diagnostics system, check if the
+    // history list is remaining empty: another bad symptom.
+    elseif (empty($status['purgehistory'])) {
+      $status['error'] = t("The system seems to be having difficulties
+        refreshing recent content changes. Your work won't be lost, but please
+        do ask your technical administrator to check the logs.");
+    }
+
+    // We're done so lets release the lock.
+    lock_release('acquia_purge_ajax_processor');
+  }
+
+  // Instead of raising a very visual error condition: indicate the lock.
+  else {
+    $status['locked'] = TRUE;
+  }
+
+  // Render the status widget and add it to the statistics array.
+  $status['widget'] = theme('acquia_purge_status_bar_widget', $status);
+
+  // Return the status array with statistics...
+  return drupal_json($status);
+}
 
 /**
  * Menu callback to drupal_get_form; let users manually purge pages.
