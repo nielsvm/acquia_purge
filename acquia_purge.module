@@ -648,14 +648,11 @@ function _acquia_purge_queue_add($path) {
  * @returns
  *   Void.
  */
-// function _acquia_purge_queue_clear() {
-//   $queue = _acquia_purge_queue();
-//   $queue->deleteQueue();
-//
-//   // Reset counter and ownership.
-//   variable_set('acquia_purge_queue_counter', 0);
-//   variable_set('acquia_purge_queue_owners', array());
-// }
+function _acquia_purge_queue_clear() {
+  db_query('DELETE FROM {ap_queue}');
+  variable_set('acquia_purge_queue_counter', 0);
+  variable_set('acquia_purge_queue_owners', array());
+}
 
 /**
  * Queue manager: pop X amount of items from the queue.
@@ -675,81 +672,83 @@ function _acquia_purge_queue_add($path) {
  *   HTTP PURGE request. Array items are non-associative arrays itself with the
  *   path in key #0.
  */
-// function _acquia_purge_queue_pop($processor_callback = NULL) {
-//   $queue = _acquia_purge_queue();
-//   $items = array();
-//
-//   // Determine the maximum amount of requests that we can process at once.
-//   $max_execution_time = (int) ini_get('max_execution_time');
-//   $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
-//   if ($max_execution_time != 0) {
-//
-//     // Never take more then 80% of all available execution time.
-//     $max_execution_time = intval(0.8 * $max_execution_time);
-//     $max_requests = $max_execution_time / ACQUIA_PURGE_REQUEST_TIMEOUT;
-//     $max_requests = ACQUIA_PURGE_PARALLEL_REQUESTS * $max_requests;
-//     if ($max_requests > ACQUIA_PURGE_MAX_REQUESTS) {
-//       $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
-//     }
-//   }
-//
-//   // Calculate the amount of paths to pop from the queue based on how many HTTP
-//   // requests we are going to generate and how much we can maximally process.
-//   $balancers = count(_acquia_purge_get_balancers());
-//   $domains = count(_acquia_purge_get_domains());
-//   $schemes = count(_acquia_purge_get_protocol_schemes());
-//   $requests = $schemes * ($domains * $balancers);
-//   $paths = intval($max_requests / $requests);
-//
-//   // In scenarios with many balancers or many domains it might happen that even
-//   // one path will trigger more HTTP requests than we can handle. To prevent
-//   // not purging anything anymore we will attempt one but with taking risks.
-//   if ($paths < 1) {
-//     $paths = 1;
-//   }
-//
-//   // Limit the number of paths to pop when it maxed out the set limit. Usually
-//   // only happens on the command line.
-//   if ($paths > ACQUIA_PURGE_MAX_PATHS) {
-//     $paths = ACQUIA_PURGE_MAX_PATHS;
-//   }
-//
-//   // Retrieve the amount of paths that we just calculated we could handle.
-//   for ($i = 0; $i < $paths; $i++) {
-//     if ($item = $queue->claimItem()) {
-//
-//       // Add this item to the items list released back or being processed.
-//       $items[] = $item->data;
-//
-//       // Call the callback once provided and pass on the arguments to purge.
-//       if (!is_null($processor_callback)) {
-//
-//         // If the processor throws FALSE: release the item and try again later.
-//         if (call_user_func_array($processor_callback, $item->data)) {
-//           $queue->deleteItem($item);
-//         }
-//         else {
-//           $queue->releaseItem($item);
-//         }
-//       }
-//
-//       // Without provided callback we assume success and delete the item.
-//       else {
-//         $queue->deleteItem($item);
-//       }
-//     }
-//   }
-//
-//   // Set acquia_purge_queue_counter to 0 once the queue is empty as well.
-//   if ((int) $queue->numberOfItems() === 0) {
-//
-//     // Once its back to 0, progress is 100% and no activity is assumed.
-//     variable_set('acquia_purge_queue_counter', 0);
-//     variable_set('acquia_purge_queue_owners', array());
-//   }
-//
-//   return $items;
-// }
+function _acquia_purge_queue_pop($processor_callback = NULL) {
+  $items = array();
+
+  // Determine the maximum amount of requests that we can process at once.
+  $max_execution_time = (int) ini_get('max_execution_time');
+  $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
+  if ($max_execution_time != 0) {
+
+    // Never take more then 80% of all available execution time.
+    $max_execution_time = intval(0.8 * $max_execution_time);
+    $max_requests = $max_execution_time / ACQUIA_PURGE_REQUEST_TIMEOUT;
+    $max_requests = ACQUIA_PURGE_PARALLEL_REQUESTS * $max_requests;
+    if ($max_requests > ACQUIA_PURGE_MAX_REQUESTS) {
+      $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
+    }
+  }
+
+  // Calculate the amount of paths to pop from the queue based on how many HTTP
+  // requests we are going to generate and how much we can maximally process.
+  $balancers = count(_acquia_purge_get_balancers());
+  $domains = count(_acquia_purge_get_domains());
+  $schemes = count(_acquia_purge_get_protocol_schemes());
+  $requests = $schemes * ($domains * $balancers);
+  $paths = intval($max_requests / $requests);
+
+  // In scenarios with many balancers or many domains it might happen that even
+  // one path will trigger more HTTP requests than we can handle. To prevent
+  // not purging anything anymore we will attempt one but with taking risks.
+  if ($paths < 1) {
+    $paths = 1;
+  }
+
+  // Limit the number of paths to pop when it maxed out the set limit. Usually
+  // only happens on the command line.
+  if ($paths > ACQUIA_PURGE_MAX_PATHS) {
+    $paths = ACQUIA_PURGE_MAX_PATHS;
+  }
+
+  // Retrieve the amount of paths that we just calculated we could handle.
+  $items_to_be_removed = array();
+  $itemsq = db_query("SELECT * FROM {ap_queue} LIMIT %d", $paths);
+  while ($item = db_fetch_object($itemsq)) {
+
+    // Add this item to the items list released back or being processed.
+    $items[] = array($item->path);
+
+    // Call the callback once provided and pass on the arguments to purge.
+    if (!is_null($processor_callback)) {
+
+      // If the processor throws FALSE: release the item and try again later.
+      if (call_user_func_array($processor_callback, array($item->path))) {
+        $items_to_be_removed[] = $item->item_id;
+      }
+    }
+
+    // Without provided callback we assume success and delete the item.
+    else {
+      $items_to_be_removed[] = $item->item_id;
+    }
+  }
+
+  // Remove the items that we're listed as safe to be removed from the queue.
+  if (count($items_to_be_removed)) {
+    $ids = implode(',', $items_to_be_removed);
+    db_query('DELETE FROM {ap_queue} WHERE item_id IN (' . $ids . ')');
+  }
+
+  // Set acquia_purge_queue_counter to 0 once the queue is empty as well.
+  if (((int) db_result(db_query("SELECT COUNT(*) FROM {ap_queue}"))) === 0) {
+
+    // Once its back to 0, progress is 100% and no activity is assumed.
+    variable_set('acquia_purge_queue_counter', 0);
+    variable_set('acquia_purge_queue_owners', array());
+  }
+
+  return $items;
+}
 
 /**
  * Queue manager: process a single path (on all domains and balancers).
@@ -760,95 +759,95 @@ function _acquia_purge_queue_add($path) {
  * @returns
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
  */
-// function _acquia_purge_queue_processpurge($path) {
-//   $base_path = base_path();
-//
-//   // Ask our built-in diagnostics system to preliminary find issues that are so
-//   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
-//   // will cause purging to cease and log messages to be written. Because we
-//   // return FALSE, the queued items will be purged later in better weather.
-//   if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
-//     _acquia_purge_get_diagnosis_logged($err);
-//     return FALSE;
-//   }
-//
-//   // Rewrite '<front>' to a empty string, which will be the frontpage. By using
-//   // substr() and str_replace() we still allow cases like '<front>?param=1'.
-//   if (drupal_substr($path, 0, 7) === '<front>') {
-//     $path = str_replace('<front>', '', $path);
-//   }
-//
-//   // Because a single path can exist on http://, https://, on various domain
-//   // names and could be cached on any of the known load balancers. Therefore we
-//   // define a list of HTTP requests that we are going to fire in a moment.
-//   $requests = array();
-//   foreach (_acquia_purge_get_balancers() as $balancer_ip) {
-//     foreach (_acquia_purge_get_domains() as $domain) {
-//       foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
-//         $rqst = new stdClass();
-//         $rqst->scheme = $scheme;
-//         $rqst->rtype = 'PURGE';
-//         $rqst->balancer = $balancer_ip;
-//         $rqst->domain = $domain;
-//         $rqst->path = str_replace('//', '/', $base_path . $path);
-//         $rqst->uri = $rqst->scheme . '://' . $rqst->domain . $rqst->path;
-//         $rqst->uribal = $rqst->scheme . '://' . $rqst->balancer . $rqst->path;
-//         $rqst->headers = array(
-//           'Host: ' . $rqst->domain,
-//           'Accept-Encoding: gzip',
-//           'X-Acquia-Purge: ' . _acquia_purge_get_site_name(),
-//         );
-//         $requests[] = $rqst;
-//       }
-//     }
-//   }
-//
-//   // Before we issue these purges against the load balancers we ensure that any
-//   // of these URLs are not left cached in Drupal's ordinary page cache.
-//   $already_cleared = array();
-//   foreach ($requests as $rqst) {
-//     if (!in_array($rqst->uri, $already_cleared)) {
-//       cache_clear_all($rqst->uri, 'cache_page');
-//       $already_cleared[] = $rqst->uri;
-//     }
-//   }
-//
-//   // Execute the prepared requests efficiently and log their results.
-//   $overall_success = TRUE;
-//   foreach (_acquia_purge_queue_processpurge_requests($requests) as $rqst) {
-//     if ($rqst->result == TRUE) {
-//       watchdog(
-//         'acquia_purge',
-//         "Purged '%url' from load balancer %balancer.",
-//         array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
-//         WATCHDOG_INFO);
-//       _acquia_purge_queue_stats($rqst->uri);
-//     }
-//     else {
-//       if ($overall_success) {
-//         $overall_success = FALSE;
-//       }
-//
-//       // Log the failing attempt and include verbose debugging information.
-//       watchdog(
-//         'acquia_purge',
-//         "Failed attempt to purge '%url' from load balancer %balancer for "
-//           . "unknown reasons as curl failed. The path item is re-queued! "
-//           . "Debugging symbols: '%debug',",
-//         array(
-//           '%url' => $rqst->uri,
-//           '%balancer' => $rqst->balancer,
-//           '%debug' => $rqst->error_debug,
-//         ),
-//         WATCHDOG_ERROR
-//       );
-//     }
-//   }
-//
-//   // If one the many HTTP requests failed we treat the full path as a failure,
-//   // by sending back FALSE the item will remain in the queue. Failsafe style.
-//   return $overall_success;
-// }
+function _acquia_purge_queue_processpurge($path) {
+  $base_path = base_path();
+
+  // Ask our built-in diagnostics system to preliminary find issues that are so
+  // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
+  // will cause purging to cease and log messages to be written. Because we
+  // return FALSE, the queued items will be purged later in better weather.
+  if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+    _acquia_purge_get_diagnosis_logged($err);
+    return FALSE;
+  }
+
+  // Rewrite '<front>' to a empty string, which will be the frontpage. By using
+  // substr() and str_replace() we still allow cases like '<front>?param=1'.
+  if (drupal_substr($path, 0, 7) === '<front>') {
+    $path = str_replace('<front>', '', $path);
+  }
+
+  // Because a single path can exist on http://, https://, on various domain
+  // names and could be cached on any of the known load balancers. Therefore we
+  // define a list of HTTP requests that we are going to fire in a moment.
+  $requests = array();
+  foreach (_acquia_purge_get_balancers() as $balancer_ip) {
+    foreach (_acquia_purge_get_domains() as $domain) {
+      foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
+        $rqst = new stdClass();
+        $rqst->scheme = $scheme;
+        $rqst->rtype = 'PURGE';
+        $rqst->balancer = $balancer_ip;
+        $rqst->domain = $domain;
+        $rqst->path = str_replace('//', '/', $base_path . $path);
+        $rqst->uri = $rqst->scheme . '://' . $rqst->domain . $rqst->path;
+        $rqst->uribal = $rqst->scheme . '://' . $rqst->balancer . $rqst->path;
+        $rqst->headers = array(
+          'Host: ' . $rqst->domain,
+          'Accept-Encoding: gzip',
+          'X-Acquia-Purge: ' . _acquia_purge_get_site_name(),
+        );
+        $requests[] = $rqst;
+      }
+    }
+  }
+
+  // Before we issue these purges against the load balancers we ensure that any
+  // of these URLs are not left cached in Drupal's ordinary page cache.
+  $already_cleared = array();
+  foreach ($requests as $rqst) {
+    if (!in_array($rqst->uri, $already_cleared)) {
+      cache_clear_all($rqst->uri, 'cache_page');
+      $already_cleared[] = $rqst->uri;
+    }
+  }
+
+  // Execute the prepared requests efficiently and log their results.
+  $overall_success = TRUE;
+  foreach (_acquia_purge_queue_processpurge_requests($requests) as $rqst) {
+    if ($rqst->result == TRUE) {
+      watchdog(
+        'acquia_purge',
+        "Purged '%url' from load balancer %balancer.",
+        array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
+        WATCHDOG_INFO);
+      _acquia_purge_queue_stats($rqst->uri);
+    }
+    else {
+      if ($overall_success) {
+        $overall_success = FALSE;
+      }
+
+      // Log the failing attempt and include verbose debugging information.
+      watchdog(
+        'acquia_purge',
+        "Failed attempt to purge '%url' from load balancer %balancer for "
+          . "unknown reasons as curl failed. The path item is re-queued! "
+          . "Debugging symbols: '%debug',",
+        array(
+          '%url' => $rqst->uri,
+          '%balancer' => $rqst->balancer,
+          '%debug' => $rqst->error_debug,
+        ),
+        WATCHDOG_ERROR
+      );
+    }
+  }
+
+  // If one the many HTTP requests failed we treat the full path as a failure,
+  // by sending back FALSE the item will remain in the queue. Failsafe style.
+  return $overall_success;
+}
 
 /**
  * Queue manager: process the given HTTP requests and do it efficiently.
@@ -861,105 +860,105 @@ function _acquia_purge_queue_add($path) {
  *   The given requests array with added properties that describe the result of
  *   the request: 'result', 'error_curl', 'error_http', 'error_debug'.
  */
-// function _acquia_purge_queue_processpurge_requests($requests) {
-//   $single_mode = (count($requests) === 1);
-//   $results = array();
-//
-//   // Initialize the cURL multi handler.
-//   if (!$single_mode) {
-//     static $curl_multi;
-//     if (is_null($curl_multi)) {
-//       $curl_multi = curl_multi_init();
-//     }
-//   }
-//
-//   // Enter our event loop and keep on requesting until $unprocessed is empty.
-//   $unprocessed = count($requests);
-//   while ($unprocessed > 0) {
-//
-//     // Group requests per sets that we can run in parallel.
-//     for ($i = 0; $i < ACQUIA_PURGE_PARALLEL_REQUESTS; $i++) {
-//       if ($rqst = array_shift($requests)) {
-//         $rqst->curl = curl_init();
-//
-//         // Instantiate the cURL resource and configure its runtime parameters.
-//         curl_setopt($rqst->curl, CURLOPT_URL, $rqst->uribal);
-//         curl_setopt($rqst->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
-//         curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
-//         curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->rtype);
-//         curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
-//
-//         // Add our handle to the multiple cURL handle.
-//         if (!$single_mode) {
-//           curl_multi_add_handle($curl_multi, $rqst->curl);
-//         }
-//
-//         // Add the shifted request to the results array and change the counter.
-//         $results[] = $rqst;
-//         $unprocessed--;
-//       }
-//     }
-//
-//     // Execute the created handles in parallel.
-//     if (!$single_mode) {
-//       $active = NULL;
-//       do {
-//         $mrc = curl_multi_exec($curl_multi, $active);
-//       } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-//       while ($active && $mrc == CURLM_OK) {
-//         if (curl_multi_select($curl_multi) != -1) {
-//           do {
-//             $mrc = curl_multi_exec($curl_multi, $active);
-//           } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-//         }
-//       }
-//     }
-//
-//     // In single mode there's only one request to do, use curl_exec().
-//     else {
-//       curl_exec($results[0]->curl);
-//       $single_info = array('result' => curl_errno($results[0]->curl));
-//     }
-//
-//     // Iterate the set of results and fetch cURL result and resultcodes. Only
-//     // process those with the 'curl' property as the property will be removed.
-//     foreach ($results as $i => $rqst) {
-//       if (!isset($rqst->curl)) {
-//         continue;
-//       }
-//       $info = $single_mode ? $single_info : curl_multi_info_read($curl_multi);
-//       $results[$i]->result = ($info['result'] == CURLE_OK) ? TRUE : FALSE;
-//       $results[$i]->error_curl = $info['result'];
-//       $results[$i]->error_http = curl_getinfo($rqst->curl, CURLINFO_HTTP_CODE);
-//
-//       // When the result failed but the HTTP code is 404 we turn the result
-//       // into a TRUE as Varnish simply couldn't find the entry as its not there.
-//       if ((!$results[$i]->result) && ($results[$i]->error_http == 404)) {
-//         $results[$i]->result = TRUE;
-//       }
-//
-//       // Collect debugging information if necessary.
-//       $results[$i]->error_debug = '';
-//       if (!$results[$i]->result) {
-//         $debug = curl_getinfo($rqst->curl);
-//         $debug['headers'] = implode('|', $rqst->headers);
-//         unset($debug['certinfo']);
-//         $results[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
-//       }
-//
-//       // Remove the handle if parallel processing occurred.
-//       if (!$single_mode) {
-//         curl_multi_remove_handle($curl_multi, $rqst->curl);
-//       }
-//
-//       // Close the resource and delete its property.
-//       curl_close($rqst->curl);
-//       unset($rqst->curl);
-//     }
-//   }
-//
-//   return $results;
-// }
+function _acquia_purge_queue_processpurge_requests($requests) {
+  $single_mode = (count($requests) === 1);
+  $results = array();
+
+  // Initialize the cURL multi handler.
+  if (!$single_mode) {
+    static $curl_multi;
+    if (is_null($curl_multi)) {
+      $curl_multi = curl_multi_init();
+    }
+  }
+
+  // Enter our event loop and keep on requesting until $unprocessed is empty.
+  $unprocessed = count($requests);
+  while ($unprocessed > 0) {
+
+    // Group requests per sets that we can run in parallel.
+    for ($i = 0; $i < ACQUIA_PURGE_PARALLEL_REQUESTS; $i++) {
+      if ($rqst = array_shift($requests)) {
+        $rqst->curl = curl_init();
+
+        // Instantiate the cURL resource and configure its runtime parameters.
+        curl_setopt($rqst->curl, CURLOPT_URL, $rqst->uribal);
+        curl_setopt($rqst->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
+        curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
+        curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->rtype);
+        curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
+
+        // Add our handle to the multiple cURL handle.
+        if (!$single_mode) {
+          curl_multi_add_handle($curl_multi, $rqst->curl);
+        }
+
+        // Add the shifted request to the results array and change the counter.
+        $results[] = $rqst;
+        $unprocessed--;
+      }
+    }
+
+    // Execute the created handles in parallel.
+    if (!$single_mode) {
+      $active = NULL;
+      do {
+        $mrc = curl_multi_exec($curl_multi, $active);
+      } while ($mrc == CURLM_CALL_MULTI_PERFORM);
+      while ($active && $mrc == CURLM_OK) {
+        if (curl_multi_select($curl_multi) != -1) {
+          do {
+            $mrc = curl_multi_exec($curl_multi, $active);
+          } while ($mrc == CURLM_CALL_MULTI_PERFORM);
+        }
+      }
+    }
+
+    // In single mode there's only one request to do, use curl_exec().
+    else {
+      curl_exec($results[0]->curl);
+      $single_info = array('result' => curl_errno($results[0]->curl));
+    }
+
+    // Iterate the set of results and fetch cURL result and resultcodes. Only
+    // process those with the 'curl' property as the property will be removed.
+    foreach ($results as $i => $rqst) {
+      if (!isset($rqst->curl)) {
+        continue;
+      }
+      $info = $single_mode ? $single_info : curl_multi_info_read($curl_multi);
+      $results[$i]->result = ($info['result'] == CURLE_OK) ? TRUE : FALSE;
+      $results[$i]->error_curl = $info['result'];
+      $results[$i]->error_http = curl_getinfo($rqst->curl, CURLINFO_HTTP_CODE);
+
+      // When the result failed but the HTTP code is 404 we turn the result
+      // into a TRUE as Varnish simply couldn't find the entry as its not there.
+      if ((!$results[$i]->result) && ($results[$i]->error_http == 404)) {
+        $results[$i]->result = TRUE;
+      }
+
+      // Collect debugging information if necessary.
+      $results[$i]->error_debug = '';
+      if (!$results[$i]->result) {
+        $debug = curl_getinfo($rqst->curl);
+        $debug['headers'] = implode('|', $rqst->headers);
+        unset($debug['certinfo']);
+        $results[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
+      }
+
+      // Remove the handle if parallel processing occurred.
+      if (!$single_mode) {
+        curl_multi_remove_handle($curl_multi, $rqst->curl);
+      }
+
+      // Close the resource and delete its property.
+      curl_close($rqst->curl);
+      unset($rqst->curl);
+    }
+  }
+
+  return $results;
+}
 
 /**
  * Queue manager: generate progress statistics on the purge queue.
