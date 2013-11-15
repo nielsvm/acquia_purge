@@ -121,35 +121,34 @@ function acquia_purge_expire_cache($paths) {
   // Ask our built-in diagnostics system to preliminary find issues that are so
   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
   // will cause purging to cease and we've got to tell the end user.
-//@TODO
-//   if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
-//
-//     // Stack all found error messages (can be one too) in a HTML item list.
-//     $items = array();
-//     foreach ($err as $error) {
-//       $items[] = '<p>' . $error['description'] . '</p>';
-//     }
-//     $items = theme('item_list', array('items' => $items));
-//
-//     // Warn the user on-screen that purging cannot continue.
-//     if (user_access('purge notification')) {
-//       drupal_set_message(
-//         t("<p>The system cannot publicly refresh the changes you just made,
-//           because of the following error conditions:</p>!items<p>Please
-//           contact your system administrator or development partner!</p>",
-//           array('!items' => $items)
-//         ),
-//         'warning'
-//       );
-//     }
-//
-//     // Or fail silently to the logs.
-//     else {
-//       _acquia_purge_get_diagnosis_logged($err);
-//     }
-//
-//     return;
-//   }
+  if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+
+    // Stack all found error messages (can be one too) in a HTML item list.
+    $items = array();
+    foreach ($err as $error) {
+      $items[] = '<p>' . $error['description'] . '</p>';
+    }
+    $items = theme('item_list', array('items' => $items));
+
+    // Warn the user on-screen that purging cannot continue.
+    if (user_access('purge notification')) {
+      drupal_set_message(
+        t("<p>The system cannot publicly refresh the changes you just made,
+          because of the following error conditions:</p>!items<p>Please
+          contact your system administrator or development partner!</p>",
+          array('!items' => $items)
+        ),
+        'warning'
+      );
+    }
+
+    // Or fail silently to the logs.
+    else {
+      _acquia_purge_get_diagnosis_logged($err);
+    }
+
+    return;
+  }
 
   // The expire module is unreliable API-wise as it often gives absolute URLs
   // in various scenarios. In the past we tested for 'expire_include_base_url'
@@ -267,43 +266,43 @@ function _acquia_purge_are_we_on_acquiacloud() {
  * @returns
  *   A one-line comma separated string with data types as var_dump() generates.
  */
-// function _acquia_purge_export_debug_symbols($symbols) {
-//
-//   // Capture a string using PHPs very own var_dump() using output buffering.
-//   ob_start();
-//   var_dump($symbols);
-//   $symbols = ob_get_clean();
-//
-//   // Clean up and reduce the output footprint for both normal and xdebug output.
-//   if (extension_loaded('xdebug')) {
-//     $symbols = trim(html_entity_decode(strip_tags($symbols)));
-//     $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
-//     $symbols = str_replace("  '", '', $symbols);
-//     $symbols = str_replace("' =>", ':', $symbols);
-//     $symbols = implode(', ', explode("\n", $symbols));
-//   }
-//   else {
-//     $symbols = strip_tags($symbols);
-//     $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
-//     $symbols = str_replace('  ["', '', $symbols);
-//     $symbols = str_replace("\"]=>\n ", ':', $symbols);
-//     $symbols = rtrim($symbols, "}\n");
-//     $symbols = implode(', ', explode("\n", $symbols));
-//   }
-//
-//   // To reduce bandwidth and storage needs we shorten data type indicators.
-//   $symbols = str_replace(' string', 'S', $symbols);
-//   $symbols = str_replace(' int', 'I', $symbols);
-//   $symbols = str_replace(' float', 'F', $symbols);
-//   $symbols = str_replace(' boolean', 'B', $symbols);
-//   $symbols = str_replace(' bool', 'B', $symbols);
-//   $symbols = str_replace(' null', 'NLL', $symbols);
-//   $symbols = str_replace(' NULL', 'NLL', $symbols);
-//   $symbols = str_replace('length=', 'l=', $symbols);
-//
-//   // Return the resulting string.
-//   return $symbols;
-// }
+function _acquia_purge_export_debug_symbols($symbols) {
+
+  // Capture a string using PHPs very own var_dump() using output buffering.
+  ob_start();
+  var_dump($symbols);
+  $symbols = ob_get_clean();
+
+  // Clean up and reduce the output footprint for both normal and xdebug output.
+  if (extension_loaded('xdebug')) {
+    $symbols = trim(html_entity_decode(strip_tags($symbols)));
+    $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
+    $symbols = str_replace("  '", '', $symbols);
+    $symbols = str_replace("' =>", ':', $symbols);
+    $symbols = implode(', ', explode("\n", $symbols));
+  }
+  else {
+    $symbols = strip_tags($symbols);
+    $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
+    $symbols = str_replace('  ["', '', $symbols);
+    $symbols = str_replace("\"]=>\n ", ':', $symbols);
+    $symbols = rtrim($symbols, "}\n");
+    $symbols = implode(', ', explode("\n", $symbols));
+  }
+
+  // To reduce bandwidth and storage needs we shorten data type indicators.
+  $symbols = str_replace(' string', 'S', $symbols);
+  $symbols = str_replace(' int', 'I', $symbols);
+  $symbols = str_replace(' float', 'F', $symbols);
+  $symbols = str_replace(' boolean', 'B', $symbols);
+  $symbols = str_replace(' bool', 'B', $symbols);
+  $symbols = str_replace(' null', 'NLL', $symbols);
+  $symbols = str_replace(' NULL', 'NLL', $symbols);
+  $symbols = str_replace('length=', 'l=', $symbols);
+
+  // Return the resulting string.
+  return $symbols;
+}
 
 /**
  * Get a list of load balancer IP addresses in front of this Acquia Cloud site.
@@ -338,63 +337,63 @@ function _acquia_purge_get_balancers() {
  * @returns
  *  Array that complies to the format as seen in hook_requirements().
  */
-// function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
-//   static $tests;
-//
-//   // Initialize $tests and gather test results, cache everything statically.
-//   if (is_null($tests)) {
-//     $module_path = drupal_get_path('module', 'acquia_purge');
-//     $prefix = '_acquia_purge_get_diagnosis_';
-//     $tests = array();
-//     $t = get_t();
-//
-//     // Require the file that contains our tests: acquia_purge.diagnostics.inc.
-//     require_once $module_path . '/acquia_purge.diagnostics.inc';
-//
-//     // Similar to hooks, functions starting with "_acquia_purge_get_diagnosis_"
-//     // will be regarded as individual tests and called to gather results.
-//     $functions = get_defined_functions();
-//     foreach ($functions['user'] as $function) {
-//       if ($function === '_acquia_purge_get_diagnosis_logged') {
-//         continue;
-//       }
-//       elseif (strpos($function, $prefix) !== 0) {
-//         continue;
-//       }
-//
-//       // Add the test and its resulting data to the tests array.
-//       $tst = str_replace($prefix, 'acquia_purge_', $function);
-//       $tests[$tst] = $function($t);
-//
-//       // Overwrite or assure data integrity on most of the fields.
-//       $tests[$tst]['name'] = isset($tests[$tst]['title']) ? $tests[$tst]['title'] : $tst;
-//       $tests[$tst]['description'] = isset($tests[$tst]['description']) ? $tests[$tst]['description'] : NULL;
-//       $tests[$tst]['description_plain'] = strip_tags($tests[$tst]['description']);
-//       $tests[$tst]['severity'] = isset($tests[$tst]['severity']) ? $tests[$tst]['severity'] : ACQUIA_PURGE_SEVLEVEL_INFO;
-//       $tests[$tst]['value_plain'] = isset($tests[$tst]['value_plain']) ? $tests[$tst]['value_plain'] : $tests[$tst]['value'];
-//       $tests[$tst]['value_plain'] = $t('@title: @value', array(
-//         '@title' => $tests[$tst]['title'],
-//         '@value' => $tests[$tst]['value_plain'],
-//         )
-//       );
-//       $tests[$tst]['value'] = $t('<b>@title</b><br />@value', array(
-//         '@title' => $tests[$tst]['title'],
-//         '@value' => $tests[$tst]['value'],
-//         )
-//       );
-//       $tests[$tst]['title'] = $t('Acquia Purge');
-//     }
-//   }
-//
-//   // Return test results that match or are higher than the verbosity level.
-//   $results = array();
-//   foreach ($tests as $name => $result) {
-//     if ($result['severity'] >= $verbosity) {
-//       $results[$name] = $result;
-//     }
-//   }
-//   return $results;
-// }
+function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
+  static $tests;
+
+  // Initialize $tests and gather test results, cache everything statically.
+  if (is_null($tests)) {
+    $module_path = drupal_get_path('module', 'acquia_purge');
+    $prefix = '_acquia_purge_get_diagnosis_';
+    $tests = array();
+    $t = get_t();
+
+    // Require the file that contains our tests: acquia_purge.diagnostics.inc.
+    require_once $module_path . '/acquia_purge.diagnostics.inc';
+
+    // Similar to hooks, functions starting with "_acquia_purge_get_diagnosis_"
+    // will be regarded as individual tests and called to gather results.
+    $functions = get_defined_functions();
+    foreach ($functions['user'] as $function) {
+      if ($function === '_acquia_purge_get_diagnosis_logged') {
+        continue;
+      }
+      elseif (strpos($function, $prefix) !== 0) {
+        continue;
+      }
+
+      // Add the test and its resulting data to the tests array.
+      $tst = str_replace($prefix, 'acquia_purge_', $function);
+      $tests[$tst] = $function($t);
+
+      // Overwrite or assure data integrity on most of the fields.
+      $tests[$tst]['name'] = isset($tests[$tst]['title']) ? $tests[$tst]['title'] : $tst;
+      $tests[$tst]['description'] = isset($tests[$tst]['description']) ? $tests[$tst]['description'] : NULL;
+      $tests[$tst]['description_plain'] = strip_tags($tests[$tst]['description']);
+      $tests[$tst]['severity'] = isset($tests[$tst]['severity']) ? $tests[$tst]['severity'] : ACQUIA_PURGE_SEVLEVEL_INFO;
+      $tests[$tst]['value_plain'] = isset($tests[$tst]['value_plain']) ? $tests[$tst]['value_plain'] : $tests[$tst]['value'];
+      $tests[$tst]['value_plain'] = $t('@title: @value', array(
+        '@title' => $tests[$tst]['title'],
+        '@value' => $tests[$tst]['value_plain'],
+        )
+      );
+      $tests[$tst]['value'] = $t('<b>@title</b><br />@value', array(
+        '@title' => $tests[$tst]['title'],
+        '@value' => $tests[$tst]['value'],
+        )
+      );
+      $tests[$tst]['title'] = $t('Acquia Purge');
+    }
+  }
+
+  // Return test results that match or are higher than the verbosity level.
+  $results = array();
+  foreach ($tests as $name => $result) {
+    if ($result['severity'] >= $verbosity) {
+      $results[$name] = $result;
+    }
+  }
+  return $results;
+}
 
 /**
  * Log diagnostic test results to watchdog.
@@ -406,33 +405,33 @@ function _acquia_purge_get_balancers() {
  * @returns
  *  Void,
  */
-// function _acquia_purge_get_diagnosis_logged($items) {
-//   $severitymap = array(
-//     ACQUIA_PURGE_SEVLEVEL_INFO    => WATCHDOG_INFO,
-//     ACQUIA_PURGE_SEVLEVEL_OK      => WATCHDOG_INFO,
-//     ACQUIA_PURGE_SEVLEVEL_WARNING => WATCHDOG_ERROR,
-//     ACQUIA_PURGE_SEVLEVEL_ERROR   => WATCHDOG_CRITICAL,
-//   );
-//
-//   // Wrap single a single test result into a workable array.
-//   if (isset($items['severity'])) {
-//     $items = array($items);
-//   }
-//
-//   // Iterate the items and report them to the watchdog log.
-//   foreach ($items as $item) {
-//     $description = $item['description_plain'];
-//     if (empty($description)) {
-//       $description = $item['value_plain'];
-//     }
-//     watchdog(
-//       'acquia_purge',
-//       $description,
-//       array(),
-//       $severitymap[$item['severity']]
-//     );
-//   }
-// }
+function _acquia_purge_get_diagnosis_logged($items) {
+  $severitymap = array(
+    ACQUIA_PURGE_SEVLEVEL_INFO    => WATCHDOG_INFO,
+    ACQUIA_PURGE_SEVLEVEL_OK      => WATCHDOG_INFO,
+    ACQUIA_PURGE_SEVLEVEL_WARNING => WATCHDOG_ERROR,
+    ACQUIA_PURGE_SEVLEVEL_ERROR   => WATCHDOG_CRITICAL,
+  );
+
+  // Wrap single a single test result into a workable array.
+  if (isset($items['severity'])) {
+    $items = array($items);
+  }
+
+  // Iterate the items and report them to the watchdog log.
+  foreach ($items as $item) {
+    $description = $item['description_plain'];
+    if (empty($description)) {
+      $description = $item['value_plain'];
+    }
+    watchdog(
+      'acquia_purge',
+      $description,
+      array(),
+      $severitymap[$item['severity']]
+    );
+  }
+}
 
 /**
  * Get a list of defined domains that we can purge for.
