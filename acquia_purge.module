@@ -702,17 +702,22 @@ function _acquia_purge_queue_add($path) {
   // Bump the queue counter.
   $qcount++;
 
-  // Register the current user and its PHP session ID as queue owner.
+  // Register the currently logged on user as one of the queue owners. These
+  // users are given the AJAX client side script until the queue is empty.
   static $owner_registered;
-  if (is_null($owner_registered)) {
+  if (is_null($owner_registered) && (php_sapi_name() != 'cli')) {
     global $user;
-    if (php_sapi_name() != 'cli') {
-      if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-        _acquia_purge_trigger_client_side_purging();
-        variable_set('acquia_purge_queue_owner', array($user->name, $user->sid));
-        $owner_registered = TRUE;
+
+    // Only register authenticated users, anonymous users will only queue.
+    if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+      $owners = variable_get('acquia_purge_queue_owners', array());
+      if (!in_array($user->name, $owners)) {
+        $owners[] = $user->name;
+        variable_set('acquia_purge_queue_owners', $owners);
       }
+      $owner_registered = TRUE;
     }
+
   }
 
   // Store the queue counter in our state variable.
@@ -733,7 +738,7 @@ function _acquia_purge_queue_clear() {
 
   // Reset counter and ownership.
   variable_set('acquia_purge_queue_counter', 0);
-  variable_set('acquia_purge_queue_owner', array());
+  variable_set('acquia_purge_queue_owners', array());
 }
 
 /**
@@ -824,7 +829,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
 
     // Once its back to 0, progress is 100% and no activity is assumed.
     variable_set('acquia_purge_queue_counter', 0);
-    variable_set('acquia_purge_queue_owner', array());
+    variable_set('acquia_purge_queue_owners', array());
   }
 
   return $items;
@@ -1105,26 +1110,22 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
 function _acquia_purge_queue_is_user_purging() {
   global $user;
 
-  // The very first check here is whether the user is authenticated.
+  // Anonymous users are never able to trigger purges by design, if this would
+  // ever become a necessity we'll introduce a permission to protect most sites.
   if (!isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
     return FALSE;
   }
 
-  // Retrieve the queue owner state.
-  $owner = variable_get('acquia_purge_queue_owner', array());
+  // Retrieve the list of user names owning a ongoing purge process.
+  $owners = variable_get('acquia_purge_queue_owners', array());
 
-  // Reject if no owner is registered at all.
-  if (count($owner) != 2) {
+  // If the owners list is empty, that means no active purges are ongoing.
+  if (!count($owners)) {
     return FALSE;
   }
 
-  // Compare the current user name with the owner.
-  if ($owner[0] != $user->name) {
-    return FALSE;
-  }
-
-  // Compare the current session ID with the owner.
-  if ($owner[1] != $user->sid) {
+  // Is the current user one of the owners of the actively ongoing purge?
+  if (!in_array($user->name, $owners)) {
     return FALSE;
   }
 
@@ -1133,7 +1134,7 @@ function _acquia_purge_queue_is_user_purging() {
     return FALSE;
   }
 
-  // All tests passed, the current user is responsible for the triggered purge.
+  // All tests passed, this user can process the queue.
   return TRUE;
 }
 

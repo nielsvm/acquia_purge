@@ -22,7 +22,7 @@ function acquia_purge_uninstall() {
 
   // Remove traces from our usage of the Queue API.
   variable_del('acquia_purge_queue_counter');
-  variable_del('acquia_purge_queue_owner');
+  variable_del('acquia_purge_queue_owners');
   $queue = DrupalQueue::get('acquia_purge', TRUE);
   $queue->deleteQueue();
 }
@@ -58,4 +58,14 @@ function acquia_purge_requirements($phase) {
  */
 function acquia_purge_update_7100(&$sandbox) {
   variable_del('acquia_purge_reportpurges');
+}
+
+/**
+ * Rename variable 'acquia_purge_queue_owner' to 'acquia_purge_queue_owners',
+ * because we're allowing multiple users to trigger purges concurrently as of
+ * version 7.x-1.0-beta2.
+ */
+function acquia_purge_update_7101(&$sandbox) {
+  variable_del('acquia_purge_queue_owner');
+  variable_set('acquia_purge_queue_owners', array());
 }
