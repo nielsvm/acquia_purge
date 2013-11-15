@@ -128,6 +128,16 @@ Frequently asked questions
   That will make your Acquia Cloud site's Varnish instances keep the pages in
   cache longer and frees up many PHP processing slots on your web servers.
 
+ Can anonymous traffic cause me unwanted purges to happen?
+--------------------------------------------------------------------------------
+  Acquia Purge will always *queue* pages that are requested purging by expire,
+  for instance articles when anonymous users commented on them. However, a
+  anonymous user will *never* trigger the AJAX-based client-side processor to
+  prevent misuse and exposing Acquia Purge as public DDOS-tool. That means that
+  comments and other anonymously queued paths will be purged as soon as a logged
+  in user triggers a purge or when "drush ap-process" is called. If this is a
+  limitation to you, please file a ticket and we will add a special permission.
+
  I'm including JS-code that does AJAX requests with changing variables, bad?
 --------------------------------------------------------------------------------
   Yes, don't even consider doing this. It happens every once in a while that we
