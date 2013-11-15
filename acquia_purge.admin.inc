@@ -221,31 +221,31 @@
  *
  * @ingroup themeable
  */
-// function theme_acquia_purge_status_widget($variables) {
-//   $progress_bar = theme('acquia_purge_status_bar_widget', $variables);
-//
-//   // Prepare the table which we use as container.
-//   $table_variables = array(
-//     'header' => array(),
-//     'rows' => array(array($progress_bar)));
-//
-//   // Render the history list and add it to the table.
-//   if (count($variables['purgehistory'])) {
-//     $table_variables['rows'][] = array(
-//       theme(
-//         'item_list',
-//         array(
-//           'items' => $variables['purgehistory'],
-//           'title' => t('Recently refreshed:'))),
-//     );
-//   }
-//
-//   // Render the table.
-//   $table = theme('table', $table_variables);
-//
-//   // Return the HTML.
-//   return '<div id="acquia-purge-status-widget">' . $table . '</div>';
-// }
+function theme_acquia_purge_status_widget($variables) {
+  $progress_bar = theme('acquia_purge_status_bar_widget', $variables);
+
+  // Prepare the table which we use as container.
+  $table_variables = array(
+    'header' => array(),
+    'rows' => array(array($progress_bar)));
+
+  // Render the history list and add it to the table.
+  if (count($variables['purgehistory'])) {
+    $table_variables['rows'][] = array(
+      theme(
+        'item_list',
+        array(
+          'items' => $variables['purgehistory'],
+          'title' => t('Recently refreshed:'))),
+    );
+  }
+
+  // Render the table.
+  $table = theme('table', $table_variables);
+
+  // Return the HTML.
+  return '<div id="acquia-purge-status-widget">' . $table . '</div>';
+}
 
 /**
  * Returns HTML for the Acquia Purge progress bar widget.
@@ -261,17 +261,16 @@
  *
  * @ingroup themeable
  */
-// function theme_acquia_purge_status_bar_widget($variables) {
-//
-//   // Determine status messages based on what the statistics tells us.
-//   if ($variables['running']) {
-//     $message = t("Site content is being refreshed, please wait a moment...
-//     %remaining items to go...", array('%remaining' => $variables['remaining']));
-//   }
-//   else {
-//     $message = t("Content changes are now visible for everybody!");
-//   }
-//
-//   return theme('progress_bar', array(
-//     'percent' => $variables['percent'], 'message' => $message));
-// }
+function theme_acquia_purge_status_bar_widget($variables) {
+
+  // Determine status messages based on what the statistics tells us.
+  if ($variables['running']) {
+    $message = t("Site content is being refreshed, please wait a moment...
+    %remaining items to go...", array('%remaining' => $variables['remaining']));
+  }
+  else {
+    $message = t("Content changes are now visible for everybody!");
+  }
+
+  return theme('progress_bar', $variables['percent'], $message);
+}

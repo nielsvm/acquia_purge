@@ -208,30 +208,30 @@ function acquia_purge_expire_cache($paths) {
 /**
  * Implements hook_theme().
  */
-// function acquia_purge_theme($existing, $type, $theme, $path) {
-//   return array(
-//     'acquia_purge_status_bar_widget' => array(
-//       'variables' => array(
-//         'total' => 0,
-//         'remaining' => 0,
-//         'processed' => 0,
-//         'percent' => 100,
-//         'running' => FALSE,
-//         'purgehistory' => array()),
-//       'file' => 'acquia_purge.admin.inc',
-//     ),
-//     'acquia_purge_status_widget' => array(
-//       'variables' => array(
-//         'total' => 0,
-//         'remaining' => 0,
-//         'processed' => 0,
-//         'percent' => 100,
-//         'running' => FALSE,
-//         'purgehistory' => array()),
-//       'file' => 'acquia_purge.admin.inc',
-//     ),
-//   );
-// }
+function acquia_purge_theme($existing, $type, $theme, $path) {
+  return array(
+    'acquia_purge_status_bar_widget' => array(
+      'variables' => array(
+        'total' => 0,
+        'remaining' => 0,
+        'processed' => 0,
+        'percent' => 100,
+        'running' => FALSE,
+        'purgehistory' => array()),
+      'file' => 'acquia_purge.admin.inc',
+    ),
+    'acquia_purge_status_widget' => array(
+      'variables' => array(
+        'total' => 0,
+        'remaining' => 0,
+        'processed' => 0,
+        'percent' => 100,
+        'running' => FALSE,
+        'purgehistory' => array()),
+      'file' => 'acquia_purge.admin.inc',
+    ),
+  );
+}
 
 /**
  * Determine whether we are running on Acquia Cloud or not.
