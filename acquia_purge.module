@@ -56,66 +56,60 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
 /**
  * Implements hook_init().
  */
-// function acquia_purge_init() {
-//   // Abort loading the AJAX logic when hitting any of the excluded paths.
-//   $excluded_auto_purging_paths = array(
-//     '',
-//     'admin/reports/status',
-//     'admin/reports/dblog',
-//     'acquia_purge_ajax_processor');
-//   if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
-//     return;
-//   }
-//
-//   // Detect if the current user instantiated a ongoing purge in the queues.
-//   if (_acquia_purge_queue_is_user_purging()) {
-//
-//     // Trigger the client side candy so it starts doing its work.
-//     _acquia_purge_trigger_client_side_purging();
-//
-//   }
-// }
+function acquia_purge_init() {
+  // Abort loading the AJAX logic when hitting any of the excluded paths.
+  $excluded_auto_purging_paths = array(
+    '',
+    'admin/reports/status',
+    'admin/reports/dblog',
+    'acquia_purge_ajax_processor');
+  if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
+    return;
+  }
+
+  // Detect if the current user instantiated a ongoing purge in the queues.
+  if (_acquia_purge_queue_is_user_purging()) {
+
+    // Trigger the client side candy so it starts doing its work.
+    _acquia_purge_trigger_client_side_purging();
+
+  }
+}
 
 /**
- * Implements hook_permission().
+ * Implements hook_perm().
  */
-// function acquia_purge_permission() {
-//   return array(
-//     'purge notification' => array(
-//       'title' => t('Purge notification'),
-//       'description' => t('Show a visual progressbar to the user that reports
-//       which URLs are being purged and when all pages have been refreshed.'),
-//     ),
-//   );
-// }
+function acquia_purge_perm() {
+  return array('purge notification');
+}
 
 /**
  * Implements hook_menu().
  */
-// function acquia_purge_menu() {
-//   $items = array();
-//
-//   // Declare the hidden AJAX processor path which we call client side.
-//   $items['acquia_purge_ajax_processor'] = array(
-//     'title' => 'Acquia Purge AJAX processor',
-//     'page callback' => 'acquia_purge_ajax_processor',
-//     'access callback' => '_acquia_purge_queue_is_user_purging',
-//     'file' => 'acquia_purge.admin.inc',
-//     'type' => MENU_CALLBACK,
-//   );
-//
-//   // Allow administrators to manually queue purge paths on the performance page.
-//   $items['admin/config/development/performance/manualpurge'] = array(
-//     'type'              => MENU_LOCAL_TASK,
-//     'title'             => 'Manually purge',
-//     'page callback'     => 'drupal_get_form',
-//     'page arguments'    => array('acquia_purge_manualpurge_form'),
-//     'access arguments'  => array('administer site configuration'),
-//     'file' => 'acquia_purge.admin.inc',
-//   );
-//
-//   return $items;
-// }
+function acquia_purge_menu() {
+  $items = array();
+
+  // Declare the hidden AJAX processor path which we call client side.
+  $items['acquia_purge_ajax_processor'] = array(
+    'title' => 'Acquia Purge AJAX processor',
+    'page callback' => 'acquia_purge_ajax_processor',
+    'access callback' => '_acquia_purge_queue_is_user_purging',
+    'file' => 'acquia_purge.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  // Allow administrators to manually queue purge paths on the performance page.
+  $items['admin/settings/performance/manualpurge'] = array(
+    'type'              => MENU_LOCAL_TASK,
+    'title'             => 'Manually purge',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('acquia_purge_manualpurge_form'),
+    'access arguments'  => array('administer site configuration'),
+    'file' => 'acquia_purge.admin.inc',
+  );
+
+  return $items;
+}
 
 /**
  * Implements hook_expire_cache().
@@ -244,23 +238,23 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * @returns
  *   A boolean expression indicating if we currently run on Acquia cloud.
  */
-// function _acquia_purge_are_we_on_acquiacloud() {
-//   static $connected;
-//
-//   // Build our assertions logic and cache it statically.
-//   if (is_null($connected)) {
-//     $assertions = array(
-//       is_array(variable_get('acquia_hosting_site_info', FALSE)),
-//       (bool) count(_acquia_purge_get_balancers()),
-//       (bool) _acquia_purge_get_site_name(),
-//       (bool) _acquia_purge_get_site_group(),
-//       function_exists('curl_init'),
-//     );
-//     $connected = !in_array(FALSE, $assertions);
-//   }
-//
-//   return $connected;
-// }
+function _acquia_purge_are_we_on_acquiacloud() {
+  static $connected;
+
+  // Build our assertions logic and cache it statically.
+  if (is_null($connected)) {
+    $assertions = array(
+      is_array(variable_get('acquia_hosting_site_info', FALSE)),
+      (bool) count(_acquia_purge_get_balancers()),
+      (bool) _acquia_purge_get_site_name(),
+      (bool) _acquia_purge_get_site_group(),
+      function_exists('curl_init'),
+    );
+    $connected = !in_array(FALSE, $assertions);
+  }
+
+  return $connected;
+}
 
 /**
  * Turn a PHP variable into a string with data type information for debugging.
@@ -318,19 +312,19 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * @returns
  *   Array with string values pointing to every Acquia Cloud load balancer.
  */
-// function _acquia_purge_get_balancers() {
-//   static $balancers;
-//
-//   // Cache the results statically, preventing multiple lookups during runtime.
-//   if (is_null($balancers)) {
-//     $balancers = array();
-//     foreach (variable_get('reverse_proxies', array()) as $ip_address) {
-//       $balancers[] = $ip_address;
-//     }
-//   }
-//
-//   return $balancers;
-// }
+function _acquia_purge_get_balancers() {
+  static $balancers;
+
+  // Cache the results statically, preventing multiple lookups during runtime.
+  if (is_null($balancers)) {
+    $balancers = array();
+    foreach (variable_get('reverse_proxies', array()) as $ip_address) {
+      $balancers[] = $ip_address;
+    }
+  }
+
+  return $balancers;
+}
 
 /**
  * Perform a series of self-tests against the site and our purging conditions.
@@ -647,16 +641,16 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * @returns
  *   Either a boolean FALSE or a string identifying what site we are on.
  */
-// function _acquia_purge_get_site_name() {
-//   static $ah_site_name;
-//   if (is_null($ah_site_name)) {
-//     $ah_site_name = FALSE;
-//     if (isset($_ENV['AH_SITE_NAME']) && !empty($_ENV['AH_SITE_NAME'])) {
-//       $ah_site_name = $_ENV['AH_SITE_NAME'];
-//     }
-//   }
-//   return $ah_site_name;
-// }
+function _acquia_purge_get_site_name() {
+  static $ah_site_name;
+  if (is_null($ah_site_name)) {
+    $ah_site_name = FALSE;
+    if (isset($_ENV['AH_SITE_NAME']) && !empty($_ENV['AH_SITE_NAME'])) {
+      $ah_site_name = $_ENV['AH_SITE_NAME'];
+    }
+  }
+  return $ah_site_name;
+}
 
 /**
  * Determine the Acquia site group.
@@ -664,16 +658,16 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * @returns
  *   Either a boolean FALSE or a string identifying what site group this is.
  */
-// function _acquia_purge_get_site_group() {
-//   static $ah_site_group;
-//   if (is_null($ah_site_group)) {
-//     $ah_site_group = FALSE;
-//     if (isset($_ENV['AH_SITE_GROUP']) && !empty($_ENV['AH_SITE_GROUP'])) {
-//       $ah_site_group = $_ENV['AH_SITE_GROUP'];
-//     }
-//   }
-//   return $ah_site_group;
-// }
+function _acquia_purge_get_site_group() {
+  static $ah_site_group;
+  if (is_null($ah_site_group)) {
+    $ah_site_group = FALSE;
+    if (isset($_ENV['AH_SITE_GROUP']) && !empty($_ENV['AH_SITE_GROUP'])) {
+      $ah_site_group = $_ENV['AH_SITE_GROUP'];
+    }
+  }
+  return $ah_site_group;
+}
 
 /**
  * Queue manager: return the queue object in use for Acquia Purge.
@@ -1116,36 +1110,36 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  *   Boolean TRUE when the current user with the exact same session initiated
  *   a purge session earlier and thus owns the purge session.
  */
-// function _acquia_purge_queue_is_user_purging() {
-//   global $user;
-//
-//   // Anonymous users are never able to trigger purges by design, if this would
-//   // ever become a necessity we'll introduce a permission to protect most sites.
-//   if (!isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-//     return FALSE;
-//   }
-//
-//   // Retrieve the list of user names owning a ongoing purge process.
-//   $owners = variable_get('acquia_purge_queue_owners', array());
-//
-//   // If the owners list is empty, that means no active purges are ongoing.
-//   if (!count($owners)) {
-//     return FALSE;
-//   }
-//
-//   // Is the current user one of the owners of the actively ongoing purge?
-//   if (!in_array($user->name, $owners)) {
-//     return FALSE;
-//   }
-//
-//   // Are we running on a Acquia Cloud environment?
-//   if (!_acquia_purge_are_we_on_acquiacloud()) {
-//     return FALSE;
-//   }
-//
-//   // All tests passed, this user can process the queue.
-//   return TRUE;
-// }
+function _acquia_purge_queue_is_user_purging() {
+  global $user;
+
+  // Anonymous users are never able to trigger purges by design, if this would
+  // ever become a necessity we'll introduce a permission to protect most sites.
+  if (!isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+    return FALSE;
+  }
+
+  // Retrieve the list of user names owning a ongoing purge process.
+  $owners = variable_get('acquia_purge_queue_owners', array());
+
+  // If the owners list is empty, that means no active purges are ongoing.
+  if (!count($owners)) {
+    return FALSE;
+  }
+
+  // Is the current user one of the owners of the actively ongoing purge?
+  if (!in_array($user->name, $owners)) {
+    return FALSE;
+  }
+
+  // Are we running on a Acquia Cloud environment?
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return FALSE;
+  }
+
+  // All tests passed, this user can process the queue.
+  return TRUE;
+}
 
 /**
  * Trigger client-side AJAX based purging during this request.
@@ -1153,41 +1147,40 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * @returns
  *   Void, this function doesn't return anything.
  */
-// function _acquia_purge_trigger_client_side_purging() {
-//
-//   // Prevent API misuse and don't trigger when this user doesn't own the queue.
-//   if (!_acquia_purge_queue_is_user_purging()) {
-//     return;
-//   }
-//
-//   // Load the JQuery logic that will start hitting 'acquia_purge_ajax_processor'
-//   // which on its turn will process the queue. Because the back-end uses locks
-//   // we don't have to worry about how many times we're hitting it. When the user
-//   // doesn't have on-screen reporting enabled the HTML DIV won't be present
-//   // causing the script to simply purge silently without notifying the user.
-//   $module_path = drupal_get_path('module', 'acquia_purge');
-//   drupal_add_js($module_path . '/acquia_purge.js');
-//
-//   // If the user has the permission 'purge notification' it means on-screen
-//   // reporting is enabled and we'll set a standard drupal_set_message() that
-//   // announces the AJAX powered purging. Because we're abusing the API with a
-//   // non-standard message type our JQuery logic is smartly able to replace the
-//   // nodes with the interactive progressbar.
-//   if (user_access('purge notification')) {
-//     $message = t("There have been changes to content, and these needs to be
-//       refreshed throughout the system. There may be a delay before the changes
-//       appear to all website visitors.");
-//
-//     // Set the message and don't repeat it if it is already set.
-//     drupal_set_message($message, 'acquia_purge_messages', FALSE);
-//
-//     // Add inline CSS to initially hide the message (see d.o. 2014461). A
-//     // separate file that could be cached would be non-sense for this one line
-//     // declaration as this statement only occurs for authenticated users.
-//     drupal_add_css('.acquia_purge_messages {display:none;}',
-//       array('type' => 'inline'));
-//   }
-// }
+function _acquia_purge_trigger_client_side_purging() {
+
+  // Prevent API misuse and don't trigger when this user doesn't own the queue.
+  if (!_acquia_purge_queue_is_user_purging()) {
+    return;
+  }
+
+  // Load the JQuery logic that will start hitting 'acquia_purge_ajax_processor'
+  // which on its turn will process the queue. Because the back-end uses locks
+  // we don't have to worry about how many times we're hitting it. When the user
+  // doesn't have on-screen reporting enabled the HTML DIV won't be present
+  // causing the script to simply purge silently without notifying the user.
+  $module_path = drupal_get_path('module', 'acquia_purge');
+  drupal_add_js($module_path . '/acquia_purge.js');
+
+  // If the user has the permission 'purge notification' it means on-screen
+  // reporting is enabled and we'll set a standard drupal_set_message() that
+  // announces the AJAX powered purging. Because we're abusing the API with a
+  // non-standard message type our JQuery logic is smartly able to replace the
+  // nodes with the interactive progressbar.
+  if (user_access('purge notification')) {
+    $message = t("There have been changes to content, and these needs to be
+      refreshed throughout the system. There may be a delay before the changes
+      appear to all website visitors.");
+
+    // Set the message and don't repeat it if it is already set.
+    drupal_set_message($message, 'acquia_purge_messages', FALSE);
+
+    // Add inline CSS to initially hide the message (see d.o. 2014461). A
+    // separate file that could be cached would be non-sense for this one line
+    // declaration as this statement only occurs for authenticated users.
+    drupal_add_css($module_path . '/acquia_purge.css');
+  }
+}
 
 /**
  * Purge the paths from a node from Varnish.
