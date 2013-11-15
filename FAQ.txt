@@ -77,6 +77,14 @@ Frequently asked questions
   about as purges are still processed anyhow, however it might confuse your
   users. I'm aware of that and there are ideas on how to "fix this" but no ETA.
 
+ Why does admin/uid 1 always see the progressbar since 7.x-1.0-beta2?
+--------------------------------------------------------------------------------
+  That is because we removed the 'Report cache purges'-setting that became
+  highly redundant since the 'Purge notification' permission was added. The fact
+  the progressbar now always shows for administrators is because we're now
+  solely depending on Drupal's permission system which allows everything for
+  administrators. Basically put, don't use admin to edit content.
+
  When I tested before it was slow and the queue exploded, should I reconsider?
 --------------------------------------------------------------------------------
   Yes, absolutely! Before Acquia Purge was a official project there has long

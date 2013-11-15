@@ -83,8 +83,8 @@ function acquia_purge_permission() {
   return array(
     'purge notification' => array(
       'title' => t('Purge notification'),
-      'description' => t('Get a confirmation message on screen for all items
-      that have been purged.'),
+      'description' => t('Show a visual progressbar to the user that reports
+      which URLs are being purged and when all pages have been refreshed.'),
     ),
   );
 }
@@ -126,8 +126,7 @@ function acquia_purge_expire_cache($paths) {
     $items = theme('item_list', array('items' => $items));
 
     // Warn the user on-screen that purging cannot continue.
-    if (variable_get('acquia_purge_reportpurges', TRUE)
-      && user_access('purge notification')) {
+    if (user_access('purge notification')) {
       drupal_set_message(
         t("<p>The system cannot publicly refresh the changes you just made,
           because of the following error conditions:</p>!items<p>Please
@@ -200,25 +199,6 @@ function acquia_purge_expire_cache($paths) {
   else {
     acquia_purge_purge_paths($paths);
   }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function acquia_purge_form_system_performance_settings_alter(&$form, &$form_state, $form_id) {
-
-  // Add a checkbox to the system_performance_settings performance form to allow
-  // users to enable/disable purge reporting.
-  $checkbox = array();
-  $checkbox['#title'] = t('Report cache purges');
-  $checkbox['#description'] = t('Whenever something in Drupal gets updated that
-    could be remotely cached in Varnish the Acquia Purge module can report this
-    to the screen to notify you. Note that you will need to enable the <i>purge
-    notification</i> permission first.');
-  $checkbox['#default_value'] = variable_get('acquia_purge_reportpurges', TRUE);
-  $checkbox['#type'] = 'checkbox';
-  $checkbox['#weight'] = -4;
-  $form['caching']['acquia_purge_reportpurges'] = $checkbox;
 }
 
 /**
@@ -1165,25 +1145,25 @@ function _acquia_purge_queue_is_user_purging() {
  */
 function _acquia_purge_trigger_client_side_purging() {
 
-  // To be sure we still want to check if a purge has been setup correctly.
+  // Prevent API misuse and don't trigger when this user doesn't own the queue.
   if (!_acquia_purge_queue_is_user_purging()) {
     return;
   }
 
-  // Load the JQuery logic that will start triggering the purges using calls
-  // to our AJAX path in the background. Due the usage of lock acquiring on
-  // the back-end path we don't need to worry about request overlap at all as
-  // the script will also automatically stop once the server is done.
+  // Load the JQuery logic that will start hitting 'acquia_purge_ajax_processor'
+  // which on its turn will process the queue. Because the back-end uses locks
+  // we don't have to worry about how many times we're hitting it. When the user
+  // doesn't have on-screen reporting enabled the HTML DIV won't be present
+  // causing the script to simply purge silently without notifying the user.
   $module_path = drupal_get_path('module', 'acquia_purge');
   drupal_add_js($module_path . '/acquia_purge.js');
 
-  // If the user has permission to it and has screen reporting enabled we set
-  // a message that announces the AJAX powered purging. Our JQuery logic that
-  // we insert is smart enough to only load the GUI elements by detecting this
-  // message. Please note that drupal_set_message() doesn't officially have a
-  // category for 'acquia_purge_messages' , which is part of the trick.
-  if (variable_get('acquia_purge_reportpurges', TRUE)
-    && user_access('purge notification')) {
+  // If the user has the permission 'purge notification' it means on-screen
+  // reporting is enabled and we'll set a standard drupal_set_message() that
+  // announces the AJAX powered purging. Because we're abusing the API with a
+  // non-standard message type our JQuery logic is smartly able to replace the
+  // nodes with the interactive progressbar.
+  if (user_access('purge notification')) {
     $message = t("There have been changes to content, and these needs to be
       refreshed throughout the system. There may be a delay before the changes
       appear to all website visitors.");

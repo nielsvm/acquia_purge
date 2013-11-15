@@ -25,9 +25,6 @@ function acquia_purge_uninstall() {
   variable_del('acquia_purge_queue_owner');
   $queue = DrupalQueue::get('acquia_purge', TRUE);
   $queue->deleteQueue();
-
-  // Remove the reporting variable.
-  variable_del('acquia_purge_reportpurges');
 }
 
 /**
@@ -52,4 +49,13 @@ function acquia_purge_requirements($phase) {
     return $requirements;
   }
   return array();
+}
+
+/**
+ * Remove the 'acquia_purge_reportpurges' variable, which disappeared as of
+ * version 7.x-1.0-beta2. Its functionality has been replaced by the 'purge
+ * notification' permission. Which is more granular and increases simplicity.
+ */
+function acquia_purge_update_7100(&$sandbox) {
+  variable_del('acquia_purge_reportpurges');
 }
