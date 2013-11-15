@@ -106,6 +106,7 @@ function acquia_purge_menu() {
     'page arguments'    => array('acquia_purge_manualpurge_form'),
     'access arguments'  => array('administer site configuration'),
     'file' => 'acquia_purge.admin.inc',
+    'weight' => 40,
   );
 
   return $items;
@@ -114,12 +115,13 @@ function acquia_purge_menu() {
 /**
  * Implements hook_expire_cache().
  */
-// function acquia_purge_expire_cache($paths) {
-//   static $patterns;
-//
-//   // Ask our built-in diagnostics system to preliminary find issues that are so
-//   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
-//   // will cause purging to cease and we've got to tell the end user.
+function acquia_purge_expire_cache($paths) {
+  static $patterns;
+
+  // Ask our built-in diagnostics system to preliminary find issues that are so
+  // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
+  // will cause purging to cease and we've got to tell the end user.
+//@TODO
 //   if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
 //
 //     // Stack all found error messages (can be one too) in a HTML item list.
@@ -148,61 +150,61 @@ function acquia_purge_menu() {
 //
 //     return;
 //   }
-//
-//   // The expire module is unreliable API-wise as it often gives absolute URLs
-//   // in various scenarios. In the past we tested for 'expire_include_base_url'
-//   // but that doesn't always seem to help. We therefore generate a list of
-//   // possible http://domainname patterns to strip out. D.o: #2049235, #2133001.
-//   $schemes = array('http://', 'https://');
-//   if (is_null($patterns)) {
-//     foreach (_acquia_purge_get_domains() as $domain) {
-//       foreach ($schemes as $scheme) {
-//         $patterns[] = "$scheme$domain" . base_path();
-//         $patterns[] = "$scheme$domain";
-//       }
-//     }
-//   }
-//
-//   // Iterate the given paths and strip everything out we can think off.
-//   $new_paths = array();
-//   foreach ($paths as $path) {
-//     foreach ($patterns as $pattern) {
-//       $path = str_replace($pattern, '', $path);
-//     }
-//     $path = ltrim($path, '/');
-//     if (!in_array($path, $new_paths)) {
-//       $new_paths[] = $path;
-//     }
-//   }
-//   $paths = $new_paths;
-//
-//   // This should help for many cases, but not always. Detect if any of the paths
-//   // still contain http:// or https://.
-//   $paths_clean = TRUE;
-//   foreach ($paths as $path) {
-//     if (!$paths_clean) {
-//       break;
-//     }
-//     foreach ($schemes as $scheme) {
-//       if (strpos($path, $scheme) !== FALSE) {
-//         $paths_clean = FALSE;
-//         break;
-//       }
-//     }
-//   }
-//
-//   // If the "cleaned" paths are still dirty we warn the user and abort purging.
-//   if (!$paths_clean) {
-//     drupal_set_message(t("Please disable the 'Include base URL in expires'
-//       setting as it is incompatible with the Acquia Purge module. "), 'error');
-//   }
-//
-//   // If everything is validated, schedule the items for purging which will be
-//   // triggered automatically on the next page load for the current user.
-//   else {
-//     acquia_purge_purge_paths($paths);
-//   }
-// }
+
+  // The expire module is unreliable API-wise as it often gives absolute URLs
+  // in various scenarios. In the past we tested for 'expire_include_base_url'
+  // but that doesn't always seem to help. We therefore generate a list of
+  // possible http://domainname patterns to strip out. D.o: #2049235, #2133001.
+  $schemes = array('http://', 'https://');
+  if (is_null($patterns)) {
+    foreach (_acquia_purge_get_domains() as $domain) {
+      foreach ($schemes as $scheme) {
+        $patterns[] = "$scheme$domain" . base_path();
+        $patterns[] = "$scheme$domain";
+      }
+    }
+  }
+
+  // Iterate the given paths and strip everything out we can think off.
+  $new_paths = array();
+  foreach ($paths as $path) {
+    foreach ($patterns as $pattern) {
+      $path = str_replace($pattern, '', $path);
+    }
+    $path = ltrim($path, '/');
+    if (!in_array($path, $new_paths)) {
+      $new_paths[] = $path;
+    }
+  }
+  $paths = $new_paths;
+
+  // This should help for many cases, but not always. Detect if any of the paths
+  // still contain http:// or https://.
+  $paths_clean = TRUE;
+  foreach ($paths as $path) {
+    if (!$paths_clean) {
+      break;
+    }
+    foreach ($schemes as $scheme) {
+      if (strpos($path, $scheme) !== FALSE) {
+        $paths_clean = FALSE;
+        break;
+      }
+    }
+  }
+
+  // If the "cleaned" paths are still dirty we warn the user and abort purging.
+  if (!$paths_clean) {
+    drupal_set_message(t("Please disable the 'Include base URL in expires'
+      setting as it is incompatible with the Acquia Purge module. "), 'error');
+  }
+
+  // If everything is validated, schedule the items for purging which will be
+  // triggered automatically on the next page load for the current user.
+  else {
+    acquia_purge_purge_paths($paths);
+  }
+}
 
 /**
  * Implements hook_theme().
@@ -438,55 +440,52 @@ function _acquia_purge_get_balancers() {
  * @returns
  *   Array with string values mapping to all defined DNS domains for this site.
  */
-// function _acquia_purge_get_domains() {
-//   static $domains;
-//
-//   // Statically cache the domains as fetching them once per request is enough.
-//   if (is_null($domains)) {
-//     $domains = array();
-//
-//     // If the configuration key 'acquia_purge_domains' is set we skip automatic
-//     // detection fully and add that list of domains to be purged.
-//     if ($acquia_purge_domains = variable_get('acquia_purge_domains', FALSE)) {
-//       if (is_array($acquia_purge_domains) && count($acquia_purge_domains)) {
-//         foreach ($acquia_purge_domains as $domain) {
-//           _acquia_purge_get_domains_add($domain, $domains);
-//         }
-//
-//         // Set and return the set of hardcoded domains.
-//         return $domains;
-//       }
-//     }
-//
-//     // Add the current HTTP_HOST that we're connected to.
-//     _acquia_purge_get_domains_add($_SERVER['HTTP_HOST'], $domains);
-//
-//     // Strip an empty absolute URL (which respects $base_url) and make sure
-//     // that domain is also in the list of domains to be purged.
-//     $base_domain = url('', array('absolute' => TRUE));
-//     $base_domain = str_replace('https://', '', $base_domain);
-//     $base_domain = str_replace('http://', '', $base_domain);
-//     $base_domain = str_replace(base_path(), '', $base_domain);
-//     _acquia_purge_get_domains_add($base_domain, $domains);
-//
-//     // Gather potentially defined domains in sites/sites.php, for this site.
-//     _acquia_purge_get_domains_add_sitesphp($domains);
-//
-//     // To better support multi-sites we only load in the configured Acquia Cloud
-//     // domain names when we are on the 'default' site as that would else flood
-//     // another site which we don't want to happen, on <front> for example.
-//     if (conf_path() == 'sites/default') {
-//
-//       // Add the domain names the customer defined on Acquia Cloud. When this
-//       // process would fail we have at least the current + $base_url domain.
-//       if (_acquia_purge_are_we_on_acquiacloud()) {
-//         _acquia_purge_get_domains_add_acloud($domains);
-//       }
-//     }
-//   }
-//
-//   return $domains;
-// }
+function _acquia_purge_get_domains() {
+  static $domains;
+
+  // Statically cache the domains as fetching them once per request is enough.
+  if (is_null($domains)) {
+    $domains = array();
+
+    // If the configuration key 'acquia_purge_domains' is set we skip automatic
+    // detection fully and add that list of domains to be purged.
+    if ($acquia_purge_domains = variable_get('acquia_purge_domains', FALSE)) {
+      if (is_array($acquia_purge_domains) && count($acquia_purge_domains)) {
+        foreach ($acquia_purge_domains as $domain) {
+          _acquia_purge_get_domains_add($domain, $domains);
+        }
+
+        // Set and return the set of hardcoded domains.
+        return $domains;
+      }
+    }
+
+    // Add the current HTTP_HOST that we're connected to.
+    _acquia_purge_get_domains_add($_SERVER['HTTP_HOST'], $domains);
+
+    // Strip an empty absolute URL (which respects $base_url) and make sure
+    // that domain is also in the list of domains to be purged.
+    $base_domain = url('', array('absolute' => TRUE));
+    $base_domain = str_replace('https://', '', $base_domain);
+    $base_domain = str_replace('http://', '', $base_domain);
+    $base_domain = str_replace(base_path(), '', $base_domain);
+    _acquia_purge_get_domains_add($base_domain, $domains);
+
+    // To better support multi-sites we only load in the configured Acquia Cloud
+    // domain names when we are on the 'default' site as that would else flood
+    // another site which we don't want to happen, on <front> for example.
+    if (conf_path() == 'sites/default') {
+
+      // Add the domain names the customer defined on Acquia Cloud. When this
+      // process would fail we have at least the current + $base_url domain.
+      if (_acquia_purge_are_we_on_acquiacloud()) {
+        _acquia_purge_get_domains_add_acloud($domains);
+      }
+    }
+  }
+
+  return $domains;
+}
 
 /**
  * Add a domain to the domain list after cleaning and checking for duplicates.
@@ -499,12 +498,12 @@ function _acquia_purge_get_balancers() {
  * @returns
  *  Void, data will be added by reference.
  */
-// function _acquia_purge_get_domains_add($domain, &$domains) {
-//   $domain = trim(drupal_strtolower($domain));
-//   if (!empty($domain) && !in_array($domain, $domains)) {
-//     $domains[] = $domain;
-//   }
-// }
+function _acquia_purge_get_domains_add($domain, &$domains) {
+  $domain = trim(drupal_strtolower($domain));
+  if (!empty($domain) && !in_array($domain, $domains)) {
+    $domains[] = $domain;
+  }
+}
 
 /**
  * Expand the list of domains being gathered by those defined in Acquia Cloud.
@@ -517,110 +516,43 @@ function _acquia_purge_get_balancers() {
  * @warning
  *   The current implementation of this function is subject to change. @TODO
  */
-// function _acquia_purge_get_domains_add_acloud(&$domains) {
-//   $detected_domains = array();
-//
-//   // This implementation is very dirty, admitted. Only possible way as of this
-//   // writing as there is no API level exposure of it. These files are generated
-//   // automatically so risks of changes are small.
-//   if (file_exists('/etc/apache2/conf.d')) {
-//     $site_name = _acquia_purge_get_site_name();
-//     $server_name = shell_exec("grep -r 'ServerName' /etc/apache2/conf.d/$site_name*.conf");
-//     foreach (explode('ServerName', $server_name) as $testable) {
-//       foreach (explode(' ', trim($testable)) as $domain) {
-//         $detected_domains[] = $domain;
-//       }
-//     }
-//     $server_alias = shell_exec("grep -r 'ServerAlias' /etc/apache2/conf.d/$site_name*.conf");
-//     foreach (explode('ServerAlias', $server_alias) as $testable) {
-//       foreach (explode(' ', trim($testable)) as $domain) {
-//         $detected_domains[] = $domain;
-//       }
-//     }
-//   }
-//
-//   // Remove the acquia-sites.com domain if we have found more then 1 domain. The
-//   // less domains found, the faster the end user experience will be.
-//   if (count($detected_domains) > 1) {
-//     foreach ($detected_domains as $i => $detected_domain) {
-//       if (strpos($detected_domain, 'acquia-sites.com') !== FALSE) {
-//         unset($detected_domains[$i]);
-//       }
-//     }
-//   }
-//
-//   // Register all detected domain names.
-//   foreach ($detected_domains as $i => $detected_domain) {
-//     _acquia_purge_get_domains_add($detected_domain, $domains);
-//   }
-// }
+function _acquia_purge_get_domains_add_acloud(&$domains) {
+  $detected_domains = array();
 
-/**
- * Expand the list of domains being gathered by interpreting sites/sites.php.
- *
- * @param array $domains
- *   A reference to the array of currently gathered domain names.
- *
- * @returns
- *   Void, data will be added by reference.
- * @warning
- *   The way the sites/sites.php array was designed was to make it a
- *   lookup map with the current active URI as lookup resource, it makes
- *   that relatively easy to do. However, we want to get all domains that
- *   point to the currently chosen site. As the array keys are in the
- *   format of '<port>.<domain>.<path>' this is relatively hackish.
- */
-// function _acquia_purge_get_domains_add_sitesphp(&$domains) {
-//   $sitedir = str_replace('sites/', '', conf_path());
-//   $tlds = array();
-//
-//   // Only interpret the $sites array if the file sites/sites.php exists.
-//   if (!file_exists('sites/sites.php')) {
-//     return;
-//   }
-//
-//   // Define the full list of TLD's we have to check against to determine if a
-//   // embedded domain name in '<port>.<domain>.<path>' seems valid for us.
-//   include drupal_get_path('module', 'acquia_purge') . '/acquia_purge.tlds.inc';
-//
-//   // Include the file which will (re)propagate the $sites array for us.
-//   $sites = array();
-//   include 'sites/sites.php';
-//
-//   // Protect ourselves against badly written code inside sites.php.
-//   if ((!isset($sites)) || empty($sites)) {
-//     return;
-//   }
-//
-//   // Iterate and validate each record in the resulting $sites array.
-//   foreach ($sites as $site => $directory) {
-//
-//     // Skip those that point to a different site directory then we are on.
-//     if ($directory != $sitedir) {
-//       continue;
-//     }
-//
-//     // Split $site that can be defined in the form of '<port>.<domain>.<path>'.
-//     $site = explode('.', $site);
-//
-//     // Strip TCP port's in '<port>....'.
-//     if (is_numeric($site[0])) {
-//       unset($site[0]);
-//     }
-//
-//     // We skip all $site records which don't end on a common known TLD, examples
-//     // would be '8080.localhost', 'www.drupal.org.my.dir' and every other site
-//     // that's defined with a path appended to it. It's an unfortunate limitation
-//     // but a very hard thing to support, so checking on TLD's is the only
-//     // sensible thing we can do to support as much scenario's as possible.
-//     if (!in_array(end($site), $tlds)) {
-//       continue;
-//     }
-//
-//     // What's left should be a 99.99% correct domain name we want to see purged.
-//     _acquia_purge_get_domains_add(implode('.', $site), $domains);
-//   }
-// }
+  // This implementation is very dirty, admitted. Only possible way as of this
+  // writing as there is no API level exposure of it. These files are generated
+  // automatically so risks of changes are small.
+  if (file_exists('/etc/apache2/conf.d')) {
+    $site_name = _acquia_purge_get_site_name();
+    $server_name = shell_exec("grep -r 'ServerName' /etc/apache2/conf.d/$site_name*.conf");
+    foreach (explode('ServerName', $server_name) as $testable) {
+      foreach (explode(' ', trim($testable)) as $domain) {
+        $detected_domains[] = $domain;
+      }
+    }
+    $server_alias = shell_exec("grep -r 'ServerAlias' /etc/apache2/conf.d/$site_name*.conf");
+    foreach (explode('ServerAlias', $server_alias) as $testable) {
+      foreach (explode(' ', trim($testable)) as $domain) {
+        $detected_domains[] = $domain;
+      }
+    }
+  }
+
+  // Remove the acquia-sites.com domain if we have found more then 1 domain. The
+  // less domains found, the faster the end user experience will be.
+  if (count($detected_domains) > 1) {
+    foreach ($detected_domains as $i => $detected_domain) {
+      if (strpos($detected_domain, 'acquia-sites.com') !== FALSE) {
+        unset($detected_domains[$i]);
+      }
+    }
+  }
+
+  // Register all detected domain names.
+  foreach ($detected_domains as $i => $detected_domain) {
+    _acquia_purge_get_domains_add($detected_domain, $domains);
+  }
+}
 
 /**
  * Get a list of protocol schemes that will be purged.
@@ -631,9 +563,9 @@ function _acquia_purge_get_balancers() {
  * @returns
  *   Array with scheme strings like 'http' and 'https'.
  */
-// function _acquia_purge_get_protocol_schemes() {
-//   return array('http');
-// }
+function _acquia_purge_get_protocol_schemes() {
+  return array('http');
+}
 
 /**
  * Determine the Acquia site name.
@@ -670,23 +602,6 @@ function _acquia_purge_get_site_group() {
 }
 
 /**
- * Queue manager: return the queue object in use for Acquia Purge.
- *
- * @returns
- *   Queue object as generated by DrupalQueue::get().
- */
-// function _acquia_purge_queue() {
-//   static $queue;
-//
-//   // We cache the queue object statically so create it once per HTTP request.
-//   if (is_null($queue)) {
-//     $queue = DrupalQueue::get('acquia_purge', TRUE);
-//   }
-//
-//   return $queue;
-// }
-
-/**
  * Queue manager: add a single purge to the queue.
  *
  * @param string $path
@@ -695,39 +610,38 @@ function _acquia_purge_get_site_group() {
  * @returns
  *   The total amount of items in the queue (int).
  */
-// function _acquia_purge_queue_add($path) {
-//   $qcount = variable_get('acquia_purge_queue_counter', 0);
-//   $queue = _acquia_purge_queue();
-//
-//   // Add the non-associative purge item definition.
-//   $queue->createItem(array($path));
-//
-//   // Bump the queue counter.
-//   $qcount++;
-//
-//   // Register the currently logged on user as one of the queue owners. These
-//   // users are given the AJAX client side script until the queue is empty.
-//   static $owner_registered;
-//   if (is_null($owner_registered) && (php_sapi_name() != 'cli')) {
-//     global $user;
-//
-//     // Only register authenticated users, anonymous users will only queue.
-//     if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-//       $owners = variable_get('acquia_purge_queue_owners', array());
-//       if (!in_array($user->name, $owners)) {
-//         $owners[] = $user->name;
-//         variable_set('acquia_purge_queue_owners', $owners);
-//       }
-//       $owner_registered = TRUE;
-//     }
-//
-//   }
-//
-//   // Store the queue counter in our state variable.
-//   variable_set('acquia_purge_queue_counter', $qcount);
-//
-//   return $qcount;
-// }
+function _acquia_purge_queue_add($path) {
+  $qcount = variable_get('acquia_purge_queue_counter', 0);
+
+  // Add the non-associative purge item definition.
+  db_query("INSERT INTO {ap_queue} (path) VALUES ('%s')", $path);
+
+  // Bump the queue counter.
+  $qcount++;
+
+  // Register the currently logged on user as one of the queue owners. These
+  // users are given the AJAX client side script until the queue is empty.
+  static $owner_registered;
+  if (is_null($owner_registered) && (php_sapi_name() != 'cli')) {
+    global $user;
+
+    // Only register authenticated users, anonymous users will only queue.
+    if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+      $owners = variable_get('acquia_purge_queue_owners', array());
+      if (!in_array($user->name, $owners)) {
+        $owners[] = $user->name;
+        variable_set('acquia_purge_queue_owners', $owners);
+      }
+      $owner_registered = TRUE;
+    }
+
+  }
+
+  // Store the queue counter in our state variable.
+  variable_set('acquia_purge_queue_counter', $qcount);
+
+  return $qcount;
+}
 
 /**
  * Queue manager: clear the queue and invalidate all running processes.
@@ -1060,47 +974,47 @@ function _acquia_purge_get_site_group() {
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'processed', 'percent' and 'purgehistory'.
  */
-// function _acquia_purge_queue_stats($log_purged_url = FALSE) {
-//   $queue = _acquia_purge_queue();
-//
-//   // Initialize the $purgehistory runtime log and add a extra path if provided.
-//   static $purgehistory;
-//   if (is_null($purgehistory)) {
-//     $purgehistory = array();
-//   }
-//   if ($log_purged_url) {
-//     if (!in_array($log_purged_url, $purgehistory)) {
-//       $purgehistory[] = $log_purged_url;
-//     }
-//   }
-//
-//   // Initialize array with default values, except for the total counter.
-//   $info = array(
-//     'total' => variable_get('acquia_purge_queue_counter', 0),
-//     'remaining' => 0,
-//     'processed' => 0,
-//     'percent' => 100,
-//     'running' => FALSE,
-//     'purgehistory' => $purgehistory);
-//
-//   // Cut statistics gathering when the queue counter equals 0: not running.
-//   if ($info['total'] === 0) {
-//     return $info;
-//   }
-//
-//   // Once we are here there are jobs running, lets update that.
-//   $info['running'] = TRUE;
-//
-//   // Add 'remaining' and 'processed' counters.
-//   $info['remaining'] = (int) $queue->numberOfItems();
-//   $info['processed'] = $info['total'] - $info['remaining'];
-//
-//   // Calculate the percentage of the job.
-//   $info['percent'] = ($info['remaining'] / $info['total']) * 100;
-//   $info['percent'] = (int) (100 - floor($info['percent']));
-//
-//   return $info;
-// }
+function _acquia_purge_queue_stats($log_purged_url = FALSE) {
+
+  // Initialize the $purgehistory runtime log and add a extra path if provided.
+  static $purgehistory;
+  if (is_null($purgehistory)) {
+    $purgehistory = array();
+  }
+  if ($log_purged_url) {
+    if (!in_array($log_purged_url, $purgehistory)) {
+      $purgehistory[] = $log_purged_url;
+    }
+  }
+
+  // Initialize array with default values, except for the total counter.
+  $info = array(
+    'total' => variable_get('acquia_purge_queue_counter', 0),
+    'remaining' => 0,
+    'processed' => 0,
+    'percent' => 100,
+    'running' => FALSE,
+    'purgehistory' => $purgehistory);
+
+  // Cut statistics gathering when the queue counter equals 0: not running.
+  if ($info['total'] === 0) {
+    return $info;
+  }
+
+  // Once we are here there are jobs running, lets update that.
+  $info['running'] = TRUE;
+
+  // Add 'remaining' and 'processed' counters.
+  $info['remaining'] = db_query("SELECT COUNT(*) FROM {ap_queue}");
+  $info['remaining'] = (int) db_result($info['remaining']);
+  $info['processed'] = $info['total'] - $info['remaining'];
+
+  // Calculate the percentage of the job.
+  $info['percent'] = ($info['remaining'] / $info['total']) * 100;
+  $info['percent'] = (int) (100 - floor($info['percent']));
+
+  return $info;
+}
 
 /**
  * Queue manager: determines if the current owns a running purge session.
@@ -1192,19 +1106,19 @@ function _acquia_purge_trigger_client_side_purging() {
  *   Progress statistics from the queue manager. Associative array with the keys
  *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
-// function acquia_purge_purge_node(&$node) {
-//   $paths = array('node/' . $node->nid);
-//   if (isset($node->path['alias']) && !empty($node->path['alias'])) {
-//     $paths[] = $node->path['alias'];
-//   }
-//   if (isset($node->promote) && $node->promote) {
-//     $paths[] = '<front>';
-//     $paths[] = 'rss.xml';
-//   }
-//
-//   // Return the paths routine and return the statistics from the queue manager.
-//   return acquia_purge_purge_paths($paths);
-// }
+function acquia_purge_purge_node(&$node) {
+  $paths = array('node/' . $node->nid);
+  if (isset($node->path['alias']) && !empty($node->path['alias'])) {
+    $paths[] = $node->path['alias'];
+  }
+  if (isset($node->promote) && $node->promote) {
+    $paths[] = '<front>';
+    $paths[] = 'rss.xml';
+  }
+
+  // Return the paths routine and return the statistics from the queue manager.
+  return acquia_purge_purge_paths($paths);
+}
 
 /**
  * Purge a certain Drupal path from Varnish.
@@ -1216,15 +1130,15 @@ function _acquia_purge_trigger_client_side_purging() {
  *   Progress statistics from the queue manager. Associative array with the keys
  *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
-// function acquia_purge_purge_path($path) {
-//
-//   // Queue the path.
-//   _acquia_purge_queue_add($path);
-//
-//   // Return the statistics array based returning useful information about the
-//   // current state of the purge queue.
-//   return _acquia_purge_queue_stats();
-// }
+function acquia_purge_purge_path($path) {
+
+  // Queue the path.
+  _acquia_purge_queue_add($path);
+
+  // Return the statistics array based returning useful information about the
+  // current state of the purge queue.
+  return _acquia_purge_queue_stats();
+}
 
 /**
  * Purge a several Drupal paths from Varnish.
@@ -1236,16 +1150,16 @@ function _acquia_purge_trigger_client_side_purging() {
  *   Progress statistics from the queue manager. Associative array with the keys
  *   'running', 'total', 'remaining', 'processed', 'percent' and 'purgehistory'.
  */
-// function acquia_purge_purge_paths($paths) {
-//
-//   // Dispatch the paths to acquia_purge_purge_path().
-//   foreach ($paths as $path) {
-//
-//     // Add the item to the queue.
-//     _acquia_purge_queue_add($path);
-//   }
-//
-//   // Return the statistics array based returning useful information about the
-//   // current state of the purge queue.
-//   return _acquia_purge_queue_stats();
-// }
+function acquia_purge_purge_paths($paths) {
+
+  // Dispatch the paths to acquia_purge_purge_path().
+  foreach ($paths as $path) {
+
+    // Add the item to the queue.
+    _acquia_purge_queue_add($path);
+  }
+
+  // Return the statistics array based returning useful information about the
+  // current state of the purge queue.
+  return _acquia_purge_queue_stats();
+}

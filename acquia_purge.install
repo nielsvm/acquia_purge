@@ -8,24 +8,18 @@
 /**
  * Implements hook_install().
  */
-// function acquia_purge_install() {
-//
-//   // Install our queuing queue using Drupal's Queue API.
-//   $queue = DrupalQueue::get('acquia_purge', TRUE);
-//   $queue->createQueue();
-// }
+function acquia_purge_install() {
+  drupal_install_schema('acquia_purge');
+}
 
 /**
  * Implements hook_uninstall().
  */
-// function acquia_purge_uninstall() {
-//
-//   // Remove traces from our usage of the Queue API.
-//   variable_del('acquia_purge_queue_counter');
-//   variable_del('acquia_purge_queue_owners');
-//   $queue = DrupalQueue::get('acquia_purge', TRUE);
-//   $queue->deleteQueue();
-// }
+function acquia_purge_uninstall() {
+  drupal_uninstall_schema('acquia_purge');
+  variable_del('acquia_purge_queue_counter');
+  variable_del('acquia_purge_queue_owners');
+}
 
 /**
  * Implements hook_requirements().
@@ -52,20 +46,28 @@
 // }
 
 /**
- * Remove the 'acquia_purge_reportpurges' variable, which disappeared as of
- * version 7.x-1.0-beta2. Its functionality has been replaced by the 'purge
- * notification' permission. Which is more granular and increases simplicity.
+ * Implements hook_schema().
  */
-// function acquia_purge_update_7100(&$sandbox) {
-//   variable_del('acquia_purge_reportpurges');
-// }
-
-/**
- * Rename variable 'acquia_purge_queue_owner' to 'acquia_purge_queue_owners',
- * because we're allowing multiple users to trigger purges concurrently as of
- * version 7.x-1.0-beta2.
- */
-// function acquia_purge_update_7101(&$sandbox) {
-//   variable_del('acquia_purge_queue_owner');
-//   variable_set('acquia_purge_queue_owners', array());
-// }
+function acquia_purge_schema() {
+  $schema = array();
+  $schema['ap_queue'] = array(
+    'description' => 'Stores paths to be purged in a queue table.',
+    'fields' => array(
+      'item_id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique item ID.',
+      ),
+      'path' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The path to be purged.',
+      ),
+    ),
+    'primary key' => array('item_id'),
+  );
+  return $schema;
+}
