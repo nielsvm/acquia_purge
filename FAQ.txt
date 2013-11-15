@@ -65,6 +65,18 @@ Frequently asked questions
   one of its "platform plugins" whilst sharing common infrastructure. In the
   meanwhile the usage of purge on Acquia Cloud is discouraged.
 
+ Sometimes the progressbar disappears while still purging, what is going on?
+--------------------------------------------------------------------------------
+  Presumably you have multiple people concurrently editing the site and you are
+  noticing a small visual logic flaw caused by the modules architecture. There
+  is just one single queue of purges and only a "single user" can process
+  purges at the same time. Whenever a purge is in progress and another user
+  saves content his/her items are added to the same list in the background and
+  then takes over the purge processing from the first user, who then suddenly
+  sees the progressbar disappear without notice. This is nothing to really worry
+  about as purges are still processed anyhow, however it might confuse your
+  users. I'm aware of that and there are ideas on how to "fix this" but no ETA.
+
  When I tested before it was slow and the queue exploded, should I reconsider?
 --------------------------------------------------------------------------------
   Yes, absolutely! Before Acquia Purge was a official project there has long
