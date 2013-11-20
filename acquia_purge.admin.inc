@@ -126,6 +126,17 @@ function acquia_purge_manualpurge_autocomplete($string) {
   // Sort the values alphabetically.
   sort($matches);
 
+  // Rewrite the matches array by copying the values into keys.
+  $clean_url = variable_get('clean_url', 0);
+  foreach ($matches as $key => $path) {
+    if (!$clean_url) {
+      $path = "index.php?q=$path";
+    }
+    unset($matches[$key]);
+    $matches[$path] = $path;
+  }
+
+  // Return the output JSON'ed.
   drupal_json_output($matches);
 }
 
