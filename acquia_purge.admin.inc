@@ -112,6 +112,7 @@ function acquia_purge_manualpurge_autocomplete($string) {
       ->fields('m', array('path'))
       ->condition('path', db_like($string) . '%', 'LIKE')
       ->condition('path', 'acquia_purge_ajax_processor', '!=')
+      ->condition('path', 'admin%', 'NOT LIKE')
       ->range(0, $query_limit)
       ->execute();
     foreach ($query as $path) {
