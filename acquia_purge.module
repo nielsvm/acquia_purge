@@ -62,7 +62,11 @@ function acquia_purge_init() {
     '',
     'admin/reports/status',
     'admin/reports/dblog',
-    'acquia_purge_ajax_processor');
+    'acquia_purge_ajax_processor',
+    'media/browser',
+    'media/browser/testbed',
+    'media/browser/list',
+    'media/browser/library');
   if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
     return;
   }
