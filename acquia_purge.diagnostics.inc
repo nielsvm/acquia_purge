@@ -221,19 +221,21 @@ function _acquia_purge_get_diagnosis_domains($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_page_cache($t) {
-  $cache = variable_get('cache', 0);
+  $cache = intval(variable_get('cache', 0)) === 3;
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
-    'value' => $cache ? $t('Enabled') : $t('Disabled'),
+    'value' => $cache ? $t('External') : $t('Not in External mode'),
     'title' => $t('Cache pages for anonymous users'));
   if (!$cache) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
-    $test['description'] = $t('Your site has Drupal page caching disabled,'
-      . ' which is of extreme importance to every website that gets traffic.'
-      . ' Once enabled your load balancer will be instructed to start serving'
-      . ' pages from its cache to offload traffic from your web servers. The'
-      . ' more traffic served from your load balancer, the faster your'
-      . ' site will be!');
+    $test['description'] = $t('Your site has Drupal page caching disabled, in,'
+      . ' normal mode or in aggressive mode. However the only mode supported'
+      . ' and effective on Acquia Cloud is the external caching. It is of'
+      . ' extreme importance to every site getting traffic. Once put in'
+      . ' external mode (Pressflow) your load balances will be instructed to'
+      . ' serve pages from its cached and protect your site and web servers.'
+      . ' The more traffic offloaded to your balancers, the faster your site'
+      . ' will be!');
   }
   return $test;
 }
