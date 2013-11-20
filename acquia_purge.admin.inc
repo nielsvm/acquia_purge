@@ -63,6 +63,72 @@ function acquia_purge_ajax_processor() {
 }
 
 /**
+ * Menu callback to fulfill autocompletes on acquia_purge_manualpurge_form.
+ *
+ * @returns
+ *   A standard Form API form-array.
+ */
+function acquia_purge_manualpurge_autocomplete($string) {
+  $query_limit = 10;
+  $matches = array();
+
+  // Overwrite $string and work around Drupal buggingly ignoring slashes.
+  $string = implode('/', array_slice(explode('/', $_GET['q']), 6));
+
+  // Scan for node/ lookups as they're quite common.
+  if (substr($string, 0, 1) == 'n') {
+    $query = db_select('node', 'n')
+      ->fields('n', array('nid'))
+      ->range(0, $query_limit);
+
+    // Lookup node IDs if the user entered node/, else limit on 15.
+    if (strlen($string) > 5) {
+      $string = (int) str_replace('node/', '', $string);
+      $query->condition('n.nid', '%' . db_like($string) . '%', 'LIKE');
+    }
+
+    $results = $query->execute();
+    foreach ($results as $nid) {
+      $path = 'node/' . $nid->nid;
+      $matches[] = $path;
+    }
+  }
+
+  // Scan for URL aliases when the path module is enabled.
+  if (module_exists('path')) {
+    $query = db_select('url_alias', 'u')
+      ->fields('u', array('alias'))
+      ->condition('alias', db_like($string) . '%', 'LIKE')
+      ->range(0, $query_limit)
+      ->execute();
+    foreach ($query as $alias) {
+      $matches[] = $alias->alias;
+    }
+  }
+
+  // Scan for menu_router paths, as long as they don't contain % characters.
+  if (module_exists('menu')) {
+    $query = db_select('menu_router', 'm')
+      ->fields('m', array('path'))
+      ->condition('path', db_like($string) . '%', 'LIKE')
+      ->condition('path', 'acquia_purge_ajax_processor', '!=')
+      ->range(0, $query_limit)
+      ->execute();
+    foreach ($query as $path) {
+      if (strpos($path->path, '%') !== FALSE) {
+        continue;
+      }
+      $matches[] = $path->path;
+    }
+  }
+
+  // Sort the values alphabetically.
+  sort($matches);
+
+  drupal_json_output($matches);
+}
+
+/**
  * Menu callback to drupal_get_form; let users manually purge pages.
  *
  * @returns
@@ -101,6 +167,7 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
   );
 
   // Fill paths with the right amount of form items according to num_paths.
+  $ac_path = 'admin/config/development/performance/manualpurge/autocomplete';
   $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], base_path());
   if (empty($form_state['num_paths'])) {
     $form_state['num_paths'] = 1;
@@ -108,6 +175,7 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
   for ($i = 0; $i < $form_state['num_paths']; $i++) {
     $form['paths']['path'][$i] = array(
       '#type' => 'textfield',
+      '#autocomplete_path' => $ac_path,
       '#field_prefix' => $prefix,
       '#size' => 30,
       '#prefix' => '<li>',

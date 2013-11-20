@@ -117,6 +117,13 @@ function acquia_purge_menu() {
     'access arguments'  => array('administer site configuration'),
     'file' => 'acquia_purge.admin.inc',
   );
+  $items['admin/config/development/performance/manualpurge/autocomplete'] =
+  array(
+    'type'              => MENU_CALLBACK,
+    'page callback'     => 'acquia_purge_manualpurge_autocomplete',
+    'access arguments'  => array('administer site configuration'),
+    'file' => 'acquia_purge.admin.inc',
+  );
 
   return $items;
 }
