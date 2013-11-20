@@ -305,6 +305,38 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
 // }
 
 /**
+ * Report whether the user runs Pressflow, absolutely necessary.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_pressflow($t) {
+  $pressflow = function_exists('drupal_page_cache_header_external');
+  $test = array(
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
+    'value' => $pressflow ? $t('Installed') : $t('Not installed'),
+    'title' => $t('Pressflow'));
+  if (!$pressflow) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('Your are running ordinary Drupal 6 which has'
+      . ' no support for external caches like the load balancers Acquia Cloud'
+      . ' has installed for you. This is very bad, as it will put enormous'
+      . ' stress on your web servers, all the time. Please upgrade your code'
+      . ' base to the fully-compatible Pressflow as soon as you can. Although'
+      . ' testing will be required, the differences remain relatively small and'
+      . ' will improve the performance of your site dramatically.');
+  }
+  return $test;
+}
+
+/**
  * Report on the current status of the system.
  *
  * @param string $t
