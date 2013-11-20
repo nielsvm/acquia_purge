@@ -68,144 +68,95 @@ function acquia_purge_ajax_processor() {
  * @returns
  *   A standard Form API form-array.
  */
-// function acquia_purge_manualpurge_form($form, &$form_state) {
-//   $schemes = _acquia_purge_get_protocol_schemes();
-//   $domains = _acquia_purge_get_domains();
-//   $form['description'] = array(
-//     '#markup' => t('<p>This form allows you to purge one or more paths from your
-//     Acquia Cloud load balancers, e.g.: <b>news?page=1</b>. This functionality is
-//     not intended for day-to-day use but rather for emergency cases when an
-//     outdated copy of a page is served. It is highly recommended to automate your
-//     site by creating rules for these paths, so everybody editing content can
-//     rely on your site refreshing properly.</p>'),
-//   );
-//   $form['domains'] = array(
-//     '#markup' => '<p>' . theme(
-//       'item_list',
-//       array(
-//         'title' => t('Paths will be purged on:'),
-//         'items' => $domains,
-//       )
-//     ) . '</p>',
-//   );
-//
-//   // Because we have many fields with the same values, we have to set
-//   // #tree to be able to access them.
-//   $form['#tree'] = TRUE;
-//
-//   // We'll group all paths both in a HTML wrapper and logically in the form.
-//   $title = t('Paths to be purged:');
-//   $form['paths'] = array(
-//     '#prefix' => '<div id="paths-wrapper"><p><h3>' . $title . '</h3><ul>',
-//     '#suffix' => '</ul></p></div>',
-//   );
-//
-//   // Fill paths with the right amount of form items according to num_paths.
-//   $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], base_path());
-//   if (empty($form_state['num_paths'])) {
-//     $form_state['num_paths'] = 1;
-//   }
-//   for ($i = 0; $i < $form_state['num_paths']; $i++) {
-//     $form['paths']['path'][$i] = array(
-//       '#type' => 'textfield',
-//       '#field_prefix' => $prefix,
-//       '#size' => 30,
-//       '#prefix' => '<li>',
-//       '#suffix' => '</li>',
-//     );
-//   }
-//
-//   // Declare the add and remove buttons.
-//   $form['paths']['add_path'] = array(
-//     '#type' => 'submit',
-//     '#value' => t('Add'),
-//     '#submit' => array('acquia_purge_manualpurge_form_add_one'),
-//     '#ajax' => array(
-//       'callback' => 'acquia_purge_manualpurge_form_callback',
-//       'wrapper' => 'paths-wrapper',
-//     ),
-//   );
-//   if ($form_state['num_paths'] > 1) {
-//     $form['paths']['remove_path'] = array(
-//       '#type' => 'submit',
-//       '#value' => t('Remove last item'),
-//       '#submit' => array('acquia_purge_manualpurge_form_remove_one'),
-//       '#ajax' => array(
-//         'callback' => 'acquia_purge_manualpurge_form_callback',
-//         'wrapper' => 'paths-wrapper',
-//       ),
-//     );
-//   }
-//
-//   // Render the submit button and return the form.
-//   $form['submit'] = array(
-//     '#type' => 'submit',
-//     '#value' => t("I know the risks, purge!"),
-//   );
-//   return $form;
-// }
+function acquia_purge_manualpurge_form(&$form_state) {
+  $fields_amount = 7;
+  $schemes = _acquia_purge_get_protocol_schemes();
+  $domains = _acquia_purge_get_domains();
+  $form['description'] = array(
+    '#type' => 'item',
+    '#value' => t('<p>This form allows you to purge one or more paths from your
+    Acquia Cloud load balancers, e.g.: <b>&lt;front&gt; ?page=1</b>. This
+    functionality is not intended for day-to-day use but rather for emergency
+    cases when an outdated copy of a page is served. It is highly recommended to
+    automate your site by creating rules for these paths, so everybody editing
+    content can rely on your site refreshing properly.</p>'),
+  );
+  $form['domains'] = array(
+    '#type' => 'item',
+    '#value' => '<p>' . theme(
+      'item_list',
+      $domains,
+      t('Paths will be purged on:')
+    ) . '</p>',
+  );
 
-/**
- * Callback to drupal_get_form: the AJAX callback to paths-wrapper.
- */
-// function acquia_purge_manualpurge_form_callback($form, $form_state) {
-//   return $form['paths'];
-// }
+  // We'll group all paths both in a HTML wrapper and logically in the form.
+  $form['#tree'] = TRUE;
+  $form['paths'] = array(
+    '#prefix' => '<p><h3>' . t('Paths to be purged:') . '</h3><ul>',
+    '#suffix' => '</ul></p>',
+  );
 
-/**
- * Callback to drupal_get_form: add a path textfield.
- */
-// function acquia_purge_manualpurge_form_add_one($form, &$form_state) {
-//   $form_state['num_paths']++;
-//   $form_state['rebuild'] = TRUE;
-// }
+  // Fill paths with the right amount of form items according to fields_amount.
+  $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], base_path());
+  for ($i = 0; $i < $fields_amount; $i++) {
+    $form['paths']['path'][$i] = array(
+      '#type' => 'textfield',
+      '#field_prefix' => $prefix,
+      '#size' => 30,
+      '#prefix' => '<li>',
+      '#suffix' => '</li>',
+    );
+  }
 
-/**
- * Callback to drupal_get_form: remove a path textfield.
- */
-// function acquia_purge_manualpurge_form_remove_one($form, &$form_state) {
-//   if ($form_state['num_paths'] > 1) {
-//     $form_state['num_paths']--;
-//   }
-//   $form_state['rebuild'] = TRUE;
-// }
+  // Render the submit button and return the form.
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t("I know the risks, purge!"),
+  );
+  return $form;
+}
 
 /**
  * Callback to drupal_get_form: validate the form.
  */
-// function acquia_purge_manualpurge_form_validate($form, &$form_state) {
-//   $paths = array();
-//   foreach ($form_state['values']['paths']['path'] as $id => $path) {
-//     if (empty($path)) {
-//       form_set_error('paths][path][' . $id,
-//         t('The path can not be empty, use &lt;front&gt; for your frontpage!'));
-//     }
-//     elseif (!is_string($path)) {
-//       form_set_error('paths][path][' . $id,
-//         t("The path has to be a string!"));
-//     }
-//     elseif (stristr($path, 'http:') || stristr($path, 'https:')) {
-//       form_set_error('paths][path][' . $id,
-//         t("You can't provide a URL, only paths!"));
-//     }
-//     elseif (preg_match('/\s/', $path)) {
-//       form_set_error('paths][path][' . $id,
-//         t('The path can not contain a space!'));
-//     }
-//     elseif (in_array($path, $paths)) {
-//       form_set_error('paths][path][' . $id,
-//         t('You have already listed this path!'));
-//     }
-//     $paths[] = $path;
-//   }
-// }
+function acquia_purge_manualpurge_form_validate($form, &$form_state) {
+  $paths = array();
+  foreach ($form_state['values']['paths']['path'] as $id => $path) {
+    if (empty($path)) {
+      continue;
+    }
+    if (!is_string($path)) {
+      form_set_error('paths][path][' . $id,
+        t("The path has to be a string!"));
+    }
+    elseif (stristr($path, 'http:') || stristr($path, 'https:')) {
+      form_set_error('paths][path][' . $id,
+        t("You can't provide a URL, only paths!"));
+    }
+    elseif (preg_match('/\s/', $path)) {
+      form_set_error('paths][path][' . $id,
+        t('The path can not contain a space!'));
+    }
+    elseif (in_array($path, $paths)) {
+      form_set_error('paths][path][' . $id,
+        t('You have already listed this path!'));
+    }
+    $paths[] = $path;
+  }
+}
 
 /**
  * Callback to drupal_get_form: handle the form submit.
  */
-// function acquia_purge_manualpurge_form_submit($form, &$form_state) {
-//   acquia_purge_purge_paths($form_state['values']['paths']['path']);
-// }
+function acquia_purge_manualpurge_form_submit($form, &$form_state) {
+  foreach ($form_state['values']['paths']['path'] as $id => $value) {
+    if (empty($value)) {
+      unset($form_state['values']['paths']['path'][$id]);
+    }
+  }
+  acquia_purge_purge_paths($form_state['values']['paths']['path']);
+}
 
 /**
  * Returns HTML for the Acquia Purge status widget.
