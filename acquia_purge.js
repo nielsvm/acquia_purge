@@ -152,14 +152,14 @@ Drupal.behaviors.AcquiaPurgeAjax = function() {
 
         // List quota reached, skip effects.
         if (list_items.find('li').length == list_items_limit) {
-          list_items.find('li').first().remove();
+          list_items.find('li:first').remove();
           list_items.append("<li>" + url + '</li>');
-          list_items.find('li').last().css('list-style', 'none');
+          list_items.find('li:last').css('list-style', 'none');
         }
         else {
           list_items.append("<li style='display:none;'>" + url + '</li>');
-          list_items.find('li').last().css('list-style', 'none');
-          list_items.find('li').last().slideDown(1000);
+          list_items.find('li:last').css('list-style', 'none');
+          list_items.find('li:last').slideDown(1000);
         }
       }
     });
@@ -173,7 +173,7 @@ Drupal.behaviors.AcquiaPurgeAjax = function() {
   // Tear the user interface down and hide it for the user.
   function uiTearDown() {
     uiThrobberOff();
-//     uiLogHistoryHide();
+    uiLogHistoryHide();
     uiError();
 
     // Hide ourselves after 4 seconds.
@@ -205,9 +205,9 @@ Drupal.behaviors.AcquiaPurgeAjax = function() {
         }
 
         // Report successfully purged URLs to the GUI's logging widget. @TODO
-//         if (uiActivated() && (data['purgehistory'].length > 0)) {
-//           uiLogHistory(data['purgehistory']);
-//         }
+        if (uiActivated() && (data['purgehistory'].length > 0)) {
+          uiLogHistory(data['purgehistory']);
+        }
 
         // Handle error conditions and remove errors when they are gone.
         errorHandlerCallsForHalt = false;
