@@ -204,7 +204,7 @@ Drupal.behaviors.AcquiaPurgeAjax = function() {
           uiThrobberOff();
         }
 
-        // Report successfully purged URLs to the GUI's logging widget. @TODO
+        // Report successfully purged URLs to the GUI's logging widget.
         if (uiActivated() && (data['purgehistory'].length > 0)) {
           uiLogHistory(data['purgehistory']);
         }
