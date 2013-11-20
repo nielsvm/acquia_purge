@@ -47,6 +47,9 @@ Drupal.behaviors.AcquiaPurgeAjax = function() {
     apbox.append(html);
     apbox_log = apbox.find(apbox_log);
 
+    // Set padding on the apbox container to have a smooth throbber on Garland.
+    apbox.css('padding-left', '2em');
+
     // As the apbox container is hidden by default, reveal our loading UI.
     apbox.show();
   }
@@ -112,7 +115,7 @@ Drupal.behaviors.AcquiaPurgeAjax = function() {
       throbber.css('height', '18px;');
       throbber.css('width', '18px');
       throbber.css('top', '1.8em');
-      throbber.css('left', '-2.2em');
+      throbber.css('left', '-1.4em');
     }
 
     // Then just make it visible.
