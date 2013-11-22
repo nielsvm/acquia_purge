@@ -157,51 +157,57 @@ function acquia_purge_expire_cache($paths) {
         'warning'
       );
     }
-
-    // Or fail silently to the logs.
     else {
+      // Or fail silently to the logs.
       _acquia_purge_get_diagnosis_logged($err);
     }
 
     return;
   }
 
-  // The expire module is unreliable API-wise as it often gives absolute URLs
-  // in various scenarios. In the past we tested for 'expire_include_base_url'
-  // but that doesn't always seem to help. We therefore generate a list of
-  // possible http://domainname patterns to strip out. D.o: #2049235, #2133001.
-  $schemes = array('http://', 'https://');
-  if (is_null($patterns)) {
-    foreach (_acquia_purge_get_domains() as $domain) {
-      foreach ($schemes as $scheme) {
-        $patterns[] = "$scheme$domain" . base_path();
-        $patterns[] = "$scheme$domain";
+  // HACK: Expire 7.x-2.x changed API and puts paths as array keys, detect that.
+  if (is_string(key($paths))) {
+    $paths = array_keys($paths);
+  }
+
+  // HACK: Expire 7.x-1.x could include full URLs in $paths, strip those out.
+  else {
+
+    // The expire module is unreliable API-wise as it often gives absolute URLs
+    // in various scenarios. In the past we tested for 'expire_include_base_url'
+    // but that doesn't always seem to help. We therefore generate a list of
+    // possible http://domainname patterns to strip out. D.o: #2049235, #2133001.
+    if (is_null($patterns)) {
+      foreach (_acquia_purge_get_domains() as $domain) {
+        foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
+          $patterns[] = "$scheme://$domain" . base_path();
+          $patterns[] = "$scheme://$domain";
+        }
       }
     }
+
+    // Iterate the given paths and strip everything out we can think off.
+    $new_paths = array();
+    foreach ($paths as $path) {
+      foreach ($patterns as $pattern) {
+        $path = str_replace($pattern, '', $path);
+      }
+      $path = ltrim($path, '/');
+      if (!in_array($path, $new_paths)) {
+        $new_paths[] = $path;
+      }
+    }
+    $paths = $new_paths;
   }
 
-  // Iterate the given paths and strip everything out we can think off.
-  $new_paths = array();
-  foreach ($paths as $path) {
-    foreach ($patterns as $pattern) {
-      $path = str_replace($pattern, '', $path);
-    }
-    $path = ltrim($path, '/');
-    if (!in_array($path, $new_paths)) {
-      $new_paths[] = $path;
-    }
-  }
-  $paths = $new_paths;
-
-  // This should help for many cases, but not always. Detect if any of the paths
-  // still contain http:// or https://.
+  // Detect if what we end up with now are really /paths and not http://urls/.
   $paths_clean = TRUE;
   foreach ($paths as $path) {
     if (!$paths_clean) {
       break;
     }
-    foreach ($schemes as $scheme) {
-      if (strpos($path, $scheme) !== FALSE) {
+    foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
+      if (strpos($path, "$scheme://") !== FALSE) {
         $paths_clean = FALSE;
         break;
       }
