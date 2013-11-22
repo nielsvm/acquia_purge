@@ -302,29 +302,13 @@ function acquia_purge_manualpurge_form_submit($form, &$form_state) {
  * @ingroup themeable
  */
 function theme_acquia_purge_status_widget($variables) {
-  $progress_bar = theme('acquia_purge_status_bar_widget', $variables);
-
-  // Prepare the table which we use as container.
-  $table_variables = array(
-    'header' => array(),
-    'rows' => array(array($progress_bar)));
-
-  // Render the history list and add it to the table.
-  if (count($variables['purgehistory'])) {
-    $table_variables['rows'][] = array(
-      theme(
-        'item_list',
-        array(
-          'items' => $variables['purgehistory'],
-          'title' => t('Recently refreshed:'))),
-    );
+  if ($variables['running']) {
+    return theme('acquia_purge_status_bar_widget', $variables);
   }
-
-  // Render the table.
-  $table = theme('table', $table_variables);
-
-  // Return the HTML.
-  return '<div id="acquia-purge-status-widget">' . $table . '</div>';
+  else {
+    $message = t('Idle, accepting purges');
+    return "<div class=\"messages status\">\n$message</div>\n";
+  }
 }
 
 /**

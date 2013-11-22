@@ -54,6 +54,17 @@ define('ACQUIA_PURGE_SEVLEVEL_WARNING', 1);
 define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
 
 /**
+ * Implements hook_boot().
+ */
+function acquia_purge_boot() {
+
+  // Enforce Expire 7.x-2.x into functional zombie mode.
+  global $conf;
+  $conf['expire_debug'] = '0';
+  $conf['expire_status'] = '2';
+}
+
+/**
  * Implements hook_init().
  */
 function acquia_purge_init() {
@@ -225,6 +236,25 @@ function acquia_purge_expire_cache($paths) {
   else {
     acquia_purge_purge_paths($paths);
   }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state, $form_id) {
+
+  // Remove the 'expire_status' and 'expire_debug' settings out of the status
+  // tab as our hook_boot takes care of these to enforce a zero-conf setup.
+  unset($form['tabs']['status']['common']);
+  unset($form['tabs']['status']['debug']);
+
+  // Represent Acquia Purge in expire's status pane.
+  $stats = _acquia_purge_queue_stats();
+  $form['tabs']['status']['ap_status'] = array(
+    '#title' => '<h3>' . t('Acquia Purge') . '</h3>',
+    '#type' => 'item',
+    '#markup' => theme('acquia_purge_status_widget', $stats)
+  );
 }
 
 /**
