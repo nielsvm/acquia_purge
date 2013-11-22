@@ -143,6 +143,26 @@ function acquia_purge_menu() {
 }
 
 /**
+ * Implements hook_menu_alter().
+ */
+function acquia_purge_menu_alter(&$items) {
+
+  // Expire 7.x-2.x: move ourselves to expire's new address.
+  if (isset($items['admin/config/system/expire'])) {
+    $items['admin/config/system/expire/settings'] = array(
+      'title'             => $items['admin/config/system/expire']['title'],
+      'type'              => MENU_DEFAULT_LOCAL_TASK);
+    $items['admin/config/system/expire']['title'] =
+      t('Cache Expiration and Purging');
+    $items['admin/config/system/expire']['description'] =
+      t('Settings for expiration of cached pages and purging.');
+    $items['admin/config/system/expire/manualpurge'] =
+      $items['admin/config/development/performance/manualpurge'];
+    unset($items['admin/config/development/performance/manualpurge']);
+  }
+}
+
+/**
  * Implements hook_expire_cache().
  */
 function acquia_purge_expire_cache($paths) {
