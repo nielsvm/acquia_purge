@@ -13,6 +13,29 @@ function acquia_purge_install() {
   // Install our queuing queue using Drupal's Queue API.
   $queue = DrupalQueue::get('acquia_purge', TRUE);
   $queue->createQueue();
+
+  // Enable Expire 7.x-2.x's most important expiration rules by default.
+  $defaults = array(
+    'expire_node_actions' => array(1, 2, 3),
+    'expire_node_front_page' => 1,
+    'expire_node_term_pages' => 1,
+    'expire_comment_actions' => array(1, 2, 3, 4, 5),
+    'expire_comment_front_page' => 1,
+    'expire_comment_node_term_pages' => 1,
+    'expire_user_actions' => array(1, 2, 3, 4),
+    'expire_user_front_page' => 1,
+    'expire_file_actions' => array(1, 2),
+    'expire_file_front_page' => 1
+  );
+  foreach ($defaults as $variable => $values) {
+    $value = is_array($values) ? array() : $values;
+    if (is_array($values)) {
+      foreach ($values as $int) {
+        $value[(string)$int] = (string)$int;
+      }
+    }
+    variable_set($variable, $value);
+  }
 }
 
 /**
