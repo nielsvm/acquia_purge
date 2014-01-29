@@ -65,7 +65,7 @@ function acquia_purge_requirements($phase) {
     }
 
     // Remove the status test once ERROR level results have been detected.
-    if (count(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+    if (!_acquia_purge_are_we_allowed_to_purge()) {
       unset($requirements['acquia_purge_status']);
     }
 

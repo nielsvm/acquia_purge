@@ -173,7 +173,8 @@ function acquia_purge_expire_cache($paths) {
   // Ask our built-in diagnostics system to preliminary find issues that are so
   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
   // will cause purging to cease and we've got to tell the end user.
-  if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
 
     // Stack all found error messages (can be one too) in a HTML item list.
     $items = array();

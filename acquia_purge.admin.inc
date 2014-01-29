@@ -33,9 +33,9 @@ function acquia_purge_ajax_processor() {
     // so risky we can expect problems. Everything starting with
     // ACQUIA_PURGE_SEVLEVEL_ERROR will cause purging to cease and log messages
     // to be written. Warn the user on any of them.
-    if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
-      $error = current($e);
-      $status['error'] = $error['description'];
+    if (!_acquia_purge_are_we_allowed_to_purge()) {
+      $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
+      $status['error'] = $err['description'];
     }
 
     // If no obvious errors were found by the diagnostics system, check if the
