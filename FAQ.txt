@@ -126,6 +126,13 @@ Frequently asked questions
   in user triggers a purge or when "drush ap-process" is called. If this is a
   limitation to you, please file a ticket and we will add a special permission.
 
+ Can I apply globs or wildcards to purge multiple paths at once? Like news/*!
+--------------------------------------------------------------------------------
+  As of this moment this is not possible. There is a open feature request ticket
+  on https://drupal.org/node/2155319 and we really like to have this in but our
+  systems will have to be changed for it and Acquia Purge needs to be updated
+  once it becomes available in Varnish.
+
  I'm including JS-code that does AJAX requests with changing variables, bad?
 --------------------------------------------------------------------------------
   Yes, don't even consider doing this. It happens every once in a while that we
