@@ -141,7 +141,7 @@ function acquia_purge_manualpurge_autocomplete($string) {
 }
 
 /**
- * Menu callback to drupal_get_form; let users manually purge pages.
+ * Menu callback to drupal_get_form; let users manual purge pages.
  *
  * @returns
  *   A standard Form API form-array.
