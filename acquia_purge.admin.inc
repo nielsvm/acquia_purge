@@ -210,6 +210,7 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
       '#type' => 'submit',
       '#value' => t('Remove last item'),
       '#submit' => array('acquia_purge_manualpurge_form_remove_one'),
+      '#limit_validation_errors' => array(),
       '#ajax' => array(
         'callback' => 'acquia_purge_manualpurge_form_callback',
         'wrapper' => 'paths-wrapper',
