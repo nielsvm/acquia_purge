@@ -80,8 +80,12 @@ function acquia_purge_drush_command() {
 
 /**
  * Perform a series of diagnostic self-tests.
+ *
+ * @param int $v
+ *   Optional, the level of diagnostics presented. Test results that match or
+ *   are higher than the given level are returned.
  */
-function drush_acquia_purge_ap_diagnosis() {
+function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
   $oldverbosity = drush_get_context('DRUSH_VERBOSE');
 
   // Define a mapping between install.inc's requirement states and drush_log().
@@ -96,7 +100,7 @@ function drush_acquia_purge_ap_diagnosis() {
   drush_set_context('DRUSH_VERBOSE', TRUE);
 
   // Iterate the tests and call drush_log with the appropriate message type.
-  foreach (_acquia_purge_get_diagnosis() as $test) {
+  foreach (_acquia_purge_get_diagnosis($v) as $test) {
     drush_log($test['value_plain'], $severitymap[$test['severity']]);
     if ($test['severity'] >= ACQUIA_PURGE_SEVLEVEL_WARNING) {
       printf("%s\n\n\n", $test['description_plain']);
@@ -133,6 +137,11 @@ function drush_acquia_purge_ap_purge($path = NULL) {
   // Stop invocation if we are not detecting Acquia Cloud heuristics.
   if (!_acquia_purge_are_we_on_acquiacloud()) {
     return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
+  }
+
+  // Stop invocation if serious error conditions have been found.
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
   }
 
   // Check if the path was provided.
@@ -215,6 +224,11 @@ function drush_acquia_purge_ap_process() {
   if (!lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
     return drush_set_error("Unable to acquire lock, ensure that all users "
       . "close their browser tabs as a different purge seems to be active!");
+  }
+
+  // Stop invocation if serious error conditions have been found.
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
   }
 
   // Retrieve the statistics and determine if processing is needed.
