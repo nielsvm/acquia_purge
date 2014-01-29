@@ -282,10 +282,18 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
     unset($form['tabs']['status']['common']);
     unset($form['tabs']['status']['debug']);
 
-    // Insert a nice looking status widget as substitute.
-    $stats = _acquia_purge_queue_stats();
+    // Add a status widget that reports how Acquia Purge is doing.
+    if (_acquia_purge_are_we_allowed_to_purge()) {
+      $stats = _acquia_purge_queue_stats();
+      $markup = theme('acquia_purge_status_widget', $stats);
+    }
+    else {
+      include_once DRUPAL_ROOT . '/includes/install.inc';
+      $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
+      $markup = theme('status_report', array('requirements' => $err));
+    }
     $form['tabs']['status']['ap_status'] = array(
-      '#markup' => theme('acquia_purge_status_widget', $stats),
+      '#markup' => $markup,
       '#title' => '<h3>' . t('Acquia Purge') . '</h3>',
       '#type' => 'item',
     );
