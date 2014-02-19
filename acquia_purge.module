@@ -685,7 +685,8 @@ function _acquia_purge_get_domains_add($domain, &$domains) {
  * @returns
  *   Void, data will be added by reference.
  * @warning
- *   The current implementation of this function is subject to change. @TODO
+ *   The current implementation is known to be fishy and dangerous. There are
+ *   serious plans to make this cleaner (Acquia reference: CL-7068). @TODO
  */
 function _acquia_purge_get_domains_add_acloud(&$domains) {
   $detected_domains = array();
