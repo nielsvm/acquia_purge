@@ -14,7 +14,7 @@ define('ACQUIA_PURGE_MAX_PATHS', 20);
 /**
  * The maximum amount of HTTP requests that can be done per step. In practice
  * this limited will be lowered to respect PHP's max execution time setting. It
- * will be met when that setting is zero, e.g. on the command line.
+ * will be met when that setting is zero, for example, on the command line.
  */
 define('ACQUIA_PURGE_MAX_REQUESTS', 60);
 
@@ -870,7 +870,7 @@ function _acquia_purge_queue() {
  * Queue manager: add a single purge to the queue.
  *
  * @param string $path
- *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ *   The Drupal path (for example: '<front>', 'user/1' or an aliased path).
  *
  * @returns
  *   The total amount of items in the queue (int).
@@ -1022,7 +1022,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
  * Queue manager: process a single path (on all domains and balancers).
  *
  * @param string $path
- *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ *   The Drupal path (for example: '<front>', 'user/1' or an aliased path).
  *
  * @returns
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
@@ -1391,7 +1391,7 @@ function acquia_purge_purge_node(&$node) {
  * Purge a certain Drupal path from Varnish.
  *
  * @param string $path
- *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ *   The Drupal path (for example: '<front>', 'user/1' or an aliased path).
  *
  * @returns
  *   Progress statistics from the queue manager. Associative array with the keys
@@ -1411,7 +1411,7 @@ function acquia_purge_purge_path($path) {
  * Purge a several Drupal paths from Varnish.
  *
  * @param string $paths
- *   Array with Drupal paths (e.g. '<front>', 'user/1' or an aliased path).
+ *   Array with Drupal paths (for example: '<front>', 'user/1' or an aliased path).
  *
  * @returns
  *   Progress statistics from the queue manager. Associative array with the keys

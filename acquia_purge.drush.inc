@@ -130,7 +130,7 @@ function drush_acquia_purge_ap_domains() {
  * Purge a specified path from your balancers.
  *
  * @param string $path
- *   The Drupal path (e.g. '<front>', 'user/1' or an aliased path).
+ *   The Drupal path (for example: '<front>', 'user/1' or an aliased path).
  */
 function drush_acquia_purge_ap_purge($path = NULL) {
 

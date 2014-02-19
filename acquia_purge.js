@@ -1,9 +1,11 @@
-(function ($) {
-
 /**
+ * @file
+ * Acquia Purge AJAX client.
+ *
  * This behavior will call to Acquia Purge's AJAX path until its purging queue
  * is empty and everything is processed. Also works without on-screen reporting.
  */
+(function ($) {
 Drupal.behaviors.AcquiaPurgeAjax = {
   attach: function (context) {
     $(document).ready(function() {
