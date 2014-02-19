@@ -1273,7 +1273,7 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
 }
 
 /**
- * Queue manager: determines if the current owns a running purge session.
+ * Queue manager: determines if the current user owns a running purge session.
  *
  * @see _acquia_purge_queue_add()
  * @returns
