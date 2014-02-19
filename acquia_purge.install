@@ -25,13 +25,13 @@ function acquia_purge_install() {
     'expire_user_actions' => array(1, 2, 3, 4),
     'expire_user_front_page' => 1,
     'expire_file_actions' => array(1, 2),
-    'expire_file_front_page' => 1
+    'expire_file_front_page' => 1,
   );
   foreach ($defaults as $variable => $values) {
     $value = is_array($values) ? array() : $values;
     if (is_array($values)) {
       foreach ($values as $int) {
-        $value[(string)$int] = (string)$int;
+        $value[(string) $int] = (string) $int;
       }
     }
     variable_set($variable, $value);
@@ -75,17 +75,20 @@ function acquia_purge_requirements($phase) {
 }
 
 /**
- * Remove the 'acquia_purge_reportpurges' variable, which disappeared as of
- * version 7.x-1.0-beta2. Its functionality has been replaced by the 'purge
- * notification' permission. Which is more granular and increases simplicity.
+ * Remove the 'acquia_purge_reportpurges' variable.
+ *
+ * The variable disappeared as of version 7.x-1.0-beta2. Its functionality has
+ * been replaced by the 'purge notification' permission. Which is more granular
+ * and increases simplicity.
  */
 function acquia_purge_update_7100(&$sandbox) {
   variable_del('acquia_purge_reportpurges');
 }
 
 /**
- * Rename variable 'acquia_purge_queue_owner' to 'acquia_purge_queue_owners',
- * because we're allowing multiple users to trigger purges concurrently as of
+ * Rename variable 'acquia_purge_queue_owner' to 'acquia_purge_queue_owners'.
+ *
+ * Because we are allowing multiple users to trigger purges concurrently as of
  * version 7.x-1.0-beta2.
  */
 function acquia_purge_update_7101(&$sandbox) {

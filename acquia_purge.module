@@ -133,8 +133,8 @@ function acquia_purge_menu() {
     'access arguments'  => array('administer site configuration'),
     'file' => 'acquia_purge.admin.inc',
   );
-  $items['admin/config/development/performance/manualpurge/autocomplete'] =
-  array(
+  $items['admin/config/development/performance/manualpurge/autocomplete']
+  = array(
     'type'              => MENU_CALLBACK,
     'page callback'     => 'acquia_purge_manualpurge_autocomplete',
     'access callback'   => '_acquia_purge_are_we_allowed_to_purge',
@@ -186,8 +186,8 @@ function acquia_purge_menu_alter(&$items) {
       'type'              => MENU_LOCAL_TASK,
       'title'             => 'Manual purge',
       'page callback'     => 'drupal_goto',
-      'page arguments'    =>
-        array('admin/config/development/performance/manualpurge'),
+      'page arguments'    => array(
+        'admin/config/development/performance/manualpurge'),
       'access arguments'  => array('administer site configuration'),
     );
   }
@@ -239,10 +239,10 @@ function acquia_purge_expire_cache($paths) {
   // HACK: Expire 7.x-1.x could include full URLs in $paths, strip those out.
   else {
 
-    // The expire module is unreliable API-wise as it often gives absolute URLs
-    // in various scenarios. In the past we tested for 'expire_include_base_url'
-    // but that doesn't always seem to help. We therefore generate a list of
-    // possible http://domainname patterns to strip out. D.o: #2049235, #2133001.
+    // Expire 7.x-1.x is unreliable API-wise as it often gives absolute URLs
+    // instead of relative. In the past we tested for 'expire_include_base_url'
+    // but that didn't always seem to help. We therefore generate a list of
+    // http://domainname patterns to strip them clean. D.o: #2049235, #2133001.
     if (is_null($patterns)) {
       foreach (_acquia_purge_get_domains() as $domain) {
         foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
