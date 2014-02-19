@@ -134,13 +134,13 @@ function acquia_purge_menu() {
     'file' => 'acquia_purge.admin.inc',
   );
   $items['admin/config/development/performance/manualpurge/autocomplete']
-  = array(
-    'type'              => MENU_CALLBACK,
-    'page callback'     => 'acquia_purge_manualpurge_autocomplete',
-    'access callback'   => '_acquia_purge_are_we_allowed_to_purge',
-    'access arguments'  => array('administer site configuration'),
-    'file' => 'acquia_purge.admin.inc',
-  );
+    = array(
+      'type'              => MENU_CALLBACK,
+      'page callback'     => 'acquia_purge_manualpurge_autocomplete',
+      'access callback'   => '_acquia_purge_are_we_allowed_to_purge',
+      'access arguments'  => array('administer site configuration'),
+      'file' => 'acquia_purge.admin.inc',
+    );
 
   return $items;
 }
@@ -305,7 +305,7 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
     $form['acquia_purge'] = array(
       '#weight' => -100,
       '#type' => 'fieldset',
-      '#title' => t('Acquia Purge recommendation')
+      '#title' => t('Acquia Purge recommendation'),
     );
     $form['acquia_purge']['markup'] = array(
       '#type' => 'item',
