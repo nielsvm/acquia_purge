@@ -151,11 +151,20 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
   $domains = _acquia_purge_get_domains();
   $form['description'] = array(
     '#markup' => t('<p>This form allows you to purge one or more paths from your
-    Acquia Cloud load balancers, e.g.: <b>news?page=1</b>. This functionality is
-    not intended for day-to-day use but rather for emergency cases when an
-    outdated copy of a page is served. It is highly recommended to automate your
-    site by creating rules for these paths, so everybody editing content can
-    rely on your site refreshing properly.</p>'),
+    Acquia Cloud load balancers. This form is not intended for day-to-day use
+    and only meant for site administrators, for instance in emergency cases when
+    a outdated copy of a page remains being served. It is highly recommended to
+    automate these purges using rules so editorial users can rely on a fully
+    fresh site instead of relying on this form.</p>'),
+  );
+  $form['examplepaths'] = array(
+    '#markup' => '<p>' . theme(
+      'item_list',
+      array(
+        'title' => t('Path examples:'),
+        'items' => array('&lt;front&gt;', 'node/1', 'news?page=1'),
+      )
+    ) . '</p>',
   );
   $form['domains'] = array(
     '#markup' => '<p>' . theme(
