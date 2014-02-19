@@ -150,18 +150,46 @@ function acquia_purge_menu() {
  */
 function acquia_purge_menu_alter(&$items) {
 
-  // Expire 7.x-2.x: rename menu items and move the manual purge form over.
+  // Expire 7.x-2.x moved its settings into its own section which breaks our
+  // manual purge tab and overall navigation experience. By setting up fake
+  // redirecting tabs between 'a./c./development/performance' and
+  // 'a./c./system/expire' we restore the experience without breaking anything.
   if (isset($items['admin/config/system/expire'])) {
-    $items['admin/config/system/expire/settings'] = array(
-      'title'             => $items['admin/config/system/expire']['title'],
-      'type'              => MENU_DEFAULT_LOCAL_TASK);
-    $items['admin/config/system/expire']['title'] =
-      t('Cache Expiration and Purging');
-    $items['admin/config/system/expire']['description'] =
-      t('Settings for expiration of cached pages and purging.');
-    $items['admin/config/system/expire/manualpurge'] =
-      $items['admin/config/development/performance/manualpurge'];
-    unset($items['admin/config/development/performance/manualpurge']);
+    $items['admin/config/development/performance/expire'] = array(
+      'type'              => MENU_LOCAL_TASK,
+      'title'             => 'Cache Expiration',
+      'page callback'     => 'drupal_goto',
+      'page arguments'    => array('admin/config/system/expire'),
+      'access arguments'  => array('administer site configuration'),
+    );
+    $items['admin/config/development/performance/default'] = array(
+      'title'             => 'Performance',
+      'type'              => MENU_DEFAULT_LOCAL_TASK,
+      'file path'         => drupal_get_path('module', 'system'),
+      'weight'            => -5,
+    );
+    $items['admin/config/system/expire/default'] = array(
+      'title'            => 'Cache Expiration',
+      'type'              => MENU_DEFAULT_LOCAL_TASK,
+      'file path'         => drupal_get_path('module', 'expire'),
+      'weight'            => -5,
+    );
+    $items['admin/config/system/expire/performance'] = array(
+      'type'              => MENU_LOCAL_TASK,
+      'title'             => 'Performance',
+      'weight'            => -20,
+      'page callback'     => 'drupal_goto',
+      'page arguments'    => array('admin/config/development/performance'),
+      'access arguments'  => array('administer site configuration'),
+    );
+    $items['admin/config/system/expire/manualpurge'] = array(
+      'type'              => MENU_LOCAL_TASK,
+      'title'             => 'Manual purge',
+      'page callback'     => 'drupal_goto',
+      'page arguments'    =>
+        array('admin/config/development/performance/manualpurge'),
+      'access arguments'  => array('administer site configuration'),
+    );
   }
 }
 
