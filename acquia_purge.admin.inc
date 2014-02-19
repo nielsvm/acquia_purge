@@ -147,6 +147,7 @@ function acquia_purge_manualpurge_autocomplete($string) {
  *   A standard Form API form-array.
  */
 function acquia_purge_manualpurge_form($form, &$form_state) {
+  $examples = array('&lt;front&gt;', 'node/1', 'news?page=1', 'contact');
   $schemes = _acquia_purge_get_protocol_schemes();
   $domains = _acquia_purge_get_domains();
   $form['description'] = array(
@@ -157,23 +158,26 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
     automate these purges using rules so editorial users can rely on a fully
     fresh site instead of relying on this form.</p>'),
   );
-  $form['examplepaths'] = array(
-    '#markup' => '<p>' . theme(
-      'item_list',
-      array(
-        'title' => t('Path examples:'),
-        'items' => array('&lt;front&gt;', 'node/1', 'news?page=1'),
-      )
-    ) . '</p>',
-  );
-  $form['domains'] = array(
-    '#markup' => '<p>' . theme(
-      'item_list',
-      array(
-        'title' => t('Paths will be purged on:'),
-        'items' => $domains,
-      )
-    ) . '</p>',
+
+  // Build up table rows with domains on the left and examples on the right.
+  $rows = array();
+  $rowsc = count($domains);
+  if (count($examples) > count($domains)) {
+    $rowsc = count($examples);
+  }
+  for ($i = 0; $i < $rowsc; $i++) {
+    $row = array();
+    $row[0] = isset($domains[$i]) ? $domains[$i] : '';
+    $row[1] = isset($examples[$i]) ? $examples[$i] : '';
+    $rows[] = $row;
+  }
+
+  // Add the guidance table to help the user understand.
+  $form['guidancetable'] = array(
+    '#theme' => 'table',
+    '#header' => array(t('Domains to purge paths on'), t('Example paths')),
+    '#rows' => $rows,
+    '#empty' => '',
   );
 
   // Because we have many fields with the same values, we have to set
