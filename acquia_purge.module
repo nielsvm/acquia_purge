@@ -298,8 +298,26 @@ function acquia_purge_expire_cache($paths) {
  */
 function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state, $form_id) {
 
-  // Alter expire 7.x-1.x's setting form, remove "Include base URL in expires".
+  // Alter expire 7.x-1.x's settings form.
   if (!isset($form['tabs']['status'])) {
+
+    // Add a recommendation to experiment with expire 7.x-2.0-beta2.
+    $form['acquia_purge'] = array(
+      '#weight' => -100,
+      '#type' => 'fieldset',
+      '#title' => t('Acquia Purge recommendation')
+    );
+    $form['acquia_purge']['markup'] = array(
+      '#type' => 'item',
+      '#markup' => '<i>' . t("Version <b>7.x-2.0-beta2</b> of the Cache
+        Expiration module provides you with much more granular configuration
+        and the ability to purge more items from your site and less of those
+        that you for instance might not need purged. If you are for instance
+        experiencing overzealous purging it might be worth testing with this
+        version to see if it improves your experience.") . '</i>',
+    );
+
+    // Remove "Include base URL in expires", we are doing that in hook_boot.
     unset($form['format']);
   }
 
