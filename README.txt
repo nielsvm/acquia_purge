@@ -42,25 +42,25 @@ sites, blogs and brand sites.
 
 Configurability
 ================================================================================
-By strict design and principle, this module doesn't expose many settings nor
-does it have any configuration forms. The reason is simple, its a utility module
-and therefore needs to be as turnkey and zeroconf as possible. However, it is
-inevitable that certain things are specific to certain cases and therefore some
-things are available through $conf settings that can be put in settings.php
-and are documented here below:
+By strict design and principle, this module doesn't have any UI exposed settings
+or configuration forms. The reason behind this philosophy is that - as a pure -
+utility module only site administrators should be able to change anything and if
+they do, things should be traceable in settings.php. Although Acquia Purge
+attempts to stay as turnkey and zeroconf as possible, the following options
+exist as of this version and documented below:
 
-╔══════════════════════╦══════════════════════════════════════════════════════╗
-║    $conf setting     ║                     Description                      ║
-╠══════════════════════╬══════════════════════════════════════════════════════╣
-║ acquia_purge_domains ║ Allows you to control which domains are being purged ║
-║                      ║ instead of automatic guessing, see DOMAINS.txt       ║
-║                      ║ $conf['acquia_purge_domains'] = array('mysite.com'); ║
-║                      ║                                                      ║
-║ acquia_purge_cron    ║ Enabling this will let the module process items in   ║
-║                      ║ the queue from cron, and disable the client-side     ║
-║                      ║ progress bar processor. Make sure to monitor your    ║
-║                      ║ queue closely with 'drush ap-list' or increase your  ║
-║                      ║ cron interval.                                       ║
-║                      ║ $conf['acquia_purge_cron'] = TRUE;                   ║
-║                      ║                                                      ║
-╚══════════════════════╩══════════════════════════════════════════════════════╝
+╔══════════════════════════╦═════════╦═════════════════════════════════════════╗
+║      $conf setting       ║ Default ║               Description               ║
+╠══════════════════════════╬═════════╬═════════════════════════════════════════╣
+║ acquia_purge_domains     ║ (auto)  ║ Allows you to control which domains will║
+║                          ║         ║ get purged, see DOMAINS.txt             ║
+║                          ║         ║                                         ║
+║ acquia_purge_cron        ║ FALSE   ║ Once set to TRUE, this will switch the  ║
+║                          ║         ║ queue processing entirely to cron and   ║
+║                          ║         ║ disable the client-side progressbar. Do ║
+║                          ║         ║ keep an eye on 'drush ap-list' once     ║
+║                          ║         ║ enabled as the queue can grow too fast  ║
+║                          ║         ║ requiring a cron interval increase.     ║
+║                          ║         ║ $conf['acquia_purge_cron'] = TRUE;      ║
+║                          ║         ║                                         ║
+╚══════════════════════════╩═════════╩═════════════════════════════════════════╝
