@@ -559,13 +559,12 @@ function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
 
   // Initialize $tests and gather test results, cache everything statically.
   if (is_null($tests)) {
-    $module_path = drupal_get_path('module', 'acquia_purge');
     $prefix = '_acquia_purge_get_diagnosis_';
     $tests = array();
     $t = get_t();
 
     // Require the file that contains our tests: acquia_purge.diagnostics.inc.
-    require_once $module_path . '/acquia_purge.diagnostics.inc';
+    module_load_include('inc', 'acquia_purge', 'acquia_purge.diagnostics');
 
     // Similar to hooks, functions starting with "_acquia_purge_get_diagnosis_"
     // will be regarded as individual tests and called to gather results.
