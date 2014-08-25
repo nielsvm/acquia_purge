@@ -924,7 +924,7 @@ function _acquia_purge_queue() {
  *   The total amount of items in the queue (int).
  */
 function _acquia_purge_queue_add($path) {
-  $qcount = variable_get('acquia_purge_queue_counter', 0);
+  $qcount = _acquia_purge_state_get('queue_counter', 0);
   $queue = _acquia_purge_queue();
 
   // Add the non-associative purge item definition.
@@ -941,10 +941,10 @@ function _acquia_purge_queue_add($path) {
 
     // Only register authenticated users, anonymous users will only queue.
     if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-      $owners = variable_get('acquia_purge_queue_owners', array());
+      $owners = _acquia_purge_state_get('queue_owners', array());
       if (!in_array($user->name, $owners)) {
         $owners[] = $user->name;
-        variable_set('acquia_purge_queue_owners', $owners);
+        _acquia_purge_state_set('queue_owners', $owners);
       }
       $owner_registered = TRUE;
     }
@@ -952,7 +952,7 @@ function _acquia_purge_queue_add($path) {
   }
 
   // Store the queue counter in our state variable.
-  variable_set('acquia_purge_queue_counter', $qcount);
+  _acquia_purge_state_set('queue_counter', $qcount);
 
   return $qcount;
 }
@@ -968,8 +968,8 @@ function _acquia_purge_queue_clear() {
   $queue->deleteQueue();
 
   // Reset counter and ownership.
-  variable_set('acquia_purge_queue_counter', 0);
-  variable_set('acquia_purge_queue_owners', array());
+  _acquia_purge_state_set('queue_counter', 0);
+  _acquia_purge_state_set('queue_owners', array());
 }
 
 /**
@@ -1055,12 +1055,12 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
     }
   }
 
-  // Set acquia_purge_queue_counter to 0 once the queue is empty as well.
+  // Set the queue counter to 0 once the queue is empty as well.
   if ((int) $queue->numberOfItems() === 0) {
 
     // Once its back to 0, progress is 100% and no activity is assumed.
-    variable_set('acquia_purge_queue_counter', 0);
-    variable_set('acquia_purge_queue_owners', array());
+    _acquia_purge_state_set('queue_counter', 0);
+    _acquia_purge_state_set('queue_owners', array());
   }
 
   return $items;
@@ -1304,7 +1304,7 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
 
   // Initialize array with default values, except for the total counter.
   $info = array(
-    'total' => variable_get('acquia_purge_queue_counter', 0),
+    'total' => _acquia_purge_state_get('queue_counter', 0),
     'remaining' => 0,
     'processed' => 0,
     'percent' => 100,
@@ -1355,7 +1355,7 @@ function _acquia_purge_queue_is_user_purging() {
   }
 
   // Retrieve the list of user names owning a ongoing purge process.
-  $owners = variable_get('acquia_purge_queue_owners', array());
+  $owners = _acquia_purge_state_get('queue_owners', array());
 
   // If the owners list is empty, that means no active purges are ongoing.
   if (!count($owners)) {
@@ -1374,6 +1374,112 @@ function _acquia_purge_queue_is_user_purging() {
 
   // All tests passed, this user can process the queue.
   return TRUE;
+}
+
+/**
+ * Initialize the persistent state data store.
+ *
+ * @see _acquia_purge_state_set()
+ * @see _acquia_purge_state_get()
+ */
+function _acquia_purge_state_initialize() {
+  global $_acquia_purge_state;
+
+  // Initialize the global variable.
+  if (!is_null($_acquia_purge_state)) {
+    return;
+  }
+  else {
+    $_acquia_purge_state = array();
+  }
+
+  // Retrieve one object from cache, which is our data store.
+  if ($cache_match = cache_get('acquia_purge_state')) {
+    if (is_array($cache_match->data) && count($cache_match->data)) {
+      $_acquia_purge_state = $cache_match->data;
+    }
+  }
+}
+
+/**
+ * Returns a persistent data entry from cached state data.
+ *
+ * @param $name
+ *   The name of the state data entry to return.
+ * @param $default
+ *   The default value to use if this data entry has never been set.
+ *
+ * @return
+ *   The value of the data entry.
+ *
+ * @see _acquia_purge_state_set()
+ * @see _acquia_purge_state_initialize()
+ */
+function _acquia_purge_state_get($name, $default = NULL) {
+  global $_acquia_purge_state;
+
+  // Read in state data and make it available globally.
+  if (is_null($_acquia_purge_state)) {
+    _acquia_purge_state_initialize();
+  }
+
+  // Return the data if it exists, else the default.
+  if (isset($_acquia_purge_state[$name])) {
+    return $_acquia_purge_state[$name];
+  }
+  return $default;
+}
+
+/**
+ * Returns a persistent data point from cached state data.
+ *
+ * @param $name
+ *   The name of the state data entry to store.
+ * @param $value
+ *   The value to set. This can be any PHP data type.
+ *
+ * @return
+ *   Void.
+ *
+ * @see _acquia_purge_state_get()
+ * @see _acquia_purge_state_initialize()
+ */
+function _acquia_purge_state_set($name, $value) {
+  global $_acquia_purge_state;
+
+  // Read in state data and make it available globally.
+  if (is_null($_acquia_purge_state)) {
+    _acquia_purge_state_initialize();
+  }
+
+  // Store the data locally first.
+  $_acquia_purge_state[$name] = $value;
+
+  // Register a shutdown function to commit the state data in one go.
+  if (!isset($_acquia_purge_state['__commit_registered'])) {
+    $_acquia_purge_state['__commit_registered'] = TRUE;
+    drupal_register_shutdown_function('_acquia_purge_state_store_commit');
+  }
+}
+
+/**
+ * Commit the store to the cache.
+ *
+ * @see _acquia_purge_state_set()
+ */
+function _acquia_purge_state_store_commit() {
+  global $_acquia_purge_state;
+
+  // Read in state data and make it available globally.
+  if (is_null($_acquia_purge_state)) {
+    _acquia_purge_state_initialize();
+  }
+
+  // Remove the double registration cookie.
+  unset($_acquia_purge_state['__commit_registered']);
+
+  // Now commit the data store to cache.
+  cache_set('acquia_purge_state', $_acquia_purge_state);
 }
 
 /**

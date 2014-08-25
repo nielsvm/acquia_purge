@@ -95,3 +95,20 @@ function acquia_purge_update_7101(&$sandbox) {
   variable_del('acquia_purge_queue_owner');
   variable_set('acquia_purge_queue_owners', array());
 }
+
+/**
+ * Remove two variables used for state data instead of configuration.
+ *
+ * As of version 7.x-1.0, these two variables aren't necessary anymore and
+ * were used as frequently changing state data keys. As rightfully explained
+ * on https://www.drupal.org/node/2205015, these shouldn't belong here
+ * anymore. BEWARE, THIS UPDATE CLEARS YOUR QUEUE!
+ */
+function acquia_purge_update_7102(&$sandbox) {
+  variable_del('acquia_purge_queue_counter');
+  variable_del('acquia_purge_queue_owners');
+
+  // As we are losing our old counter and owners state, also clear the queue
+  // as this will otherwise inevitably lead to sites with queue zombies.
+  _acquia_purge_queue_clear();
+}
