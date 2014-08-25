@@ -1016,6 +1016,14 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   $requests = $schemes * ($domains * $balancers);
   $paths = intval($max_requests / $requests);
 
+  // Prepare a reusable list that we use to track which paths we purged during
+  // this request. When a path - say '/news' - was already purged during this
+  // run, we will discard any new popped item from the queue and move on.
+  static $dedupe_list;
+  if (is_null($dedupe_list)) {
+    $dedupe_list = array();
+  }
+
   // In scenarios with many balancers or many domains it might happen that even
   // one path will trigger more HTTP requests than we can handle. To prevent
   // not purging anything anymore we will attempt one but with taking risks.
@@ -1033,6 +1041,16 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   for ($i = 0; $i < $paths; $i++) {
     if ($item = $queue->claimItem()) {
 
+      // Discard any items that we already purged during this request.
+      if (!isset($item->data[0]) || in_array($item->data[0], $dedupe_list)) {
+        $queue->deleteItem($item);
+        $qcount = _acquia_purge_state_get('queue_counter', 0);
+        $qcount--;
+        _acquia_purge_state_set('queue_counter', $qcount);
+        $i++;
+        continue;
+      }
+
       // Add this item to the items list released back or being processed.
       $items[] = $item->data;
 
@@ -1042,6 +1060,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
         // If the processor throws FALSE: release the item and try again later.
         if (call_user_func_array($processor_callback, $item->data)) {
           $queue->deleteItem($item);
+          $dedupe_list[] = $item->data[0];
         }
         else {
           $queue->releaseItem($item);
@@ -1051,6 +1070,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
       // Without provided callback we assume success and delete the item.
       else {
         $queue->deleteItem($item);
+        $dedupe_list[] = $item->data[0];
       }
     }
   }
