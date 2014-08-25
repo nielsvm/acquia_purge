@@ -20,13 +20,23 @@ Frequently asked questions
   of choice so you are dependent on how well it respects the Cache-Control
   header set by the pages Drupal generates. Extensive testing will be required.
 
- Will Acquia Purge wipe SSL parts of my site?
+ Will Acquia Purge wipe SSL/https:// paths on my site?
 --------------------------------------------------------------------------------
-  No it will not purge your HTTPS sections and won't generate https:// url's as
-  SSL support isn't fully implemented as of this writing. As Acquia's load
-  balancers are starting to cache SSL requests in Varnish experimental support
-  for this is coming and can in fact already be tested, but you have been
-  warned. See the patch on: https://drupal.org/node/2100327
+  Yes it will, once you added "$conf['acquia_purge_https'] = TRUE;" to your
+  settings.php file. It is important to understand that just adding this setting
+  will DOUBLE the total amount of purging going on as http:// will also see its
+  paths purged, so you will need to monitor your site extra careful as the queue
+  can go up without getting purged fast enough. If the queue does go up quickly,
+  consider switching to cron mode (with 1-5 minute cron intervals) or disable
+  http:// purging as well, see README.txt.
+
+ My site redirects all http:// to https://, should Acquia Purge know about that?
+--------------------------------------------------------------------------------
+  Yes definitely, as that means that without your interference Acquia Purge will
+  continue to wipe http:// paths and essentially ends up double purging with
+  high queues and resource waste as result. By adding this to settings.php:
+  "$conf['acquia_purge_http'] = FALSE;", you essentially disable all http://
+  purging.
 
  My site visitors can go to www.mysite.com and to mysite.com, is that bad?
 --------------------------------------------------------------------------------

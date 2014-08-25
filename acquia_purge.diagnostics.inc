@@ -305,6 +305,68 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
 }
 
 /**
+ * Test how http:// and https:// based purging are set up.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_protocol_schemes($t) {
+  $schemes = _acquia_purge_get_protocol_schemes();
+  $domains = _acquia_purge_get_domains();
+  $test = array(
+    'title' => $t('Purged schemes'),
+    'value' => implode(', ', $schemes));
+
+  // Test if no protocol schemes are to be purged.
+  if (empty($schemes)) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('It seems as if you have put both '
+    . ' <b>acquia_purge_http</b> and <b>acquia_purge_https</b> settings to'
+    . ' <b>FALSE</b> and thus disabled, which leads to a situation'
+    . ' that does not work. Enable either one of them for Acquia Purge'
+    . ' to continue to operate.');
+  }
+
+  // Test for the best possible scenario, either http:// OR https:// enabled.
+  elseif (count($schemes) === 1) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
+  }
+
+  // Test for the Molotov cocktail scenario, two schemes with >4 domains.
+  elseif ((count($schemes) === 2) && (count($domains) > 4)) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('You are purging both <b>http://</b> as'
+    . ' <b>https://</b> paths on your site with more than 4 domain names.'
+    . ' Acquia Purge has self-shutdown to prevent worse from happening as'
+    . ' two protocol schemes with this many domain names can likely bring'
+    . ' down your website at some point. Its better to either only wipe'
+    . ' https:// or by reducing unnecessary domain names, for instance'
+    . ' bare domains that redirect. See README.txt and DOMAINS.txt for more'
+    . ' information on tuning.');
+  }
+
+  // Test for the lesser dangerous cocktail, just two schemes.
+  elseif (count($schemes) === 2) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('You are purging both <b>http://</b> as'
+    . ' <b>https://</b> paths on your site, which can be dangerous. Especially'
+    . ' if you have more than 1-2 domains as this will lead in the double'
+    . ' amount of work that gets done. Keep a close eye on the queue and'
+    . ' consider delivering all your traffic off https:// (by doing a full'
+    . ' -site redirect) and to disable http:// purging, see README.txt.');
+  }
+
+  return $test;
+}
+
+/**
  * Report on the current status of the system.
  *
  * @param string $t

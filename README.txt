@@ -63,4 +63,20 @@ exist as of this version and documented below:
 ║                          ║         ║ requiring a cron interval increase.     ║
 ║                          ║         ║ $conf['acquia_purge_cron'] = TRUE;      ║
 ║                          ║         ║                                         ║
+║ acquia_purge_http        ║ TRUE    ║ Purging of http:// schemes, which is    ║
+║                          ║         ║ the default behavior. You can disable   ║
+║                          ║         ║ it with FALSE, as long as you then do   ║
+║                          ║         ║ purge https://. Else the system will    ║
+║                          ║         ║ shut itself down and report an error.   ║
+║                          ║         ║ $conf['acquia_purge_http'] = FALSE;     ║
+║                          ║         ║                                         ║
+║                          ║         ║                                         ║
+║ acquia_purge_https       ║ FALSE   ║ Experimental https:// scheme support,   ║
+║                          ║         ║ disabled by default. Once enabled the   ║
+║                          ║         ║ total amount of work done will double,  ║
+║                          ║         ║ so monitor your system closely and      ║
+║                          ║         ║ consider disabling http:// if your site ║
+║                          ║         ║ is fully https:// based (redirecting).  ║
+║                          ║         ║ $conf['acquia_purge_https'] = TRUE;     ║
+║                          ║         ║                                         ║
 ╚══════════════════════════╩═════════╩═════════════════════════════════════════╝

@@ -853,14 +853,21 @@ function _acquia_purge_get_domains_add_sitesphp(&$domains) {
 /**
  * Get a list of protocol schemes that will be purged.
  *
- * @warning
- *   This facilitates future functionality, currently only HTTP is supported.
- *
  * @returns
  *   Array with scheme strings like 'http' and 'https'.
  */
 function _acquia_purge_get_protocol_schemes() {
-  return array('http');
+  static $schemes;
+  if (is_null($schemes)) {
+    $schemes = array();
+    if (variable_get('acquia_purge_http', TRUE) === TRUE) {
+      $schemes[] = 'http';
+    }
+    if (variable_get('acquia_purge_https', FALSE) === TRUE) {
+      $schemes[] = 'https';
+    }
+  }
+  return $schemes;
 }
 
 /**
@@ -1223,6 +1230,12 @@ function _acquia_purge_queue_processpurge_requests($requests) {
         curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
         curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->rtype);
         curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
+
+        // For SSL, we need host and peer verification disabled in some cases.
+        if ($rqst->scheme === 'https') {
+          curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+          curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        }
 
         // Add our handle to the multiple cURL handle.
         if (!$single_mode) {
