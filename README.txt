@@ -39,3 +39,28 @@ longer. This hugely decreases the stress on your web servers and leaves more
 "PHP processes" available for actual back-end traffic. Basically every site will
 benefit from implementing this, especially content-focused sites like news
 sites, blogs and brand sites.
+
+Configurability
+================================================================================
+By strict design and principle, this module doesn't expose many settings nor
+does it have any configuration forms. The reason is simple, its a utility module
+and therefore needs to be as turnkey and zeroconf as possible. However, it is
+inevitable that certain things are specific to certain cases and therefore some
+things are available through $conf settings that can be put in settings.php
+and are documented here below:
+
+╔══════════════════════╦══════════════════════════════════════════════════════╗
+║    $conf setting     ║                     Description                      ║
+╠══════════════════════╬══════════════════════════════════════════════════════╣
+║ acquia_purge_domains ║ Allows you to control which domains are being purged ║
+║                      ║ instead of automatic guessing, see DOMAINS.txt       ║
+║                      ║ $conf['acquia_purge_domains'] = array('mysite.com'); ║
+║                      ║                                                      ║
+║ acquia_purge_cron    ║ Enabling this will let the module process items in   ║
+║                      ║ the queue from cron, and disable the client-side     ║
+║                      ║ progress bar processor. Make sure to monitor your    ║
+║                      ║ queue closely with 'drush ap-list' or increase your  ║
+║                      ║ cron interval.                                       ║
+║                      ║ $conf['acquia_purge_cron'] = TRUE;                   ║
+║                      ║                                                      ║
+╚══════════════════════╩══════════════════════════════════════════════════════╝
