@@ -185,7 +185,7 @@ function drush_acquia_purge_ap_forget() {
     array('@remaining' => $stats['remaining'])), 'ok');
 
   // If there was a lock acquired, free it up as the queue will be empty now.
-  lock_release('acquia_purge_ajax_processor');
+  lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
 }
 
 /**
@@ -221,7 +221,7 @@ function drush_acquia_purge_ap_process() {
   }
 
   // Acquire a lock and ensure nobody else is purging something.
-  if (!lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+  if (!lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
     return drush_set_error("Unable to acquire lock, ensure that all users "
       . "close their browser tabs as a different purge seems to be active!");
   }
@@ -254,5 +254,5 @@ function drush_acquia_purge_ap_process() {
   } while (count($items));
 
   // We are done so lets release the lock.
-  lock_release('acquia_purge_ajax_processor');
+  lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
 }

@@ -29,6 +29,11 @@ define('ACQUIA_PURGE_PARALLEL_REQUESTS', 6);
 define('ACQUIA_PURGE_REQUEST_TIMEOUT', 2);
 
 /**
+ * The lock ID used as lock name for all queue processing actors.
+ */
+define('ACQUIA_PURGE_QUEUE_LOCK_ID', 'acquia_purge_processor');
+
+/**
  * The amount of time in seconds used to lock purge processing.
  */
 define('ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT', 60);
@@ -106,6 +111,49 @@ function acquia_purge_permission() {
       which URLs are being purged and when all pages have been refreshed.'),
     ),
   );
+}
+
+/**
+ * Implements hook_cron().
+ */
+function acquia_purge_cron() {
+
+  // If cron-based purging isn't specifically enabled, don't do anything.
+  if (variable_get('acquia_purge_cron', FALSE) !== TRUE) {
+    return;
+  }
+
+  // Stop invocation if we are not detecting Acquia Cloud heuristics.
+  if (!_acquia_purge_are_we_on_acquiacloud()) {
+    return;
+  }
+
+  // Acquire a lock and ensure nobody else is purging something.
+  if (!lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+    return;
+  }
+
+  // Stop processing if any serious issues were found and log to watchdog.
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
+    _acquia_purge_get_diagnosis_logged($err);
+    return;
+  }
+
+  // Retrieve the statistics and determine if processing is needed at all.
+  $stats = _acquia_purge_queue_stats();
+  if (!$stats['running']) {
+    return;
+  }
+
+  // Calculate how many iterations we need and start processing accordingly.
+  $log = array();
+  do {
+    $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+  } while (count($items));
+
+  // We are done so lets release the lock.
+  lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
 }
 
 /**
@@ -1296,6 +1344,13 @@ function _acquia_purge_queue_is_user_purging() {
   // Anonymous users are never able to trigger purges by design, if this would
   // ever become a necessity we'll introduce a permission to protect most sites.
   if (!isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+    return FALSE;
+  }
+
+  // If the site administrator has deliberately enabled cron-based processing,
+  // there's no reason to assume a user is purging. The latter might have
+  // initiated it, but is not the one who's going to process it as cron will.
+  if (variable_get('acquia_purge_cron', FALSE) === TRUE) {
     return FALSE;
   }
 

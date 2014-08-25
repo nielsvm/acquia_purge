@@ -46,15 +46,29 @@ Frequently asked questions
 
  Does Acquia Purge purge from cron and/or should I set up cron for it?
 --------------------------------------------------------------------------------
-  No, the module doesn't purge paths out of cron by design. Whenever a user
-  triggers purges - after saving content for instance - a JS file will be loaded
-  for that particular user whilst he/she is logged in and purges exists. When
-  the "purge notification"-permission is granted the user will see a progressbar
-  on every page that shows progress, as soon as its done it will go away. Users
-  triggering purges without that permission will still secretly load the file
-  and trigger back-end purge calls till data is processed. If you really need
-  periodic queue processing you can call "drush --uri=http://... ap-process"
-  from cron to process remaining queue items.
+  Not by default as the client-side processing works well for most websites and
+  clogging site's cron runs even further isn't a good default setting. However,
+  it is possible as of Acquia Purge 7.x-1.0 to add this to your settings.php
+  file: "$conf['acquia_purge_cron'] = TRUE;", which will not only let the module
+  purge from cron, but also disable the on-screen client-side progressbar. It is
+  however very important - if you cron processing goes through Drush - that the
+  --uri parameter gets passed in to Drush, it should point to a URL your end
+  users will also visit, e.g. your frontpage.
+
+ Can I disable the client-side progressbar based purging?
+--------------------------------------------------------------------------------
+  You can, but only by enabling cron-based purging as answered in the question
+  "Does Acquia Purge purge from cron and/or should I set up cron for it?".
+
+ With previous versions, I had set up "drush ap-process" in cron, is this okay?
+--------------------------------------------------------------------------------
+  Acquia Purge now has a cleaner way of enabling cron-based purging with the
+  setting "$conf['acquia_purge_cron'] = TRUE;", which is now the recommended
+  way of achieving this. The drawback that method is that there's no granular
+  control over when purging happens (as it follows the cron schedule) and that
+  it also disabled the client-side progressbar. So I recommend you to consider
+  using the new method but if any of its drawbacks prevent you from using the
+  new cron feature, you can continue using this directly.
 
  Why do I need "Acquia Purge" instead of "Purge", Purge works fine here!
 --------------------------------------------------------------------------------

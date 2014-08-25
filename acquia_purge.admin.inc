@@ -19,7 +19,7 @@ function acquia_purge_ajax_processor() {
 
   // Lock acquiring assures us that nothing is purging the same paths at the
   // same time. All ways that trigger purging (ajax, drush) respect the locks.
-  if (lock_acquire('acquia_purge_ajax_processor', ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+  if (lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
 
     // Pop items from the queue and immediately process them.
     _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
@@ -47,7 +47,7 @@ function acquia_purge_ajax_processor() {
     }
 
     // We're done so lets release the lock.
-    lock_release('acquia_purge_ajax_processor');
+    lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
   }
 
   // Instead of raising a very visual error condition: indicate the lock.
