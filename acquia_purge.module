@@ -949,14 +949,14 @@ function _acquia_purge_queue() {
  *   The total amount of items in the queue (int).
  */
 function _acquia_purge_queue_add($path) {
-  $qcount = _acquia_purge_state_get('queue_counter', 0);
   $queue = _acquia_purge_queue();
+
+  // Retrieve and bump the queue counter.
+  $qtotal = _acquia_purge_state_get('qtotal', 0);
+  $qtotal++;
 
   // Add the non-associative purge item definition.
   $queue->createItem(array($path));
-
-  // Bump the queue counter.
-  $qcount++;
 
   // Register the currently logged on user as one of the queue users. These
   // users are given the AJAX client side script until the queue is cleaned up.
@@ -977,10 +977,10 @@ function _acquia_purge_queue_add($path) {
     }
   }
 
-  // Store the queue counter in our state variable.
-  _acquia_purge_state_set('queue_counter', $qcount);
+  // Store the queue total counter in our state storage.
+  _acquia_purge_state_set('qtotal', $qtotal);
 
-  return $qcount;
+  return $qtotal;
 }
 
 /**
@@ -994,7 +994,7 @@ function _acquia_purge_queue_clear() {
   $queue->deleteQueue();
 
   // Reset counter and ownership.
-  _acquia_purge_state_set('queue_counter', 0);
+  _acquia_purge_state_set('qtotal', 0);
   _acquia_purge_state_set('uiusers', array());
 }
 
@@ -1070,9 +1070,9 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
       // Discard any items that we already purged during this request.
       if (!isset($item->data[0]) || in_array($item->data[0], $dedupe_list)) {
         $queue->deleteItem($item);
-        $qcount = _acquia_purge_state_get('queue_counter', 0);
-        $qcount--;
-        _acquia_purge_state_set('queue_counter', $qcount);
+        $qtotal = _acquia_purge_state_get('qtotal', 0);
+        $qtotal--;
+        _acquia_purge_state_set('qtotal', $qtotal);
         $i++;
         continue;
       }
@@ -1105,7 +1105,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   if ((int) $queue->numberOfItems() === 0) {
 
     // Once its back to 0, progress is 100% and no activity is assumed.
-    _acquia_purge_state_set('queue_counter', 0);
+    _acquia_purge_state_set('qtotal', 0);
     _acquia_purge_state_set('uiusers', array());
   }
 
@@ -1356,7 +1356,7 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
 
   // Initialize array with default values, except for the total counter.
   $info = array(
-    'total' => _acquia_purge_state_get('queue_counter', 0),
+    'total' => _acquia_purge_state_get('qtotal', 0),
     'remaining' => 0,
     'processed' => 0,
     'percent' => 100,
