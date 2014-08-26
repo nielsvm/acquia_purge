@@ -305,6 +305,57 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
 }
 
 /**
+ * Report which way processing occurs.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_processing_mode($t) {
+  $cron = variable_get('acquia_purge_cron', FALSE) === TRUE;
+  $test = array(
+    'title' => $t('Processing mode'),
+    'value' => $t('client-side (js)'),
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
+  );
+
+  // Report just that if cron isn't running.
+  if (!$cron) {
+    return $test;
+  }
+
+  // Since we are operating in cron mode, change the value.
+  $test['value'] = $t('cron');
+
+  // Test if the last cron run was too long ago for Acquia Purge.
+  $warning_threshold = 3600;
+
+  // Determine when cron last ran.
+  $cron_last = variable_get('cron_last');
+  if (!is_numeric($cron_last)) {
+    $cron_last = variable_get('install_time', 0);
+  }
+
+  // Raise a warning when it was too long ago since cron ran.
+  if (REQUEST_TIME - $cron_last > $warning_threshold) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('It has been longer than one hour since cron ran'
+      . ' for the last time, which puts your site at risk. As Acquia Purge'
+      . ' operates in cron-mode, it assumes high frequency processing of its'
+      . ' queue. When this is not frequent enough, the queue can reach'
+      . ' dangerous levels and eventually even lead to a safety shutdown.');
+  }
+
+  return $test;
+}
+
+/**
  * Test how http:// and https:// based purging are set up.
  *
  * @param string $t
@@ -367,6 +418,74 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
 }
 
 /**
+ * Test and report the current queue volume.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_queue($t) {
+  $stats = _acquia_purge_queue_stats();
+  $test = array('title' => $t('Queue volume'));
+
+  // Build up a calculation factor which we use to determine our thresholds.
+  $balancers = count(_acquia_purge_get_balancers());
+  $domains   = count(_acquia_purge_get_domains());
+  $schemes   = count(_acquia_purge_get_protocol_schemes());
+  $factor    = $schemes * ($domains * $balancers);
+
+  // Define our warning and shutdown thresholds.
+  $warning  = ceil(3000 / $factor);
+  $shutdown = ceil(10000 / $factor);
+
+  // Setup our $t() variables.
+  $tvars = array(
+    '@total' => $stats['total'],
+    '@warning' => $warning,
+    '@shutdown' => $shutdown,
+  );
+  $test['value'] = $t('@total (warning: @warning, shutdown: @shutdown)', $tvars);
+
+  // Test the queue level for these thresholds and act appropriately.
+  if ($stats['total'] < $warning) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
+  }
+  elseif (($stats['total'] >= $warning) && ($stats['total'] < $shutdown)) {
+    $test['value'] = $stats['total'];
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('Your queue is at @total items which is'
+      . ' regarded as dangerous, as it either means that your are purging too'
+      . ' broadly (domains, http:// and https://) or that your installation is'
+      . ' not able to keep up processing. If you are not using cron for'
+      . ' processing, consider this now and if you already are, consider a'
+      . ' shorter cron interval. If you have many domain names, consider'
+      . ' reducing the domains. As safety measure, Acquia Purge will shut'
+      . ' itself down once the queue reaches @shutdown items!', $tvars);
+  }
+  elseif ($stats['total'] >= $shutdown) {
+    $test['value'] = $stats['total'];
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('Your queue contains @total items and crossed'
+      . ' the safety limit of @shutdown items, Acquia Purge has shut itself'
+      . ' down to prevent your system from trashing. What this means is that'
+      . ' you are either purging too broadly (domains, http:// and https://)'
+      . ' or that your installation is not able to keep up. If you are not'
+      . ' using cron for processing, set this up now and if you already are,'
+      . ' increase your cron interval! If you have many domain names, reduce'
+      . ' the list. Clear Varnish manually and run drush ap-forget to clear'
+      . ' your queue and unblock the safety shutdown.', $tvars);
+  }
+
+  return $test;
+}
+
+/**
  * Report on the current status of the system.
  *
  * @param string $t
@@ -383,24 +502,26 @@ function _acquia_purge_get_diagnosis_status($t) {
   $stats = _acquia_purge_queue_stats();
   $test = array(
     'title' => $t('Status'),
+    'value' => $t('inactive'),
     'severity' => ACQUIA_PURGE_SEVLEVEL_INFO,
   );
 
-  // Determine the status message.
-  $status = $t('Idle, accepting purges');
-  if ($stats['running']) {
-    $status = $t('Active ongoing purges, @remaining items to go...', array(
-        '@remaining' => $stats['remaining'],
-      )
-    );
+  // If the bad counter is too high, self-shutdown to prevent endless purging.
+  if ($stats['bad'] > 10) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('We counted @bad errors since the last time the'
+      . ' queue finished. To prevent the system from endlessly attempting to'
+      . ' process the queue, it is recommended to check your logs to see what'
+      . ' is going on. Once resolved, you should clear Varnish manually and'
+      . ' clear the queue by calling drush ap-forget, processing will then'
+      . ' start over from scratch.', array('@bad' => $stats['bad']));
+    return $test;
   }
 
-  // Set the status on the plain-text and HTML versions.
-  $test['value'] = $test['value_plain'] = $status;
-
-  // Insert a HTML status widget into the description field if its running.
+  // Report status if the system is running.
   if ($stats['running']) {
     $test['description'] = theme('acquia_purge_status_bar_widget', $stats);
+    $test['value'] = $test['value_plain'] = $t('Purging');
   }
 
   return $test;
