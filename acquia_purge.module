@@ -39,6 +39,11 @@ define('ACQUIA_PURGE_QUEUE_LOCK_ID', 'acquia_purge_processor');
 define('ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT', 60);
 
 /**
+ * File on disk (within files directory) that keeps our state data.
+ */
+define('ACQUIA_PURGE_STATE_FILE', 'public://acquia_purge_state.raw');
+
+/**
  * Diagnostic severity levels: Informational.
  */
 define('ACQUIA_PURGE_SEVLEVEL_INFO', -1);
@@ -1429,6 +1434,7 @@ function _acquia_purge_queue_is_user_purging() {
  * @see _acquia_purge_state_get()
  */
 function _acquia_purge_state_initialize() {
+  global $_acquia_purge_state_raw;
   global $_acquia_purge_state;
 
   // Initialize the global variable.
@@ -1436,14 +1442,30 @@ function _acquia_purge_state_initialize() {
     return;
   }
   else {
+    $_acquia_purge_state_raw = NULL;
     $_acquia_purge_state = array();
   }
 
-  // Retrieve one object from cache, which is our data store.
-  if ($cache_match = cache_get('acquia_purge_state')) {
-    if (is_array($cache_match->data) && count($cache_match->data)) {
-      $_acquia_purge_state = $cache_match->data;
-    }
+  // Load all state data straight from disk, which is quite a bit slower than
+  // stored through a (memory-backed) cache or the database. But, various
+  // tests showed that using the cache API or the dmemcache_* functions proved
+  // to be too unreliable as simple cache wipes would wipe the state data
+  // resulting in a false assumption of an empty queue and therefore corruption
+  // between the queue table and our state data. This is the only storage
+  // mechanism that stays consistently reliable and I/O is reduced to the
+  // bare minimum.
+  if (!file_exists(ACQUIA_PURGE_STATE_FILE)) {
+    return;
+  }
+  $_acquia_purge_state_raw = file_get_contents(ACQUIA_PURGE_STATE_FILE);
+  if (!$_acquia_purge_state_raw) {
+    return;
+  }
+
+  // Now that we have the raw payload, parse it and load into our global store.
+  $data = unserialize($_acquia_purge_state_raw);
+  if (is_array($data) && count($data)) {
+    $_acquia_purge_state = $data;
   }
 }
 
@@ -1514,6 +1536,7 @@ function _acquia_purge_state_set($name, $value) {
  * @see _acquia_purge_state_set()
  */
 function _acquia_purge_state_store_commit() {
+  global $_acquia_purge_state_raw;
   global $_acquia_purge_state;
 
   // Read in state data and make it available globally.
@@ -1524,8 +1547,16 @@ function _acquia_purge_state_store_commit() {
   // Remove the double registration cookie.
   unset($_acquia_purge_state['__commit_registered']);
 
-  // Now commit the data store to cache.
-  cache_set('acquia_purge_state', $_acquia_purge_state);
+  // Serialize the current store and compare the raw data with the initial
+  // raw data, if they match exactly we won't write to disk to reduce IO.
+  $new_raw_payload = serialize($_acquia_purge_state);
+  if ($_acquia_purge_state_raw === $new_raw_payload) {
+    return;
+  }
+
+  // Write all state data to disk, see _acquia_purge_state_initialize().
+  $_acquia_purge_state_raw = $new_raw_payload;
+  file_put_contents(ACQUIA_PURGE_STATE_FILE, $new_raw_payload);
 }
 
 /**
