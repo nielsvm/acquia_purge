@@ -986,16 +986,22 @@ function _acquia_purge_queue_add($path) {
 /**
  * Queue manager: clear the queue and invalidate all running processes.
  *
+ * @param boolean $state_only
+ *   Only wipe associated state data as the queue is already certainly
+ *   cleared, for instance when numberOfItems() returned 0.
+ *
  * @returns
  *   Void.
  */
-function _acquia_purge_queue_clear() {
-  $queue = _acquia_purge_queue();
-  $queue->deleteQueue();
-
-  // Reset counter and ownership.
+function _acquia_purge_queue_clear($state_only = FALSE) {
   _acquia_purge_state_set('qtotal', 0);
   _acquia_purge_state_set('uiusers', array());
+
+  // Only retrieve and really delete the queue if we are asked to.
+  if ($state_only === FALSE) {
+    $queue = _acquia_purge_queue();
+    $queue->deleteQueue();
+  }
 }
 
 /**
@@ -1102,11 +1108,9 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   }
 
   // Set the queue counter to 0 once the queue is empty as well.
+  // When the queue reports that its empty, reset our associated state data.
   if ((int) $queue->numberOfItems() === 0) {
-
-    // Once its back to 0, progress is 100% and no activity is assumed.
-    _acquia_purge_state_set('qtotal', 0);
-    _acquia_purge_state_set('uiusers', array());
+    _acquia_purge_queue_clear(TRUE);
   }
 
   return $items;
