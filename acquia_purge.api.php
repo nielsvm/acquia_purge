@@ -15,8 +15,8 @@
  *
  * Modules may implement this hook to influence the domain names Acquia Purge
  * is purging and have more narrow control over it. Although it is generally
- * discouraged to implement this, it does make in complexer scenarios with many
- * domains that need contextual reduction.
+ * discouraged to do this, it does make sense in complexer scenarios with many
+ * domains that need to be reduced to stay under the diagnostic limit.
  *
  * Adding domains MUST always happen through _acquia_purge_get_domains_add()
  * as this guards domain normalization and de-duplication, and removing domains
