@@ -958,22 +958,23 @@ function _acquia_purge_queue_add($path) {
   // Bump the queue counter.
   $qcount++;
 
-  // Register the currently logged on user as one of the queue owners. These
-  // users are given the AJAX client side script until the queue is empty.
-  static $owner_registered;
-  if (is_null($owner_registered) && (php_sapi_name() != 'cli')) {
-    global $user;
+  // Register the currently logged on user as one of the queue users. These
+  // users are given the AJAX client side script until the queue is cleaned up.
+  if (variable_get('acquia_purge_cron', FALSE) !== TRUE) {
+    static $uiuser_registered;
+    if (is_null($uiuser_registered) && (php_sapi_name() != 'cli')) {
+      global $user;
 
-    // Only register authenticated users, anonymous users will only queue.
-    if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-      $owners = _acquia_purge_state_get('queue_owners', array());
-      if (!in_array($user->name, $owners)) {
-        $owners[] = $user->name;
-        _acquia_purge_state_set('queue_owners', $owners);
+      // Only register authenticated users, anonymous users will only queue.
+      if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
+        $uiusers = _acquia_purge_state_get('uiusers', array());
+        if (!in_array($user->name, $uiusers)) {
+          $uiusers[] = $user->name;
+          _acquia_purge_state_set('uiusers', $uiusers);
+        }
+        $uiuser_registered = TRUE;
       }
-      $owner_registered = TRUE;
     }
-
   }
 
   // Store the queue counter in our state variable.
@@ -994,7 +995,7 @@ function _acquia_purge_queue_clear() {
 
   // Reset counter and ownership.
   _acquia_purge_state_set('queue_counter', 0);
-  _acquia_purge_state_set('queue_owners', array());
+  _acquia_purge_state_set('uiusers', array());
 }
 
 /**
@@ -1105,7 +1106,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
 
     // Once its back to 0, progress is 100% and no activity is assumed.
     _acquia_purge_state_set('queue_counter', 0);
-    _acquia_purge_state_set('queue_owners', array());
+    _acquia_purge_state_set('uiusers', array());
   }
 
   return $items;
@@ -1405,16 +1406,16 @@ function _acquia_purge_queue_is_user_purging() {
     return FALSE;
   }
 
-  // Retrieve the list of user names owning a ongoing purge process.
-  $owners = _acquia_purge_state_get('queue_owners', array());
+  // Retrieve the list of user names owning an ongoing purge process.
+  $uiusers = _acquia_purge_state_get('uiusers', array());
 
-  // If the owners list is empty, that means no active purges are ongoing.
-  if (!count($owners)) {
+  // If the uiusers list is empty, that means no active purges are ongoing.
+  if (!count($uiusers)) {
     return FALSE;
   }
 
-  // Is the current user one of the owners of the actively ongoing purge?
-  if (!in_array($user->name, $owners)) {
+  // Is the current user one of the uiusers of the actively ongoing purge?
+  if (!in_array($user->name, $uiusers)) {
     return FALSE;
   }
 
