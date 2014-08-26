@@ -670,6 +670,13 @@ function _acquia_purge_get_domains() {
           _acquia_purge_get_domains_add($domain, $domains);
         }
 
+        // Call hook_acquia_purge_domains_alter() implementations and allow
+        // alteration of the domains list just before it gets stored.
+        foreach (module_implements('acquia_purge_domains_alter') as $module) {
+          $function = $module . '_acquia_purge_domains_alter';
+          $function($domains);
+        }
+
         // Set and return the set of hardcoded domains.
         return $domains;
       }
@@ -699,6 +706,13 @@ function _acquia_purge_get_domains() {
       if (_acquia_purge_are_we_on_acquiacloud()) {
         _acquia_purge_get_domains_add_acloud($domains);
       }
+    }
+
+    // Call hook_acquia_purge_domains_alter() implementations and allow
+    // alteration of the domains list just before it gets stored.
+    foreach (module_implements('acquia_purge_domains_alter') as $module) {
+      $function = $module . '_acquia_purge_domains_alter';
+      $function($domains);
     }
   }
 
