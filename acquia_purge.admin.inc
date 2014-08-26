@@ -308,7 +308,8 @@ function acquia_purge_manualpurge_form_submit($form, &$form_state) {
  *   An associative array containing:
  *   - total: Total amount of actions initially queued for purging.
  *   - remaining: Remaining number of purge actions still to be processed.
- *   - processed: Number of purge actions that have already taken place.
+ *   - good: Number of purge actions that have already taken place.
+ *   - bad: Number of queue items that failed purging.
  *   - percent: Value between 0-100 representing the progress percentage.
  *   - running: Whether URLs are being purged or not.
  *   - purgehistory: Array with recently purged URL's.
@@ -332,7 +333,8 @@ function theme_acquia_purge_status_widget($variables) {
  *   An associative array containing:
  *   - total: Total amount of actions initially queued for purging.
  *   - remaining: Remaining number of purge actions still to be processed.
- *   - processed: Number of purge actions that have already taken place.
+ *   - good: Number of purge actions that have already taken place.
+ *   - bad: Number of queue items that failed purging.
  *   - percent: Value between 0-100 representing the progress percentage.
  *   - running: Whether URLs are being purged or not.
  *   - purgehistory: Array with recently purged URL's.
