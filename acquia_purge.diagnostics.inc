@@ -225,7 +225,7 @@ function _acquia_purge_get_diagnosis_logging($t) {
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('successes and failures'),
     'title' => $t('Logging verbosity'));
-  if (variable_get('acquia_purge_log_success', TRUE) !== TRUE) {
+  if (_acquia_purge_get('acquia_purge_log_success') !== TRUE) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_INFO;
     $test['value'] = $t('failures only');
   }
@@ -343,7 +343,7 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_processing_mode($t) {
-  $cron = variable_get('acquia_purge_cron', FALSE) === TRUE;
+  $cron = _acquia_purge_get('acquia_purge_cron') === TRUE;
   $test = array(
     'title' => $t('Processing mode'),
     'value' => $t('client-side (js)'),

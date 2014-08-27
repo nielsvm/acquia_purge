@@ -52,7 +52,7 @@ exist as of this version and documented below:
 ╔══════════════════════════╦═══════╦═══════════════════════════════════════════╗
 ║      $conf setting       ║ Deflt ║               Description                 ║
 ╠══════════════════════════╬═══════╬═══════════════════════════════════════════╣
-║ acquia_purge_domains     ║ auto  ║ Allows you to control which domains will  ║
+║ acquia_purge_domains     ║ FALSE ║ Allows you to control which domains will  ║
 ║                          ║       ║ get purged, see DOMAINS.txt               ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_cron        ║ FALSE ║ Once set to TRUE, this will switch the    ║
