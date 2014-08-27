@@ -381,6 +381,31 @@ function _acquia_purge_get_diagnosis_processing_mode($t) {
 }
 
 /**
+ * Report the processing capacity under the current configuration.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_processing_capacity($t) {
+  $capacity = _acquia_purge_get_capacity();
+  $factor = _acquia_purge_get_capacity_factor();
+  $test = array(
+    'title' => $t('Processing capacity'),
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
+    'value' => $t('@items items per run, slowdown factor=@factor',
+      array('@items' => $capacity, '@factor' => $factor)),
+  );
+  return $test;
+}
+
+/**
  * Test how http:// and https:// based purging are set up.
  *
  * @param string $t

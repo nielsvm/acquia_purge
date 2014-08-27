@@ -744,25 +744,27 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
  *   Integer indicating how many items may be popped from the queue.
  */
 function _acquia_purge_get_capacity() {
-  $requests_per_item = _acquia_purge_get_capacity_factor();
-  $max_requests = _acquia_purge_get_capacity_maxrequests();
+  static $capacity;
+  if (is_null($capacity)) {
+    $requests_per_item = _acquia_purge_get_capacity_factor();
+    $max_requests = _acquia_purge_get_capacity_maxrequests();
 
-  // Divide the maximum amount of requests through the number of requests we
-  // need per item to get to the capacity.
-  $capacity = intval($max_requests / $requests_per_item);
+    // Divide the maximum amount of requests through the number of requests we
+    // need per item to get to the capacity.
+    $capacity = intval($max_requests / $requests_per_item);
 
-  // In scenarios with many balancers or many domains it might happen that even
-  // one item will trigger more HTTP requests than we can handle. To prevent
-  // not purging anything anymore we will always purge one at minimum.
-  if ($capacity < 1) {
-    $capacity = 1;
+    // In scenarios with many balancers or many domains it might happen that even
+    // one item will trigger more HTTP requests than we can handle. To prevent
+    // not purging anything anymore we will always purge one at minimum.
+    if ($capacity < 1) {
+      $capacity = 1;
+    }
+
+    // Cap the capacity if our calculation is higher than the maximum.
+    if ($capacity > ACQUIA_PURGE_MAX_ITEMS) {
+      $capacity = ACQUIA_PURGE_MAX_ITEMS;
+    }
   }
-
-  // Cap the capacity if our calculation is higher than the maximum.
-  if ($capacity > ACQUIA_PURGE_MAX_ITEMS) {
-    $capacity = ACQUIA_PURGE_MAX_ITEMS;
-  }
-
   return $capacity;
 }
 
