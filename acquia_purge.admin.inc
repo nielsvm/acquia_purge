@@ -21,6 +21,7 @@ function acquia_purge_ajax_processor() {
   // stop us from processing the queue and notify the user about it.
   if (!_acquia_purge_are_we_allowed_to_purge()) {
     $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
+    _acquia_purge_get_diagnosis_logged($err);
     $stats['error'] = $err['description'];
   }
 
