@@ -252,11 +252,11 @@ function acquia_purge_menu_alter(&$items) {
 function acquia_purge_expire_cache($paths) {
   static $patterns;
 
-  // Ask our built-in diagnostics system to preliminary find issues that are so
-  // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
-  // will cause purging to cease and we've got to tell the end user.
+  // Ask our diagnostics system if there are any blocking issues that should
+  // stop us from queuing the item, log the error and notify the user.
   if (!_acquia_purge_are_we_allowed_to_purge()) {
     $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
+    _acquia_purge_get_diagnosis_logged($err);
 
     // Stack all found error messages (can be one too) in a HTML item list.
     $items = array();
@@ -266,19 +266,15 @@ function acquia_purge_expire_cache($paths) {
     $items = theme('item_list', array('items' => $items));
 
     // Warn the user on-screen that purging cannot continue.
-    if (user_access('purge notification')) {
+    if (user_access('purge notification') && ($_GET['q'] !== 'batch')) {
       drupal_set_message(
         t("<p>The system cannot publicly refresh the changes you just made,
           because of the following error conditions:</p>!items<p>Please
           contact your system administrator or development partner!</p>",
           array('!items' => $items)
         ),
-        'warning'
+        'error'
       );
-    }
-    else {
-      // Or fail silently to the logs.
-      _acquia_purge_get_diagnosis_logged($err);
     }
 
     return;
