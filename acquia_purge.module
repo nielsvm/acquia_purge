@@ -594,11 +594,6 @@ function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
       $tests[$tst]['description_plain'] = strip_tags($tests[$tst]['description']);
       $tests[$tst]['severity'] = isset($tests[$tst]['severity']) ? $tests[$tst]['severity'] : ACQUIA_PURGE_SEVLEVEL_INFO;
       $tests[$tst]['value_plain'] = isset($tests[$tst]['value_plain']) ? $tests[$tst]['value_plain'] : $tests[$tst]['value'];
-      $tests[$tst]['value_plain'] = $t('@title: @value', array(
-        '@title' => $tests[$tst]['title'],
-        '@value' => $tests[$tst]['value_plain'],
-        )
-      );
       $tests[$tst]['value'] = $t('<b>@title</b><br />@value', array(
         '@title' => $tests[$tst]['title'],
         '@value' => $tests[$tst]['value'],

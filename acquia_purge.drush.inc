@@ -87,6 +87,7 @@ function acquia_purge_drush_command() {
  */
 function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
   $oldverbosity = drush_get_context('DRUSH_VERBOSE');
+  $tests = _acquia_purge_get_diagnosis($v);
 
   // Define a mapping between install.inc's requirement states and drush_log().
   $severitymap = array(
@@ -99,11 +100,27 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
   // Tell Drush to be verbose.
   drush_set_context('DRUSH_VERBOSE', TRUE);
 
+  // Determine the longest test name, to calculate spacing.
+  $longest = 0;
+  foreach ($tests as $test) {
+    if (strlen($test['name']) > $longest) {
+      $longest = strlen($test['name']) + 2;
+    }
+  }
+
   // Iterate the tests and call drush_log with the appropriate message type.
-  foreach (_acquia_purge_get_diagnosis($v) as $test) {
-    drush_log($test['value_plain'], $severitymap[$test['severity']]);
+  foreach ($tests as $test) {
+    $line = sprintf(
+      ' - %s%s%s',
+      strtoupper($test['name']),
+      str_repeat(' ', $longest - strlen($test['name'])),
+      strtolower($test['value_plain'])
+    );
+    drush_log($line, $severitymap[$test['severity']]);
     if ($test['severity'] >= ACQUIA_PURGE_SEVLEVEL_WARNING) {
-      printf("%s\n\n\n", $test['description_plain']);
+      $pad = '   ';
+      $warning = wordwrap($test['description_plain'], 2 * $longest, "\n$pad");
+      printf("%s%s\n\n\n", $pad, $warning);
     }
   }
 

@@ -22,11 +22,11 @@ function _acquia_purge_get_diagnosis_acquiacloud($t) {
   $site = _acquia_purge_get_site_name();
   $test = array('title' => $t('Hosting environment'));
   if (_acquia_purge_are_we_on_acquiacloud()) {
-    $test['value'] = $t('Acquia Cloud: @site', array('@site' => $site));
+    $test['value'] = $t('Acquia Cloud (@site)', array('@site' => $site));
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
   else {
-    $test['value'] = $t('Third-party environment.');
+    $test['value'] = $t('Third-party');
     $test['description'] = $t('You are not running on Acquia Cloud, this is a'
       . ' mandatory requirement for this module. The module will not process'
       . ' scheduled purges, once deployed scheduled purges will be processed.');
@@ -97,7 +97,7 @@ function _acquia_purge_get_diagnosis_balancers($t) {
 function _acquia_purge_get_diagnosis_conflicts($t) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
-    'value' => $t('No issues detected.'),
+    'value' => $t('None'),
     'title' => $t('Module conflicts'),
   );
 
