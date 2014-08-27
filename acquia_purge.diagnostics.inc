@@ -208,6 +208,31 @@ function _acquia_purge_get_diagnosis_domains($t) {
 }
 
 /**
+ * Report on how our logging is configured.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_logging($t) {
+  $test = array(
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
+    'value' => $t('successes and failures'),
+    'title' => $t('Logging verbosity'));
+  if (variable_get('acquia_purge_log_success', TRUE) !== TRUE) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_INFO;
+    $test['value'] = $t('failures only');
+  }
+  return $test;
+}
+
+/**
  * Test if anonymous page caching is enabled.
  *
  * @param string $t

@@ -49,34 +49,44 @@ they do, things should be traceable in settings.php. Although Acquia Purge
 attempts to stay as turnkey and zeroconf as possible, the following options
 exist as of this version and documented below:
 
-╔══════════════════════════╦═════════╦═════════════════════════════════════════╗
-║      $conf setting       ║ Default ║               Description               ║
-╠══════════════════════════╬═════════╬═════════════════════════════════════════╣
-║ acquia_purge_domains     ║ (auto)  ║ Allows you to control which domains will║
-║                          ║         ║ get purged, see DOMAINS.txt             ║
-║                          ║         ║                                         ║
-║ acquia_purge_cron        ║ FALSE   ║ Once set to TRUE, this will switch the  ║
-║                          ║         ║ queue processing entirely to cron and   ║
-║                          ║         ║ disable the client-side progressbar. Do ║
-║                          ║         ║ keep an eye on 'drush ap-list' once     ║
-║                          ║         ║ enabled as the queue can grow too fast  ║
-║                          ║         ║ requiring a cron interval increase.     ║
-║                          ║         ║ $conf['acquia_purge_cron'] = TRUE;      ║
-║                          ║         ║                                         ║
-║ acquia_purge_http        ║ TRUE    ║ Purging of http:// schemes, which is    ║
-║                          ║         ║ the default behavior. You can disable   ║
-║                          ║         ║ it with FALSE, as long as you then do   ║
-║                          ║         ║ purge https://. Else the system will    ║
-║                          ║         ║ shut itself down and report an error.   ║
-║                          ║         ║ $conf['acquia_purge_http'] = FALSE;     ║
-║                          ║         ║                                         ║
-║                          ║         ║                                         ║
-║ acquia_purge_https       ║ FALSE   ║ Experimental https:// scheme support,   ║
-║                          ║         ║ disabled by default. Once enabled the   ║
-║                          ║         ║ total amount of work done will double,  ║
-║                          ║         ║ so monitor your system closely and      ║
-║                          ║         ║ consider disabling http:// if your site ║
-║                          ║         ║ is fully https:// based (redirecting).  ║
-║                          ║         ║ $conf['acquia_purge_https'] = TRUE;     ║
-║                          ║         ║                                         ║
-╚══════════════════════════╩═════════╩═════════════════════════════════════════╝
+╔══════════════════════════╦═══════╦═══════════════════════════════════════════╗
+║      $conf setting       ║ Deflt ║               Description                 ║
+╠══════════════════════════╬═══════╬═══════════════════════════════════════════╣
+║ acquia_purge_domains     ║ auto  ║ Allows you to control which domains will  ║
+║                          ║       ║ get purged, see DOMAINS.txt               ║
+║                          ║       ║                                           ║
+║ acquia_purge_cron        ║ FALSE ║ Once set to TRUE, this will switch the    ║
+║                          ║       ║ queue processing entirely to cron and     ║
+║                          ║       ║ disable the client-side progressbar. Do   ║
+║                          ║       ║ keep an eye on 'drush ap-list' once       ║
+║                          ║       ║ enabled as the queue can grow too fast    ║
+║                          ║       ║ requiring a cron interval increase.       ║
+║                          ║       ║ $conf['acquia_purge_cron'] = TRUE;        ║
+║                          ║       ║                                           ║
+║ acquia_purge_http        ║ TRUE  ║ Purging of http:// schemes, which is      ║
+║                          ║       ║ the default behavior. You can disable     ║
+║                          ║       ║ it with FALSE, as long as you then do     ║
+║                          ║       ║ purge https://. Else the system will      ║
+║                          ║       ║ shut itself down and report an error.     ║
+║                          ║       ║ $conf['acquia_purge_http'] = FALSE;       ║
+║                          ║       ║                                           ║
+║                          ║       ║                                           ║
+║ acquia_purge_https       ║ FALSE ║ Experimental https:// scheme support,     ║
+║                          ║       ║ disabled by default. Once enabled the     ║
+║                          ║       ║ total amount of work done will double,    ║
+║                          ║       ║ so monitor your system closely and        ║
+║                          ║       ║ consider disabling http:// if your site   ║
+║                          ║       ║ is fully https:// based (redirecting).    ║
+║                          ║       ║ $conf['acquia_purge_https'] = TRUE;       ║
+║                          ║       ║                                           ║
+║ acquia_purge_log_success ║ TRUE  ║ By default this module will log both      ║
+║                          ║       ║ successes and failure, which is helpful   ║
+║                          ║       ║ for those setting the module up. But once ║
+║                          ║       ║ implemented and working fine, it can      ║
+║                          ║       ║ be heavy on your log files. By setting    ║
+║                          ║       ║ this to FALSE, only failure will be put   ║
+║                          ║       ║ into your logs and thus reduce queries    ║
+║                          ║       ║ or disk writes (for log files).           ║
+║                          ║       ║ $conf['acquia_purge_log_success'] = FALSE;║
+║                          ║       ║                                           ║
+╚══════════════════════════╩═══════╩═══════════════════════════════════════════╝

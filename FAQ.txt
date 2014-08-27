@@ -80,6 +80,15 @@ Frequently asked questions
   using the new method but if any of its drawbacks prevent you from using the
   new cron feature, you can continue using this directly.
 
+ My logs are flooded by the Acquia Purge module, help!
+--------------------------------------------------------------------------------
+ I'm sorry about that. Logging is meant to help keep a trail for when things go
+ bad and also to confirm if things work, which is especially helpful for those
+ new to this module and still in the process of setting it up. But if your site
+ is running stable and fine with Acquia Purge it makes sense to reduce records
+ in your logs by setting "$conf['acquia_purge_log_success'] = FALSE;", which
+ will suppress reporting successful purges but it will still log any failure.
+
  Why do I need "Acquia Purge" instead of "Purge", Purge works fine here!
 --------------------------------------------------------------------------------
   The Purge module - written by co-Acquian Paul Krischer - has never been

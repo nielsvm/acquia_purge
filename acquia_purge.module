@@ -1197,11 +1197,13 @@ function _acquia_purge_queue_processpurge($path) {
   $overall_success = TRUE;
   foreach (_acquia_purge_queue_processpurge_requests($requests) as $rqst) {
     if ($rqst->result == TRUE) {
-      watchdog(
-        'acquia_purge',
-        "Purged '%url' from load balancer %balancer.",
-        array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
-        WATCHDOG_INFO);
+      if (variable_get('acquia_purge_log_success', TRUE) === TRUE) {
+        watchdog(
+          'acquia_purge',
+          "Purged '%url' from load balancer %balancer.",
+          array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
+          WATCHDOG_INFO);
+      }
       _acquia_purge_queue_stats($rqst->uri);
     }
     else {
