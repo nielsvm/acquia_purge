@@ -71,7 +71,7 @@ exist as of this version and documented below:
 ║                          ║       ║ $conf['acquia_purge_http'] = FALSE;       ║
 ║                          ║       ║                                           ║
 ║                          ║       ║                                           ║
-║ acquia_purge_https       ║ FALSE ║ Experimental https:// scheme support,     ║
+║ acquia_purge_https       ║ FALSE ║ EXPERIMENTAL https:// scheme support,     ║
 ║                          ║       ║ disabled by default. Once enabled the     ║
 ║                          ║       ║ total amount of work done will double,    ║
 ║                          ║       ║ so monitor your system closely and        ║
@@ -88,5 +88,14 @@ exist as of this version and documented below:
 ║                          ║       ║ into your logs and thus reduce queries    ║
 ║                          ║       ║ or disk writes (for log files).           ║
 ║                          ║       ║ $conf['acquia_purge_log_success'] = FALSE;║
+║                          ║       ║                                           ║
+║ acquia_purge_memcache    ║ FALSE ║ EXPERIMENTAL support for letting Acquia   ║
+║                          ║       ║ Purge store its state data in Memcached,  ║
+║                          ║       ║ if your site uses it for caching. This    ║
+║                          ║       ║ prevents I/O activity for every request or║
+║                          ║       ║ Drush command that involves any calls to  ║
+║                          ║       ║ our API's. This might become the default  ║
+║                          ║       ║ in the future if it works well!           ║
+║                          ║       ║ $conf['acquia_purge_memcache'] = TRUE;    ║
 ║                          ║       ║                                           ║
 ╚══════════════════════════╩═══════╩═══════════════════════════════════════════╝

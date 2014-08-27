@@ -39,9 +39,19 @@ define('ACQUIA_PURGE_QUEUE_LOCK_ID', 'acquia_purge_processor');
 define('ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT', 60);
 
 /**
- * File on disk (within files directory) that keeps our state data.
+ * File on disk to store our state data in (if memcached disabled).
  */
 define('ACQUIA_PURGE_STATE_FILE', 'public://acquia_purge_state.raw');
+
+/**
+ * Memcached key used to store our state data in (if enabled).
+ */
+define('ACQUIA_PURGE_STATE_MEMKEY', 'acquia_purge_state');
+
+/**
+ * Memcached bin used to store our state data in memcached (if enabled).
+ */
+define('ACQUIA_PURGE_STATE_MEMBIN', 'acquia_purge');
 
 /**
  * Diagnostic severity levels: Informational.
@@ -525,7 +535,7 @@ function _acquia_purge_export_debug_symbols($symbols) {
 }
 
 /**
- * Retrieve a variable or state data entry.
+ * Retrieve a variable or state data property.
  *
  * This function exists to prevent a wilderness of calls to variable_get()
  * and _acquia_purge_state_get() but *especially* to keep all their defaults
@@ -533,7 +543,7 @@ function _acquia_purge_export_debug_symbols($symbols) {
  * which is exactly why Drupal 8 fixes this with defaults in CMI.
  *
  * @param string $name
- *   The name of the state data entry OR variable to return.
+ *   The name of the state data property OR variable to return.
  * @param boolean $get_default
  *   Optional, retrieve the default value instead of the real value.
  *
@@ -554,6 +564,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_http'        => TRUE,
         'acquia_purge_https'       => FALSE,
         'acquia_purge_log_success' => TRUE,
+        'acquia_purge_memcache'    => FALSE,
       ),
       'state' => array(
         'qtotal'        => 0,
@@ -1519,13 +1530,12 @@ function _acquia_purge_queue_is_user_purging() {
 }
 
 /**
- * Initialize the persistent state data store.
+ * Load state data from the persistent storage location.
  *
  * @see _acquia_purge_state_set()
  * @see _acquia_purge_state_get()
  */
 function _acquia_purge_state_initialize() {
-  global $_acquia_purge_state_raw;
   global $_acquia_purge_state;
 
   // Initialize the global variable.
@@ -1533,38 +1543,58 @@ function _acquia_purge_state_initialize() {
     return;
   }
   else {
-    $_acquia_purge_state_raw = NULL;
     $_acquia_purge_state = array();
   }
 
-  // Load all state data straight from disk, which is quite a bit slower than
-  // stored through a (memory-backed) cache or the database. But, various
-  // tests showed that using the cache API or the dmemcache_* functions proved
-  // to be too unreliable as simple cache wipes would wipe the state data
-  // resulting in a false assumption of an empty queue and therefore corruption
-  // between the queue table and our state data. This is the only storage
-  // mechanism that stays consistently reliable and I/O is reduced to the
-  // bare minimum.
-  if (!file_exists(ACQUIA_PURGE_STATE_FILE)) {
-    return;
-  }
-  $_acquia_purge_state_raw = file_get_contents(ACQUIA_PURGE_STATE_FILE);
-  if (!$_acquia_purge_state_raw) {
+  // Load up the data from memcache if it is enabled.
+  if (_acquia_purge_get('acquia_purge_memcache')) {
+    if (!function_exists('dmemcache_get')) {
+      throw new Exception('Acquia Purge operates on acquia_purge_memcache='
+        . 'TRUE but dmemcache_get() is nowhere to be found! Disable memcache '
+        . 'support for Acquia Purge if you see this.');
+    }
+
+    // Retrieve the data and test it briefly.
+    $state = dmemcache_get(
+      ACQUIA_PURGE_STATE_MEMKEY, ACQUIA_PURGE_STATE_MEMBIN);
+    if (is_array($state) && count($state)) {
+      $_acquia_purge_state = $state;
+    }
     return;
   }
 
-  // Now that we have the raw payload, parse it and load into our global store.
-  $data = unserialize($_acquia_purge_state_raw);
-  if (is_array($data) && count($data)) {
-    $_acquia_purge_state = $data;
+  // Load the state data from a file on disk. This is obviously slower than
+  // through memory but compared to the variable_set() we used before and given
+  // the fact that we cannot rely on the Cache API directly (as it is not
+  // disposable information), this is still a whole lot better.
+  else {
+
+    // We are keeping the raw payload globally, so that we can check if we
+    // really need to write out to disk in _acquia_purge_state_commit().
+    global $_acquia_purge_state_raw;
+
+    // Check if the file exists and if so, load up its raw content.
+    if (!file_exists(ACQUIA_PURGE_STATE_FILE)) {
+      return;
+    }
+    $_acquia_purge_state_raw = file_get_contents(ACQUIA_PURGE_STATE_FILE);
+    if (!$_acquia_purge_state_raw) {
+      return;
+    }
+
+    // Now that we have the payload, unserialize and share it.
+    $data = unserialize($_acquia_purge_state_raw);
+    if (is_array($data) && count($data)) {
+      $_acquia_purge_state = $data;
+    }
   }
 }
 
 /**
- * Returns a persistent data entry from cached state data.
+ * Load a state data property.
  *
  * @param $name
- *   The name of the state data entry to return.
+ *   The name of the state data property to return.
  * @param $default
  *   The default value to use if this data entry has never been set.
  *
@@ -1576,8 +1606,6 @@ function _acquia_purge_state_initialize() {
  */
 function _acquia_purge_state_get($name, $default = NULL) {
   global $_acquia_purge_state;
-
-  // Read in state data and make it available globally.
   if (is_null($_acquia_purge_state)) {
     _acquia_purge_state_initialize();
   }
@@ -1590,10 +1618,10 @@ function _acquia_purge_state_get($name, $default = NULL) {
 }
 
 /**
- * Returns a persistent data point from cached state data.
+ * Store a state data property.
  *
  * @param $name
- *   The name of the state data entry to store.
+ *   The name of the state data property to store.
  * @param $value
  *   The value to set. This can be any PHP data type.
  *
@@ -1605,8 +1633,6 @@ function _acquia_purge_state_get($name, $default = NULL) {
  */
 function _acquia_purge_state_set($name, $value) {
   global $_acquia_purge_state;
-
-  // Read in state data and make it available globally.
   if (is_null($_acquia_purge_state)) {
     _acquia_purge_state_initialize();
   }
@@ -1617,37 +1643,80 @@ function _acquia_purge_state_set($name, $value) {
   // Register a shutdown function to commit the state data in one go.
   if (!isset($_acquia_purge_state['__commit_registered'])) {
     $_acquia_purge_state['__commit_registered'] = TRUE;
-    drupal_register_shutdown_function('_acquia_purge_state_store_commit');
+    drupal_register_shutdown_function('_acquia_purge_state_commit');
   }
 }
 
 /**
- * Commit the store to the cache.
+ * Commit the state data to its persistent storage location.
  *
  * @see _acquia_purge_state_set()
  */
-function _acquia_purge_state_store_commit() {
-  global $_acquia_purge_state_raw;
+function _acquia_purge_state_commit() {
   global $_acquia_purge_state;
-
-  // Read in state data and make it available globally.
   if (is_null($_acquia_purge_state)) {
     _acquia_purge_state_initialize();
   }
 
-  // Remove the double registration cookie.
-  unset($_acquia_purge_state['__commit_registered']);
+  // Do not commit anything when the cookie isn't set, which might occur
+  // when something got written while _acquia_purge_state_wipe() followed.
+  if (!isset($_acquia_purge_state['__commit_registered'])) {
+    return;
+  }
+  else {
+    unset($_acquia_purge_state['__commit_registered']);
+  }
 
-  // Serialize the current store and compare the raw data with the initial
-  // raw data, if they match exactly we won't write to disk to reduce IO.
-  $new_raw_payload = serialize($_acquia_purge_state);
-  if ($_acquia_purge_state_raw === $new_raw_payload) {
+  // Write out the data to memcache if that's enabled.
+  if (_acquia_purge_get('acquia_purge_memcache')) {
+    dmemcache_set(
+      ACQUIA_PURGE_STATE_MEMKEY,
+      $_acquia_purge_state,
+      0, // Store the item permanently.
+      ACQUIA_PURGE_STATE_MEMBIN
+    );
     return;
   }
 
-  // Write all state data to disk, see _acquia_purge_state_initialize().
-  $_acquia_purge_state_raw = $new_raw_payload;
-  file_put_contents(ACQUIA_PURGE_STATE_FILE, $new_raw_payload);
+  // Write the data to disk.
+  else {
+
+    // We are keeping the raw payload globally, so that we can check if we
+    // really need to write out to disk here.
+    global $_acquia_purge_state_raw;
+
+    // Serialize the current store and compare the raw data with the initial
+    // raw data, if they match exactly we won't write to disk to reduce IO.
+    $new_raw_payload = serialize($_acquia_purge_state);
+    if ($_acquia_purge_state_raw === $new_raw_payload) {
+      return;
+    }
+    $_acquia_purge_state_raw = $new_raw_payload;
+    file_put_contents(ACQUIA_PURGE_STATE_FILE, $new_raw_payload);
+  }
+}
+
+/**
+ * Wipe all state data.
+ *
+ * @see _acquia_purge_state_set()
+ * @see _acquia_purge_state_get()
+ * @see _acquia_purge_state_initialize()
+ * @see _acquia_purge_state_commit()
+ */
+function _acquia_purge_state_wipe() {
+  global $_acquia_purge_state;
+  unset($_acquia_purge_state);
+
+  // Always attempt to delete the memcached object if the function's here.
+  if (function_exists('dmemcache_delete')) {
+    dmemcache_delete(ACQUIA_PURGE_STATE_MEMKEY, ACQUIA_PURGE_STATE_MEMBIN);
+  }
+
+  // Check if the state file exists and wipe it if it does.
+  if (file_exists(ACQUIA_PURGE_STATE_FILE)) {
+    drupal_unlink(ACQUIA_PURGE_STATE_FILE);
+  }
 }
 
 /**

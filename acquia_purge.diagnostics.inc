@@ -512,6 +512,32 @@ function _acquia_purge_get_diagnosis_queue($t) {
 }
 
 /**
+ * Report where state data gets stored.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_statedata($t) {
+  $test = array(
+    'title' => $t('State data location'),
+    'value' => ACQUIA_PURGE_STATE_FILE,
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
+  );
+  if (_acquia_purge_get('acquia_purge_memcache')) {
+    $test['value'] = 'memcache';
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_INFO;
+  }
+  return $test;
+}
+
+/**
  * Report on the current status of the system.
  *
  * @param string $t

@@ -42,12 +42,14 @@ function acquia_purge_install() {
  * Implements hook_uninstall().
  */
 function acquia_purge_uninstall() {
+  drupal_load('module', 'acquia_purge');
 
-  // Remove traces from our usage of the Queue API.
-  variable_del('acquia_purge_queue_counter');
-  variable_del('acquia_purge_queue_owners');
+  // Delete all the items within the queue we maintained.
   $queue = DrupalQueue::get('acquia_purge', TRUE);
   $queue->deleteQueue();
+
+  // Wipe out state data in the case the user re-enables the module.
+  _acquia_purge_state_wipe();
 }
 
 /**
