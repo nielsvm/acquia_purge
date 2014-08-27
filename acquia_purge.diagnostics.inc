@@ -401,7 +401,8 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
     'value' => implode(', ', $schemes));
 
   // Test if no protocol schemes are to be purged.
-  if (empty($schemes)) {
+  if (in_array('ERROR', $schemes)) {
+    $test['value'] = $t('None');
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('It seems as if you have put both '
     . ' <b>acquia_purge_http</b> and <b>acquia_purge_https</b> settings to'

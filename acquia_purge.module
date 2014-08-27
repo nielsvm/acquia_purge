@@ -881,6 +881,9 @@ function _acquia_purge_get_protocol_schemes() {
     if (variable_get('acquia_purge_https', FALSE) === TRUE) {
       $schemes[] = 'https';
     }
+    if (empty($schemes)) {
+      $schemes = array('ERROR');
+    }
   }
   return $schemes;
 }
