@@ -102,7 +102,7 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
   drush_set_context('DRUSH_COLUMNS', 120);
 
   // Determine the longest test name and set the drush_type field.
-  $longest = 0;
+  $longest = 25;
   foreach ($tests as $id => $test) {
     $tests[$id]['drush_type'] = $severitymap[$test['severity']];
     if (strlen($test['name']) > $longest) {
@@ -170,7 +170,7 @@ function _drush_acquia_purge_ap_diagnosis_log($test, $longest) {
   if ($test['severity'] >= ACQUIA_PURGE_SEVLEVEL_WARNING) {
     $pad = str_repeat(' ', $pad_maxlength);
     printf(
-      sprintf($colors[$test['drush_type']], "%s%s\n\n\n"),
+      sprintf($colors[$test['drush_type']], "\n%s%s\n\n"),
       $pad,
       wordwrap($test['description_plain'], 2 * $longest, "\n$pad")
     );
