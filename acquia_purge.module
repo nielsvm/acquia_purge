@@ -536,15 +536,17 @@ function _acquia_purge_export_debug_symbols($symbols) {
  * in one place. Having default values centralized means less risk on bugs,
  * which is exactly why Drupal 8 fixes this with defaults in CMI.
  *
- * @param $name
+ * @param string $name
  *   The name of the state data entry OR variable to return.
+ * @param boolean $get_default
+ *   Optional, retrieve the default value instead of the real value.
  *
  * @see variable_get()
  * @see _acquia_purge_state_get()
  * @returns
  *   Either the default or actual value of the item request.
  */
-function _acquia_purge_get($name) {
+function _acquia_purge_get($name, $get_default = FALSE) {
   static $names;
 
   // Document all names that are in use.
@@ -570,9 +572,15 @@ function _acquia_purge_get($name) {
 
   // Now return the requested item, or their defaults as documented.
   if (isset($names['variables'][$name])) {
+    if ($get_default) {
+      return $names['variables'][$name];
+    }
     return variable_get($name, $names['variables'][$name]);
   }
   if (isset($names['state'][$name])) {
+    if ($get_default) {
+      return $names['state'][$name];
+    }
     return _acquia_purge_state_get($name, $names['state'][$name]);
   }
 
@@ -1063,11 +1071,13 @@ function _acquia_purge_queue_add($path) {
  *   Void.
  */
 function _acquia_purge_queue_clear($state_only = FALSE) {
-  _acquia_purge_state_set('qtotal', 0);
-  _acquia_purge_state_set('qgood', 0);
-  _acquia_purge_state_set('qbad', 0);
-  _acquia_purge_state_set('uiusers', array());
-  _acquia_purge_state_set('logged_errors', array());
+
+  // Reset several state data keys to their default value.
+  $names = array('qtotal', 'qgood', 'qbad', 'uiusers', 'logged_errors');
+  foreach ($names as $name) {
+    $default = _acquia_purge_get($name, TRUE);
+    _acquia_purge_state_set($name, $default);
+  }
 
   // Only retrieve and really delete the queue if we are asked to.
   if ($state_only === FALSE) {
