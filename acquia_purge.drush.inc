@@ -91,7 +91,7 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
 
   // Define a mapping between install.inc's requirement states and drush_log().
   $severitymap = array(
-    ACQUIA_PURGE_SEVLEVEL_INFO => 'notice',
+    ACQUIA_PURGE_SEVLEVEL_INFO => 'info',
     ACQUIA_PURGE_SEVLEVEL_OK   => 'ok',
     ACQUIA_PURGE_SEVLEVEL_WARNING => 'warning',
     ACQUIA_PURGE_SEVLEVEL_ERROR   => 'error',
@@ -99,10 +99,12 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
 
   // Tell Drush to be verbose.
   drush_set_context('DRUSH_VERBOSE', TRUE);
+  drush_set_context('DRUSH_COLUMNS', 120);
 
-  // Determine the longest test name, to calculate spacing.
+  // Determine the longest test name and set the drush_type field.
   $longest = 0;
-  foreach ($tests as $test) {
+  foreach ($tests as $id => $test) {
+    $tests[$id]['drush_type'] = $severitymap[$test['severity']];
     if (strlen($test['name']) > $longest) {
       $longest = strlen($test['name']) + 2;
     }
@@ -110,22 +112,69 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
 
   // Iterate the tests and call drush_log with the appropriate message type.
   foreach ($tests as $test) {
-    $line = sprintf(
-      ' - %s%s%s',
-      strtoupper($test['name']),
-      str_repeat(' ', $longest - strlen($test['name'])),
-      strtolower($test['value_plain'])
-    );
-    drush_log($line, $severitymap[$test['severity']]);
-    if ($test['severity'] >= ACQUIA_PURGE_SEVLEVEL_WARNING) {
-      $pad = '   ';
-      $warning = wordwrap($test['description_plain'], 2 * $longest, "\n$pad");
-      printf("%s%s\n\n\n", $pad, $warning);
-    }
+    _drush_acquia_purge_ap_diagnosis_log($test, $longest);
   }
 
   // Set back the old verbosity state.
   drush_set_context('DRUSH_VERBOSE', $oldverbosity);
+}
+
+/**
+ * Log the given test.
+ *
+ * @param array $test
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+
+ * @param int $longest
+ *   The longest test name, used to calculate formatting padding.
+ */
+function _drush_acquia_purge_ap_diagnosis_log($test, $longest) {
+
+  // When running in backend mode, log messages aren't printed and forwarded.
+  if (drush_get_context('DRUSH_BACKEND')) {
+    $message = sprintf('%s: %s', $test['name'], $test['value_plain']);
+    return drush_log($message, $test['drush_type']);
+  }
+
+  // When not running in backend mode, prepare for fancier output.
+  $type = sprintf(' [%s]', $test['drush_type']);
+  $pad_maxlength = 11;
+  $colors = array(
+    'info' => '%s',
+    'error'  => '%s',
+    'warning' => '%s',
+    'ok' => '%s');
+
+  // In color mode, setup ASCII color codes borrowed from _drush_print_log().
+  if (!drush_get_context('DRUSH_NOCOLOR')) {
+    $colors['error'] = "\033[31;40m\033[1m%s\033[0m";
+    $colors['warning'] = "\033[1;33;40m\033[1m%s\033[0m";
+    $colors['ok'] = "\033[1;32;40m\033[1m%s\033[0m";
+  }
+
+  // Print the test name and value.
+  printf(
+    sprintf($colors[$test['drush_type']], "%s%s%s%s%s\n"),
+    $type,
+    str_repeat(' ', $pad_maxlength - strlen($type)),
+    strtoupper($test['name']),
+    str_repeat(' ', $longest - strlen($test['name'])),
+    strtolower($test['value_plain'])
+  );
+
+  // Print descriptions for warnings and errors.
+  if ($test['severity'] >= ACQUIA_PURGE_SEVLEVEL_WARNING) {
+    $pad = str_repeat(' ', $pad_maxlength);
+    printf(
+      sprintf($colors[$test['drush_type']], "%s%s\n\n\n"),
+      $pad,
+      wordwrap($test['description_plain'], 2 * $longest, "\n$pad")
+    );
+  }
 }
 
 /**
