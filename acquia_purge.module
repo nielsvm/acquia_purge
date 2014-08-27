@@ -9,12 +9,13 @@
  * The maximum number of paths to purge per batch step, this max will usually
  * only be necessary on the command line where execution time is endless.
  */
-define('ACQUIA_PURGE_MAX_PATHS', 20);
+define('ACQUIA_PURGE_MAX_ITEMS', 20);
 
 /**
- * The maximum amount of HTTP requests that can be done per step. In practice
- * this limited will be lowered to respect PHP's max execution time setting. It
- * will be met when that setting is zero, for example, on the command line.
+ * The max amount of outgoing HTTP requests that can be made during script
+ * execution time. Although always respected as outer limit, it will be lower
+ * in practice as PHP resource limits (max execution time) bring it further
+ * down. However, the maximum amount of requests will be higher on the CLI.
  */
 define('ACQUIA_PURGE_MAX_REQUESTS', 60);
 
@@ -736,6 +737,93 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
 }
 
 /**
+ * Calculate how many items can be purged during the current script execution.
+ *
+ * @see ACQUIA_PURGE_MAX_ITEMS
+ * @returns int
+ *   Integer indicating how many items may be popped from the queue.
+ */
+function _acquia_purge_get_capacity() {
+  $requests_per_item = _acquia_purge_get_capacity_factor();
+  $max_requests = _acquia_purge_get_capacity_maxrequests();
+
+  // Divide the maximum amount of requests through the number of requests we
+  // need per item to get to the capacity.
+  $capacity = intval($max_requests / $requests_per_item);
+
+  // In scenarios with many balancers or many domains it might happen that even
+  // one item will trigger more HTTP requests than we can handle. To prevent
+  // not purging anything anymore we will always purge one at minimum.
+  if ($capacity < 1) {
+    $capacity = 1;
+  }
+
+  // Cap the capacity if our calculation is higher than the maximum.
+  if ($capacity > ACQUIA_PURGE_MAX_ITEMS) {
+    $capacity = ACQUIA_PURGE_MAX_ITEMS;
+  }
+
+  return $capacity;
+}
+
+/**
+ * Calculate the slowdown factor based on configuration.
+ *
+ * @returns int
+ *   Integer that represents how many HTTP requests will have to be made for a
+ *   single item to be successfully purged. The lower this is, the better.
+ */
+function _acquia_purge_get_capacity_factor() {
+  static $slowdown_factor;
+  if (is_null($slowdown_factor)) {
+    $balancers = count(_acquia_purge_get_balancers());
+    $domains = count(_acquia_purge_get_domains());
+    $schemes = count(_acquia_purge_get_protocol_schemes());
+
+    // Multiply all configuration actors with each other.
+    $slowdown_factor = $schemes * $domains * $balancers;
+  }
+  return $slowdown_factor;
+}
+
+/**
+ * Calculate the maximum amount of outgoing HTTP requests we can make.
+ *
+ * @see ACQUIA_PURGE_REQUEST_TIMEOUT
+ * @see ACQUIA_PURGE_MAX_REQUESTS
+ * @returns int
+ *   Integer representing how many outgoing HTTP requests we can afford to make
+ *   during the current script execution. Usually it will be higher on the CLI
+ *   and in general this value will be on the safe side, as it assumes each
+ *   request to last as long as ACQUIA_PURGE_REQUEST_TIMEOUT takes place.
+ */
+function _acquia_purge_get_capacity_maxrequests() {
+  static $max_requests;
+  if (is_null($max_requests)) {
+
+    // Get the outer limits, usually only applicable through Drush/CLI.
+    $max_execution_time = (int) ini_get('max_execution_time');
+    $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
+
+    // But if there is a max execution time, cut 20% from it and go lower.
+    if ($max_execution_time != 0) {
+      $max_execution_time = intval(0.8 * $max_execution_time);
+
+      // Calculate how many HTTP requests we should be able to do with the
+      // used parallel processing and set timeout values.
+      $max_requests = $max_execution_time / ACQUIA_PURGE_REQUEST_TIMEOUT;
+      $max_requests = ACQUIA_PURGE_PARALLEL_REQUESTS * $max_requests;
+
+      // That value's usually higher than the outer cap, so use that if needed.
+      if ($max_requests > ACQUIA_PURGE_MAX_REQUESTS) {
+        $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
+      }
+    }
+  }
+  return $max_requests;
+}
+
+/**
  * Get a list of defined domains that we can purge for.
  *
  * @returns
@@ -1115,28 +1203,6 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   $queue = _acquia_purge_queue();
   $items = array();
 
-  // Determine the maximum amount of requests that we can process at once.
-  $max_execution_time = (int) ini_get('max_execution_time');
-  $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
-  if ($max_execution_time != 0) {
-
-    // Never take more then 80% of all available execution time.
-    $max_execution_time = intval(0.8 * $max_execution_time);
-    $max_requests = $max_execution_time / ACQUIA_PURGE_REQUEST_TIMEOUT;
-    $max_requests = ACQUIA_PURGE_PARALLEL_REQUESTS * $max_requests;
-    if ($max_requests > ACQUIA_PURGE_MAX_REQUESTS) {
-      $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
-    }
-  }
-
-  // Calculate the amount of paths to pop from the queue based on how many HTTP
-  // requests we are going to generate and how much we can maximally process.
-  $balancers = count(_acquia_purge_get_balancers());
-  $domains = count(_acquia_purge_get_domains());
-  $schemes = count(_acquia_purge_get_protocol_schemes());
-  $requests = $schemes * ($domains * $balancers);
-  $paths = intval($max_requests / $requests);
-
   // Prepare a reusable list that we use to track which paths we purged during
   // this request. When a path - say '/news' - was already purged during this
   // run, we will discard any new popped item from the queue and move on.
@@ -1145,26 +1211,15 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
     $dedupe_list = array();
   }
 
-  // In scenarios with many balancers or many domains it might happen that even
-  // one path will trigger more HTTP requests than we can handle. To prevent
-  // not purging anything anymore we will attempt one but with taking risks.
-  if ($paths < 1) {
-    $paths = 1;
-  }
-
-  // Limit the number of paths to pop when it maxed out the set limit. Usually
-  // only happens on the command line.
-  if ($paths > ACQUIA_PURGE_MAX_PATHS) {
-    $paths = ACQUIA_PURGE_MAX_PATHS;
-  }
-
   // Load up the various counters we keep in state storage.
   $qtotal = _acquia_purge_get('qtotal');
   $qgood  = _acquia_purge_get('qgood');
   $qbad   = _acquia_purge_get('qbad');
 
-  // Retrieve the amount of paths that we just calculated we could handle.
-  for ($i = 0; $i < $paths; $i++) {
+  // Retrieve a figure of how many items we should be safely able to purge and
+  // keep on claiming as long as the queue runs out.
+  $max_items = _acquia_purge_get_capacity();
+  for ($i = 0; $i < $max_items; $i++) {
     if ($item = $queue->claimItem()) {
 
       // Discard any items that we already purged during this request.

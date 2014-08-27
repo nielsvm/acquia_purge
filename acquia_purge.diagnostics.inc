@@ -460,13 +460,8 @@ function _acquia_purge_get_diagnosis_queue($t) {
   $stats = _acquia_purge_queue_stats();
   $test = array('title' => $t('Queue volume'));
 
-  // Build up a calculation factor which we use to determine our thresholds.
-  $balancers = count(_acquia_purge_get_balancers());
-  $domains   = count(_acquia_purge_get_domains());
-  $schemes   = count(_acquia_purge_get_protocol_schemes());
-  $factor    = $schemes * ($domains * $balancers);
-
   // Define our warning and shutdown thresholds.
+  $factor   = _acquia_purge_get_capacity_factor();
   $warning  = ceil(3000 / $factor);
   $shutdown = ceil(10000 / $factor);
 
