@@ -558,10 +558,11 @@ function _acquia_purge_get($name) {
         'acquia_purge_log_success' => TRUE,
       ),
       'state' => array(
-        'qtotal'    => 0,
-        'qgood'     => 0,
-        'qbad'      => 0,
-        'uiusers'   => array(),
+        'qtotal'        => 0,
+        'qgood'         => 0,
+        'qbad'          => 0,
+        'uiusers'       => array(),
+        'logged_errors' => array(),
       ),
 
     );
@@ -669,13 +670,16 @@ function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
  *
  * @param array $items
  *   Associative array with test results or an individual test result array.
+ * @param boolean $deduplicate
+ *   Prevent diagnostic messages from ending up in the logs multiple times when
+ *   they already have been logged since the last queue wipe.
  *
  * @see _acquia_purge_get_diagnosis()
  * @returns
  *  Void,
  */
-function _acquia_purge_get_diagnosis_logged($items) {
-  $severitymap = array(
+function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
+  $map = array(
     ACQUIA_PURGE_SEVLEVEL_INFO    => WATCHDOG_INFO,
     ACQUIA_PURGE_SEVLEVEL_OK      => WATCHDOG_INFO,
     ACQUIA_PURGE_SEVLEVEL_WARNING => WATCHDOG_ERROR,
@@ -693,12 +697,26 @@ function _acquia_purge_get_diagnosis_logged($items) {
     if (empty($description)) {
       $description = $item['value_plain'];
     }
-    watchdog(
-      'acquia_purge',
-      $description,
-      array(),
-      $severitymap[$item['severity']]
-    );
+
+    // If we aren't asked to deduplicate messages, log it straight away.
+    if (!$deduplicate) {
+      watchdog('acquia_purge', $description, array(), $map[$item['severity']]);
+    }
+
+    // Run a duplicate check by hashing and checking state data.
+    else {
+      $logged = _acquia_purge_get('logged_errors');
+      $hash = sha1($description);
+
+      if (in_array($hash, $logged)) {
+        return;
+      }
+
+      // Log the message and add the hash to the deduplication list.
+      watchdog('acquia_purge', $description, array(), $map[$item['severity']]);
+      $logged[] = $hash;
+      _acquia_purge_state_set('logged_errors', $logged);
+    }
   }
 }
 
@@ -1049,6 +1067,7 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
   _acquia_purge_state_set('qgood', 0);
   _acquia_purge_state_set('qbad', 0);
   _acquia_purge_state_set('uiusers', array());
+  _acquia_purge_state_set('logged_errors', array());
 
   // Only retrieve and really delete the queue if we are asked to.
   if ($state_only === FALSE) {
