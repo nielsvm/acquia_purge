@@ -12,54 +12,52 @@
  *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
  */
 function acquia_purge_ajax_processor() {
-  $status = _acquia_purge_queue_stats();
+  $stats = _acquia_purge_queue_stats();
+  $stats['widget'] = '&nbsp;';
+  $stats['locked'] = FALSE;
+  $stats['error'] = FALSE;
 
-  // Define a key 'error' that describes a potential error condition.
-  $status['error'] = $status['locked'] = FALSE;
-
-  // Lock acquiring assures us that nothing is purging the same paths at the
-  // same time. All ways that trigger purging (ajax, drush) respect the locks.
-  if (lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
-
-    // Pop items from the queue and immediately process them.
-    _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
-
-    // Refresh the statistics post-run, so override most fields in $status.
-    foreach (_acquia_purge_queue_stats() as $key => $value) {
-      $status[$key] = $value;
-    }
-
-    // Ask our built-in diagnostics system to preliminary find issues that are
-    // so risky we can expect problems. Everything starting with
-    // ACQUIA_PURGE_SEVLEVEL_ERROR will cause purging to cease and log messages
-    // to be written. Warn the user on any of them.
-    if (!_acquia_purge_are_we_allowed_to_purge()) {
-      $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
-      $status['error'] = $err['description'];
-    }
-
-    // If no obvious errors were found by the diagnostics system, check if the
-    // history list is remaining empty: another bad symptom.
-    elseif (empty($status['purgehistory'])) {
-      $status['error'] = t("The system seems to be having difficulties
-        refreshing recent content changes. Your work won't be lost, but please
-        do ask your technical administrator to check the logs.");
-    }
-
-    // We're done so lets release the lock.
-    lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
+  // Ask our diagnostics system if there are any blocking issues that should
+  // stop us from processing the queue and notify the user about it.
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
+    $stats['error'] = $err['description'];
   }
 
-  // Instead of raising a very visual error condition: indicate the lock.
+  // If nothing was found, attempt to acquire the lock and process some items.
   else {
-    $status['locked'] = TRUE;
+    if (lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+
+      // This automatically pops an X amount of items for which we have enough
+      // resource capacity and processes them straight away.
+      _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+
+      // Processing finished, so update $stats to reflect the new values.
+      foreach (_acquia_purge_queue_stats() as $key => $value) {
+        $stats[$key] = $value;
+      }
+
+      // If errors did occur meanwhile, one indication of this could be that
+      // the history list remained empty, raise an error if it is empty.
+      if (empty($stats['purgehistory'])) {
+        $stats['error'] = t("The system seems to be having difficulties
+          refreshing recent content changes. Your work won't be lost, but please
+          do ask your technical administrator to check the logs.");
+      }
+
+      lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
+    }
+    else {
+      $stats['locked'] = TRUE;
+    }
   }
 
   // Render the status widget and add it to the statistics array.
-  $status['widget'] = theme('acquia_purge_status_bar_widget', $status);
+  if (!$stats['error']) {
+    $stats['widget'] = theme('acquia_purge_status_bar_widget', $stats);
+  }
 
-  // Return the status array with statistics...
-  return drupal_json_output($status);
+  return drupal_json_output($stats);
 }
 
 /**
