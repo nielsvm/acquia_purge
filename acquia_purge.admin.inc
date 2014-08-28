@@ -140,29 +140,37 @@ function acquia_purge_manualpurge_autocomplete($string) {
 }
 
 /**
- * Menu callback to drupal_get_form; let users manual purge pages.
- *
- * @returns
- *   A standard Form API form-array.
+ * UX rich form that lets administrative users purge paths manually.
  */
-function acquia_purge_manualpurge_form($form, &$form_state) {
+function acquia_purge_manualpurge_form_full($form, &$form_state) {
 
-  // Show any existing error conditions if they exist.
+  // Do not render the full form if error conditions are found.
   if (!_acquia_purge_are_we_allowed_to_purge()) {
     include_once DRUPAL_ROOT . '/includes/install.inc';
-    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
-    $form['status'] = array(
-      '#markup' => theme('status_report', array('requirements' => $err)),
-      '#type' => 'item',
-      '#title' => t("We're sorry, but due a critical error condition it is "
-        . "not possible to use this form. Please contact your administrator."),
+    return array(
+      'status' => array(
+        '#type' => 'item',
+        '#title' => t("We're sorry, but due a critical error condition it is "
+          . "not possible to use this form. Please contact your administrator."),
+        '#markup' => theme(
+          'status_report',
+          array(
+            'requirements'
+              => _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR)
+          )
+        ),
+      ),
     );
-    return $form;
   }
 
-  // If things all work fine, continue to build up the form.
-  $schemes = _acquia_purge_get_protocol_schemes();
-  $domains = _acquia_purge_get_domains();
+  // Retrieve the base form and register our validation and submit callbacks.
+  _acquia_purge_manualpurge_base($form, $form_state);
+  $form['#validate'] = array('_acquia_purge_manualpurge_validate');
+  $form['#submit'] = array('_acquia_purge_manualpurge_submit');
+  unset($form['submits']['page']);
+
+  // Start adding on-screen documentation.
+  $form['paths']['#prefix'] .= '<h3>' . t('Paths to be purged:') . '</h3>';
   $form['description'] = array(
     '#markup' => t('<p>This form allows you to purge one or more paths from your
     Acquia Cloud load balancers. This form is not intended for day-to-day use
@@ -180,6 +188,7 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
   }
 
   // Build up table rows with domains on the left and examples on the right.
+  $domains = _acquia_purge_get_domains($form, $form_state);
   $rows = array();
   $rowsc = count($domains);
   if (count($examples) > count($domains)) {
@@ -191,8 +200,6 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
     $row[1] = isset($examples[$i]) ? $examples[$i] : '';
     $rows[] = $row;
   }
-
-  // Add the guidance table to help the user understand.
   $form['guidancetable'] = array(
     '#theme' => 'table',
     '#header' => array(t('Domains to purge paths on'), t('Example paths')),
@@ -200,41 +207,98 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
     '#empty' => '',
   );
 
-  // Because we have many fields with the same values, we have to set
-  // #tree to be able to access them.
-  $form['#tree'] = TRUE;
+  // Decorate the textfields and prepend URL's as helpful guide.
+  $schemes = _acquia_purge_get_protocol_schemes();
+  $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], base_path());
+  foreach ($form['paths']['path'] as $i => $item) {
+    $form['paths']['path'][$i]['#field_prefix'] = $prefix;
+    $form['paths']['path'][$i]['#size'] = 30;
+  }
 
-  // We'll group all paths both in a HTML wrapper and logically in the form.
-  $title = t('Paths to be purged:');
+  return $form;
+}
+
+/**
+ * Bare bones form that lets administrative users purge paths manually.
+ */
+function acquia_purge_manualpurge_form_paths($form, &$form_state) {
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    return array();
+  }
+
+  // Retrieve the base form and register our validation and submit callbacks.
+  _acquia_purge_manualpurge_base($form, $form_state);
+  $form['#validate'] = array('_acquia_purge_manualpurge_validate');
+  $form['#submit'] = array('_acquia_purge_manualpurge_submit');
+  unset($form['submits']['page']);
+
+  // Decorate the path items.
+  foreach ($form['paths']['path'] as $i => $item) {
+    $form['paths']['path'][$i]['#size'] = 15;
+  }
+
+  return $form;
+}
+
+/**
+ * Single button form that lets administrative users purge the current page.
+ */
+function acquia_purge_manualpurge_form_page($form, &$form_state) {
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    return array();
+  }
+
+  // Retrieve the base form and register our validation and submit callbacks.
+  _acquia_purge_manualpurge_base($form, $form_state);
+  $form['#submit'] = array('_acquia_purge_manualpurge_submit');
+  unset($form['submits']['paths']);
+
+  // Rewrite the paths array and add the current page and alias as paths.
+  $form['paths'] = array();
+  $form['paths']['path'][] = array(
+    '#type' => 'hidden',
+    '#default_value' => $_GET['q'],
+  );
+  if (module_exists('path')) {
+    $alias = drupal_get_path_alias();
+    if ($form['paths']['path'][0]['#default_value'] !== $alias) {
+      $form['paths']['path'][] = array(
+        '#type' => 'hidden',
+        '#default_value' => $alias,
+      );
+    }
+  }
+  return $form;
+}
+
+/**
+ * A (base)form that lets users purge manually.
+ */
+function _acquia_purge_manualpurge_base(&$form, &$form_state) {
+  $form['#tree'] = TRUE;
   $form['paths'] = array(
-    '#prefix' => '<div id="paths-wrapper"><p><h3>' . $title . '</h3><ul>',
-    '#suffix' => '</ul></p></div>',
+    '#prefix' => '<div id="paths-wrapper">',
+    '#suffix' => '</div>',
+    '#weight' => 5,
   );
 
-  // Fill paths with the right amount of form items according to num_paths.
-  $ac_path = 'admin/config/development/performance/manualpurge/autocomplete';
-  $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], base_path());
+  // Generate the path textfields, add and remove buttons.
   if (empty($form_state['num_paths'])) {
     $form_state['num_paths'] = 1;
   }
   for ($i = 0; $i < $form_state['num_paths']; $i++) {
     $form['paths']['path'][$i] = array(
       '#type' => 'textfield',
-      '#autocomplete_path' => $ac_path,
-      '#field_prefix' => $prefix,
-      '#size' => 30,
-      '#prefix' => '<li>',
-      '#suffix' => '</li>',
+      '#autocomplete_path'
+        => 'admin/config/development/performance/manualpurge/autocomplete',
     );
   }
-
-  // Declare the add and remove buttons.
   $form['paths']['add_path'] = array(
     '#type' => 'submit',
     '#value' => t('Add'),
-    '#submit' => array('acquia_purge_manualpurge_form_add_one'),
+    '#submit' => array('_acquia_purge_manualpurge_add'),
     '#ajax' => array(
-      'callback' => 'acquia_purge_manualpurge_form_callback',
+      'callback' => '_acquia_purge_manualpurge_paths',
       'wrapper' => 'paths-wrapper',
     ),
   );
@@ -242,56 +306,64 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
     $form['paths']['remove_path'] = array(
       '#type' => 'submit',
       '#value' => t('Remove last item'),
-      '#submit' => array('acquia_purge_manualpurge_form_remove_one'),
+      '#submit' => array('_acquia_purge_manualpurge_remove'),
       '#limit_validation_errors' => array(),
       '#ajax' => array(
-        'callback' => 'acquia_purge_manualpurge_form_callback',
+        'callback' => '_acquia_purge_manualpurge_paths',
         'wrapper' => 'paths-wrapper',
       ),
     );
   }
 
   // Render the submit button and return the form.
-  $form['submit'] = array(
+  $form['submits'] = array('#weight' => 10);
+  $form['submits']['paths'] = array(
     '#type' => 'submit',
-    '#value' => t("I know the risks, purge!"),
+    '#prefix' => '<p>',
+    '#suffix' => '</p>',
+    '#value' => _acquia_purge_get('acquia_purge_cron')
+      ? t("Queue") : t("Purge"),
   );
-  if (_acquia_purge_get('acquia_purge_cron') === TRUE) {
-    $form['submit']['#value'] = t("I'm aware of the risks, queue paths!");
-  }
+  $form['submits']['page'] = array(
+    '#type' => 'submit',
+    '#value' => t("Purge this page"),
+  );
 
   return $form;
 }
 
 /**
- * Callback to drupal_get_form: the AJAX callback to paths-wrapper.
+ * @see _acquia_purge_manualpurge_base()
  */
-function acquia_purge_manualpurge_form_callback($form, $form_state) {
+function __acquia_purge_manualpurge_add($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+  $form_state['num_paths']++;
+}
+
+/**
+ * @see _acquia_purge_manualpurge_base()
+ */
+function __acquia_purge_manualpurge_remove($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+  if ($form_state['num_paths'] > 1) {
+    $form_state['num_paths']--;
+  }
+}
+
+/**
+ * @see _acquia_purge_manualpurge_base()
+ */
+function __acquia_purge_manualpurge_paths($form, &$form_state) {
   return $form['paths'];
 }
 
 /**
- * Callback to drupal_get_form: add a path textfield.
+ * Form validation callback.
+ *
+ * @see acquia_purge_manualpurge_form_full()
+ * @see acquia_purge_manualpurge_form_paths()
  */
-function acquia_purge_manualpurge_form_add_one($form, &$form_state) {
-  $form_state['num_paths']++;
-  $form_state['rebuild'] = TRUE;
-}
-
-/**
- * Callback to drupal_get_form: remove a path textfield.
- */
-function acquia_purge_manualpurge_form_remove_one($form, &$form_state) {
-  if ($form_state['num_paths'] > 1) {
-    $form_state['num_paths']--;
-  }
-  $form_state['rebuild'] = TRUE;
-}
-
-/**
- * Callback to drupal_get_form: validate the form.
- */
-function acquia_purge_manualpurge_form_validate($form, &$form_state) {
+function __acquia_purge_manualpurge_validate($form, &$form_state) {
   foreach ($form_state['values']['paths']['path'] as $id => $path) {
     if ($msg = _acquia_purge_input_validate($path)) {
       form_set_error('paths][path][' . $id, $msg);
@@ -300,15 +372,25 @@ function acquia_purge_manualpurge_form_validate($form, &$form_state) {
 }
 
 /**
- * Callback to drupal_get_form: handle the form submit.
+ * Form submit callback.
+ *
+ * @see acquia_purge_manualpurge_form_full()
+ * @see acquia_purge_manualpurge_form_paths()
+ * @see acquia_purge_manualpurge_form_page()
  */
-function acquia_purge_manualpurge_form_submit($form, &$form_state) {
-  $paths = $form_state['values']['paths']['path'];
+function __acquia_purge_manualpurge_submit($form, &$form_state) {
+  if (!isset($form_state['values']['paths']['path'])) {
+    return;
+  }
+  if (!count($form_state['values']['paths']['path'])) {
+    return;
+  }
 
   // Improve the administrative experience by automatically adding variations
   // on the given paths, which includes trailing slash versions and pagination.
   if (_acquia_purge_get('acquia_purge_variations')) {
-    _acquia_purge_input_path_variations($paths);
+    _acquia_purge_input_path_variations(
+      $form_state['values']['paths']['path']);
   }
 
   // Nothing visual will happen in cron-mode, unless we notify.
@@ -317,7 +399,7 @@ function acquia_purge_manualpurge_form_submit($form, &$form_state) {
       . 'during the next cron iteration.'));
   }
 
-  acquia_purge_purge_paths($paths);
+  acquia_purge_purge_paths($form_state['values']['paths']['path']);
 }
 
 /**

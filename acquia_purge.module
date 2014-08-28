@@ -102,7 +102,8 @@ function acquia_purge_init() {
     'media/browser',
     'media/browser/testbed',
     'media/browser/list',
-    'media/browser/library');
+    'media/browser/library',
+    'system/ajax');
   if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
     return;
   }
@@ -192,7 +193,7 @@ function acquia_purge_menu() {
     'type'              => MENU_LOCAL_TASK,
     'title'             => 'Manual purge',
     'page callback'     => 'drupal_get_form',
-    'page arguments'    => array('acquia_purge_manualpurge_form'),
+    'page arguments'    => array('acquia_purge_manualpurge_form_full'),
     'access arguments'  => array('administer site configuration'),
     'file' => 'acquia_purge.admin.inc',
   );
@@ -410,6 +411,60 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
       '#type' => 'item',
     );
   }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function acquia_purge_block_info() {
+  return array(
+    'page' => array(
+      'info' => t('Manual purge form (paths)'),
+      'cache' => DRUPAL_NO_CACHE,
+      'status' => 0,
+      'weight' => 1,
+      'region' => 'sidebar_first',
+      'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+      'properties' => array('administrative' => TRUE),
+    ),
+    'paths' => array(
+      'info' => t('Manual purge form (paths)'),
+      'cache' => DRUPAL_NO_CACHE,
+      'status' => 0,
+      'weight' => 1,
+      'region' => 'sidebar_first',
+      'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+      'properties' => array('administrative' => TRUE),
+    )
+  );
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function acquia_purge_block_view($delta = '') {
+
+  // Render one of the manual purge blocks.
+  if (in_array($delta, array('page', 'paths'))) {
+    if (!user_access('purge on-screen')) {
+      return array();
+    }
+    if ($_GET['q'] == 'admin/config/development/performance/manualpurge') {
+      return array();
+    }
+    if (!_acquia_purge_are_we_allowed_to_purge()) {
+      return array();
+    }
+
+    // Load acquia_purge.admin.inc to be able to call our form callback.
+    module_load_include('inc', 'acquia_purge', 'acquia_purge.admin');
+    return array(
+      'subject' => ($delta === 'paths') ? t('Purge paths') : NULL,
+      'content' => drupal_get_form("acquia_purge_manualpurge_form_$delta"),
+    );
+  }
+
+  return array();
 }
 
 /**
@@ -1240,6 +1295,56 @@ function _acquia_purge_input_validate($path) {
   // All tests passed, remember it for future duplication testing.
   $history[] = $path;
   return FALSE;
+}
+
+/**
+ * Manual purge form: require inclusion wrapper.
+ *
+ * @see __acquia_purge_manualpurge_add()
+ */
+function _acquia_purge_manualpurge_add($form, &$form_state) {
+  module_load_include('inc', 'acquia_purge', 'acquia_purge.admin');
+  return __acquia_purge_manualpurge_add($form, $form_state);
+}
+
+/**
+ * Manual purge form: require inclusion wrapper.
+ *
+ * @see __acquia_purge_manualpurge_remove()
+ */
+function _acquia_purge_manualpurge_remove($form, &$form_state) {
+  module_load_include('inc', 'acquia_purge', 'acquia_purge.admin');
+  return __acquia_purge_manualpurge_remove($form, $form_state);
+}
+
+/**
+ * Manual purge form: require inclusion wrapper.
+ *
+ * @see __acquia_purge_manualpurge_paths()
+ */
+function _acquia_purge_manualpurge_paths($form, &$form_state) {
+  module_load_include('inc', 'acquia_purge', 'acquia_purge.admin');
+  return __acquia_purge_manualpurge_paths($form, $form_state);
+}
+
+/**
+ * Manual purge form: require inclusion wrapper.
+ *
+ * @see __acquia_purge_manualpurge_validate()
+ */
+function _acquia_purge_manualpurge_validate($form, &$form_state) {
+  module_load_include('inc', 'acquia_purge', 'acquia_purge.admin');
+  return __acquia_purge_manualpurge_validate($form, $form_state);
+}
+
+/**
+ * Manual purge form: require inclusion wrapper.
+ *
+ * @see __acquia_purge_manualpurge_add()
+ */
+function _acquia_purge_manualpurge_submit($form, &$form_state) {
+  module_load_include('inc', 'acquia_purge', 'acquia_purge.admin');
+  return __acquia_purge_manualpurge_submit($form, $form_state);
 }
 
 /**
