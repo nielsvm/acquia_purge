@@ -193,7 +193,6 @@ function acquia_purge_menu() {
     'title'             => 'Manual purge',
     'page callback'     => 'drupal_get_form',
     'page arguments'    => array('acquia_purge_manualpurge_form'),
-    'access callback'   => '_acquia_purge_are_we_allowed_to_purge',
     'access arguments'  => array('administer site configuration'),
     'file' => 'acquia_purge.admin.inc',
   );
@@ -201,7 +200,6 @@ function acquia_purge_menu() {
     = array(
       'type'              => MENU_CALLBACK,
       'page callback'     => 'acquia_purge_manualpurge_autocomplete',
-      'access callback'   => '_acquia_purge_are_we_allowed_to_purge',
       'access arguments'  => array('administer site configuration'),
       'file' => 'acquia_purge.admin.inc',
     );
@@ -471,13 +469,10 @@ function _acquia_purge_are_we_on_acquiacloud() {
 /**
  * Determine if critical error conditions exists disallowing purges.
  *
- * @param string $permission
- *   Optional permission string to include in the decision, defaults to no.
- *
  * @returns
  *   Boolean TRUE or FALSE indicating access.
  */
-function _acquia_purge_are_we_allowed_to_purge($permission = NULL) {
+function _acquia_purge_are_we_allowed_to_purge() {
   static $allowed_to_purge;
 
   // Statically store if error conditions exists or not.
@@ -486,13 +481,7 @@ function _acquia_purge_are_we_allowed_to_purge($permission = NULL) {
     $allowed_to_purge = !(count($errors) > 0);
   }
 
-  // Have we been asked to check for a permission as well?
-  if (is_null($permission)) {
-    return $allowed_to_purge;
-  }
-  else {
-    return ($allowed_to_purge && user_access($permission));
-  }
+  return $allowed_to_purge;
 }
 
 /**

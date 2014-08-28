@@ -146,6 +146,21 @@ function acquia_purge_manualpurge_autocomplete($string) {
  *   A standard Form API form-array.
  */
 function acquia_purge_manualpurge_form($form, &$form_state) {
+
+  // Show any existing error conditions if they exist.
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    include_once DRUPAL_ROOT . '/includes/install.inc';
+    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
+    $form['status'] = array(
+      '#markup' => theme('status_report', array('requirements' => $err)),
+      '#type' => 'item',
+      '#title' => t("We're sorry, but due a critical error condition it is "
+        . "not possible to use this form. Please contact your administrator."),
+    );
+    return $form;
+  }
+
+  // If things all work fine, continue to build up the form.
   $schemes = _acquia_purge_get_protocol_schemes();
   $domains = _acquia_purge_get_domains();
   $form['description'] = array(
