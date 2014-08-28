@@ -11,17 +11,17 @@ Drupal.behaviors.AcquiaPurgeAjax = {
     $(document).ready(function() {
 
       // Declare the trigger path the script will call back home to.
-      triggerPath = Drupal.settings.basePath + 'acquia_purge_ajax_processor';
+      var triggerPath = Drupal.settings.basePath + 'acquia_purge_ajax_processor';
 
       // Declare reference variables to the main container and its elements.
-      apbox = '.acquia_purge_messages';
-      apbox_errors = '#aperror';
-      apbox_widget = '#apwidget';
-      apbox_log = '#aplog';
+      var apbox = '.acquia_purge_messages';
+      var apbox_errors = '#aperror';
+      var apbox_widget = '#apwidget';
+      var apbox_log = '#aplog';
 
       // Declare a error counter and a error limit before we stop processing.
-      errorCounter = 0;
-      errorCounterLimit = 3;
+      var errorCounter = 0;
+      var errorCounterLimit = 3;
 
       // Determine if on-screen reporting is enabled or not.
       function uiActivated() {
@@ -42,7 +42,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         apbox_widget = apbox.find(apbox_widget);
 
         // Prepend the hidden errors container and reference it.
-        html = "<div id='aperror' style='display: none;' class='messages ";
+        var html = "<div id='aperror' style='display: none;' class='messages ";
         html = html + "error'>&nbsp;</div>";
         apbox.prepend(html);
         apbox_errors = apbox.find(apbox_errors);
@@ -59,8 +59,8 @@ Drupal.behaviors.AcquiaPurgeAjax = {
       // Set a visual error in the error container. Returns true when processing
       // could continue and returns false when the error limit has been reached.
       function uiError(message) {
-        message = typeof message !== 'undefined' ? message : false;
-        message_old = apbox_errors.html();
+        var message = typeof message !== 'undefined' ? message : false;
+        var message_old = apbox_errors.html();
 
         // If message wasn't passed we hide and delete the current message.
         if (!message) {
@@ -87,7 +87,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         }
 
         // The only resulting case is a message replacement, handle nicely.
-        apn  = "<div class='apn' style='display:none;'>" + message + "</div>";
+        var apn  = "<div class='apn' style='display:none;'>" + message + "</div>";
         apbox_errors.html("<div class='apo'>" + apbox_errors.html() + "</div>");
         apbox_errors.append(apn);
         apbox_errors.find('.apo').slideUp('slow');
@@ -99,12 +99,12 @@ Drupal.behaviors.AcquiaPurgeAjax = {
 
       // Enable the throbber on the widget container.
       function uiThrobberOn() {
-        throbber_path = Drupal.settings.basePath + 'misc/throbber.gif';
-        throbber = apbox.find('#apthrobr');
+        var throbber_path = Drupal.settings.basePath + 'misc/throbber.gif';
+        var throbber = apbox.find('#apthrobr');
 
         // Create the throbber when it doesn't exist.
         if (!($(throbber).length > 0)) {
-          html = "<div id='apthrobr' style='display: none;'>&nbsp;</div>";
+          var html = "<div id='apthrobr' style='display: none;'>&nbsp;</div>";
           apbox_errors.after(html);
           throbber = apbox.find('#apthrobr');
           throbber.css('background-image', 'url(' + throbber_path + ')');
@@ -126,14 +126,14 @@ Drupal.behaviors.AcquiaPurgeAjax = {
 
       // Disable the throbber on the widget container.
       function uiThrobberOff() {
-        throbber = apbox.find('#apthrobr');
+        var throbber = apbox.find('#apthrobr');
         throbber.fadeOut(1000);
       }
 
       // Add new items to the purge log history widget.
       function uiLogHistory(purges) {
-        list_items_limit = 10;
-        list_items = apbox_log.find('ul');
+        var list_items_limit = 10;
+        var list_items = apbox_log.find('ul');
 
         // Slowly slide the widget on screen once purges are logged.
         if (!apbox_log.is(':visible')) {
@@ -144,7 +144,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
         $.each(purges, function(key, url) {
 
           // Check the existing list and add the item if its new to us.
-          alreadyInList = false;
+          var alreadyInList = false;
           list_items.find('li').each(function(index) {
             if ($(this).text() == url) {alreadyInList = true;}
           });
@@ -212,7 +212,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
             }
 
             // Handle error conditions and remove errors when they are gone.
-            errorHandlerCallsForHalt = false;
+            var errorHandlerCallsForHalt = false;
             if (uiActivated() && data['error']) {
               if (!uiError(data['error'])) {
                 errorHandlerCallsForHalt = true;
@@ -269,7 +269,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
               if (uiActivated()) {
                 uiThrobberOff();
                 uiLogHistoryHide();
-                msg = "Something went wrong while communicating with the ";
+                var msg = "Something went wrong while communicating with the ";
                 msg = msg + "server. Last known response was '";
                 msg = msg + request['statusText'] + "' with HTTP code ";
                 msg = msg + request['status'] + ".";
