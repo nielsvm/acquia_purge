@@ -419,7 +419,7 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
 function acquia_purge_block_info() {
   return array(
     'page' => array(
-      'info' => t('Manual purge form (paths)'),
+      'info' => t('Manual purge form (current page)'),
       'cache' => DRUPAL_NO_CACHE,
       'status' => 0,
       'weight' => 1,
