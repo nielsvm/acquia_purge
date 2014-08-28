@@ -1097,6 +1097,85 @@ function _acquia_purge_get_site_group() {
 }
 
 /**
+ * Perform necessary string cleaning on a provided path string.
+ *
+ * Whenever working with user input it is required to first validate
+ * with _acquia_purge_input_validate() before cleaning it.
+ *
+ * @param string $path
+ *   The Drupal path (for example: '<front>', 'user/1' or a alias).
+ *
+ * @returns
+ *   The cleaned version of the path.
+ */
+function _acquia_purge_input_clean($path) {
+  if (!is_string($path)) {
+    return '/';
+  }
+  $path = trim($path);
+  if (empty($path)) {
+    return '/';
+  }
+
+  // Strip the path and remove potentially added double paths.
+  $path = trim($path, '/');
+  $path = str_replace('//', '/', $path);
+
+  // Rewrite '<front>' to a empty string, which will be the frontpage. By using
+  // substr() and str_replace() we still allow cases like '<front>?param=1'.
+  if (drupal_substr($path, 0, 7) === '<front>') {
+    $path = str_replace('<front>', '/', $path);
+  }
+
+  return $path;
+}
+
+/**
+ * Validate a user provided path string.
+ *
+ * @param string $path
+ *   The Drupal path (for example: '<front>', 'user/1' or a alias).
+ *
+ * @returns
+ *   FALSE on success (!!) or a translated string describing what's wrong with
+ *   the given user input.
+ */
+function _acquia_purge_input_validate($path) {
+  static $history;
+  if (is_null($history)) {
+    $history = array();
+  }
+
+  // Start all the validation checks.
+  if (empty($path)) {
+    $front = (php_sapi_name() === 'cli') ? '<front>' : '&lt;front&gt;';
+    return t('The path cannot be empty, if you intended to purge the frontpage'
+      . ' of your site, use "/" or "!front".', array('!front' => $front));
+  }
+  if (!is_string($path)) {
+    return t('The path is not a string!');
+  }
+  if (stristr($path, 'http:') || stristr($path, 'https:')) {
+    return t('You provided a URL which is not compatible with the way Acquia '
+      . 'Purge works, as it constructs full URLs for its configured domains.');
+  }
+  if (preg_match('/\s/', $path)) {
+    return t('The path cannot contain a space!');
+  }
+  if (stristr($path, '*')) {
+    return t('You cannot purge paths with wildcard signs (*), unfortunately '
+      . 'this is not supported but may be in future versions.');
+  }
+  if (in_array($path, $history)) {
+    return t('You have already listed this path!');
+  }
+
+  // All tests passed, remember it for future duplication testing.
+  $history[] = $path;
+  return FALSE;
+}
+
+/**
  * Queue manager: return the queue object in use for Acquia Purge.
  *
  * @returns
@@ -1124,6 +1203,9 @@ function _acquia_purge_queue() {
  */
 function _acquia_purge_queue_add($path) {
   $queue = _acquia_purge_queue();
+
+  // Perform input cleaning to end up with a somewhat trustworthy path string.
+  $path = _acquia_purge_input_clean($path);
 
   // Retrieve and bump the queue counter.
   $qtotal = _acquia_purge_get('qtotal');
@@ -1292,12 +1374,6 @@ function _acquia_purge_queue_processpurge($path) {
   if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
     _acquia_purge_get_diagnosis_logged($err);
     return FALSE;
-  }
-
-  // Rewrite '<front>' to a empty string, which will be the frontpage. By using
-  // substr() and str_replace() we still allow cases like '<front>?param=1'.
-  if (drupal_substr($path, 0, 7) === '<front>') {
-    $path = str_replace('<front>', '', $path);
   }
 
   // Because a single path can exist on http://, https://, on various domain

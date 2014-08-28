@@ -267,29 +267,10 @@ function acquia_purge_manualpurge_form_remove_one($form, &$form_state) {
  * Callback to drupal_get_form: validate the form.
  */
 function acquia_purge_manualpurge_form_validate($form, &$form_state) {
-  $paths = array();
   foreach ($form_state['values']['paths']['path'] as $id => $path) {
-    if (empty($path)) {
-      form_set_error('paths][path][' . $id,
-        t('The path can not be empty, use &lt;front&gt; for your frontpage!'));
+    if ($msg = _acquia_purge_input_validate($path)) {
+      form_set_error('paths][path][' . $id, $msg);
     }
-    elseif (!is_string($path)) {
-      form_set_error('paths][path][' . $id,
-        t("The path has to be a string!"));
-    }
-    elseif (stristr($path, 'http:') || stristr($path, 'https:')) {
-      form_set_error('paths][path][' . $id,
-        t("You can't provide a URL, only paths!"));
-    }
-    elseif (preg_match('/\s/', $path)) {
-      form_set_error('paths][path][' . $id,
-        t('The path can not contain a space!'));
-    }
-    elseif (in_array($path, $paths)) {
-      form_set_error('paths][path][' . $id,
-        t('You have already listed this path!'));
-    }
-    $paths[] = $path;
   }
 }
 

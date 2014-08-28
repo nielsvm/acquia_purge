@@ -210,23 +210,9 @@ function drush_acquia_purge_ap_purge($path = NULL) {
     return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
   }
 
-  // Check if the path was provided.
-  if (!is_string($path)) {
-    return drush_set_error("You haven't provided a path to be purged.");
-  }
-
-  // Block invocations with URL's instead of paths, we'll handle the URLs!
-  if (stristr($path, 'http:') || stristr($path, 'https:')) {
-    return drush_set_error("You can't provide a URL, only paths...");
-  }
-
-  // Strip the path and remove potentially added double paths.
-  $path = trim($path, '/');
-  $path = str_replace('//', '/', $path);
-
-  // If the path is empty, assume <front>.
-  if (empty($path)) {
-    $path = '<front>';
+  // Validate the given user input.
+  if ($msg = _acquia_purge_input_validate($path)) {
+    return drush_set_error($msg);
   }
 
   // Add the given path to the queue and dispatch processing to ap-process.
