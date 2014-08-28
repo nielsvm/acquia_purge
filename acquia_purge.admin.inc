@@ -256,6 +256,10 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
     '#type' => 'submit',
     '#value' => t("I know the risks, purge!"),
   );
+  if (_acquia_purge_get('acquia_purge_cron') === TRUE) {
+    $form['submit']['#value'] = t("I'm aware of the risks, queue paths!");
+  }
+
   return $form;
 }
 
@@ -307,7 +311,13 @@ function acquia_purge_manualpurge_form_submit($form, &$form_state) {
     _acquia_purge_input_path_variations($paths);
   }
 
-  acquia_purge_purge_paths($form_state['values']['paths']['path']);
+  // Nothing visual will happen in cron-mode, unless we notify.
+  if (_acquia_purge_get('acquia_purge_cron') === TRUE) {
+    drupal_set_message(t('Your paths have been queued and will get processed '
+      . 'during the next cron iteration.'));
+  }
+
+  acquia_purge_purge_paths($paths);
 }
 
 /**
