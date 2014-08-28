@@ -572,6 +572,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_http'        => TRUE,
         'acquia_purge_https'       => FALSE,
         'acquia_purge_log_success' => TRUE,
+        'acquia_purge_variations'  => TRUE,
         'acquia_purge_memcache'    => FALSE,
       ),
       'state' => array(
@@ -1117,23 +1118,94 @@ function _acquia_purge_get_site_group() {
  */
 function _acquia_purge_input_clean($path) {
   if (!is_string($path)) {
-    return '/';
+    return '';
   }
   $path = trim($path);
-  if (empty($path)) {
-    return '/';
+  if (empty($path) || ($path === '/')) {
+    return '';
   }
 
   // Remove double slashes that might occur in strings.
   $path = str_replace('//', '/', $path);
 
-  // Rewrite '<front>' to '/', which will always be the frontpage. By using
+  // Remove leading slashes as we add those in later too.
+  $path = ltrim($path, '/');
+
+  // Rewrite '<front>' to '', which will always be the frontpage. By using
   // substr() and str_replace() we still allow cases like '<front>?param=1'.
   if (drupal_substr($path, 0, 7) === '<front>') {
-    $path = str_replace('<front>', '/', $path);
+    $path = str_replace('<front>', '', $path);
   }
 
   return $path;
+}
+
+/**
+ * Make up variations on the given paths for lazier administrative cleaning.
+ *
+ * As every URL gets uniquely cached, purging a path like 'news' will not purge
+ * potentially existing variations like 'news/' or 'news?page=0'. This helper
+ * is only meant to be used in places where an administrator is manually
+ * purging a few paths, for instance through Drush or the manual purge form.
+ *
+ * @param array $paths
+ *   Non-associative array with Drupal paths like '<front>' or 'user/1'.
+ * @param string $path
+ *   INTERNAL, don't use directly! Used to add made up variations to the
+ *   list by reference and to prevent duplicate paths.
+ *
+ * @see acquia_purge_manualpurge_form_submit()
+ * @see drush_acquia_purge_ap_purge()
+ * @returns
+ *   Void, rewrites $paths as passed in by reference.
+ */
+function _acquia_purge_input_path_variations(&$paths, $path = NULL) {
+
+  // Are we supposed to just add a path to $paths? This only happens as we call
+  // ourselves here, a closure would have been better but that's PHP 5.3 :(.
+  if (!is_null($path)) {
+    if (!in_array($path, $paths)) {
+      $paths[] = $path;
+    }
+    return;
+  }
+  else {
+    $add = __FUNCTION__;
+  }
+
+  // Iterate each path and build up $paths_new.
+  $paths_new = array();
+  foreach ($paths as $path) {
+    $path = _acquia_purge_input_clean($path);
+    $add($paths_new, $path);
+
+    // For parameterized paths we'll add just a trailing slashed version.
+    if (strstr($path, '?')) {
+      $add($paths_new, str_replace('?', '/?', $path));
+      continue;
+    }
+
+    // Start by adding a no trailed slash version with pagination.
+    $noslashed = (substr($path, -1) === '/') ? substr($path, 0, -1) : $path;
+    $add($paths_new, $noslashed);
+    $add($paths_new, $noslashed . '?page=0');
+    $add($paths_new, $noslashed . '?page=1');
+    $add($paths_new, $noslashed . '?page=2');
+    $add($paths_new, $noslashed . '?page=3');
+    $add($paths_new, $noslashed . '?page=4');
+
+    // Then add a slashed version with pagination.
+    $slashed = (substr($path, -1) === '/') ? $path : $path . '/';
+    $add($paths_new, $slashed);
+    $add($paths_new, $slashed . '?page=0');
+    $add($paths_new, $slashed . '?page=1');
+    $add($paths_new, $slashed . '?page=2');
+    $add($paths_new, $slashed . '?page=3');
+    $add($paths_new, $slashed . '?page=4');
+  }
+
+  // Overwrite the rewritten array with variations.
+  $paths = $paths_new;
 }
 
 /**

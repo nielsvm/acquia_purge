@@ -47,10 +47,10 @@ function acquia_purge_drush_command() {
       'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
       'aliases' => array('app'),
       'arguments' => array(
-        'paths' => 'The Drupal path to be purged, e.g.: "/news" or "<front>",'
+        'paths' => 'The Drupal path to be purged, e.g.: "news" or "<front>",'
           . ' multiple separated paths are also accepted: "news contact node/1".',
       ),
-      'examples' => array('drush app "/news"'),
+      'examples' => array('drush app "news"'),
     ),
 
     // Define the 'ap-forget' command.
@@ -197,7 +197,7 @@ function drush_acquia_purge_ap_domains() {
  * Purge a specified path from your balancers.
  *
  * @param string $paths
- *   The Drupal path to be purged, e.g.: "/news" or "<front>",
+ *   The Drupal path to be purged, e.g.: "news" or "<front>",
  *   multiple separated paths are also accepted: "news contact node/1".
  */
 function drush_acquia_purge_ap_purge($paths = NULL) {
@@ -219,6 +219,12 @@ function drush_acquia_purge_ap_purge($paths = NULL) {
       drush_set_error($path);
       return drush_set_error($msg);
     }
+  }
+
+  // Improve the administrative experience by automatically adding variations
+  // on the given paths, which includes trailing slash versions and pagination.
+  if (_acquia_purge_get('acquia_purge_variations')) {
+    _acquia_purge_input_path_variations($paths);
   }
 
   // Add all paths and dispatch processing to ap-process.

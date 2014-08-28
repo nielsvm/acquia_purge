@@ -146,7 +146,6 @@ function acquia_purge_manualpurge_autocomplete($string) {
  *   A standard Form API form-array.
  */
 function acquia_purge_manualpurge_form($form, &$form_state) {
-  $examples = array('&lt;front&gt;', 'node/1', 'news?page=1', 'contact');
   $schemes = _acquia_purge_get_protocol_schemes();
   $domains = _acquia_purge_get_domains();
   $form['description'] = array(
@@ -157,6 +156,13 @@ function acquia_purge_manualpurge_form($form, &$form_state) {
     automate these purges using rules so editorial users can rely on a fully
     fresh site instead of relying on this form.</p>'),
   );
+
+  // Define a list of example paths so users know what they can/should purge.
+  $examples = array('&lt;front&gt;', '&lt;front&gt;?page=0', '&lt;front&gt;/',
+    'node/1', 'node/1/', 'news?page=0');
+  if (_acquia_purge_get('acquia_purge_variations')) {
+    $examples = array('&lt;front&gt;', 'node/1', 'news');
+  }
 
   // Build up table rows with domains on the left and examples on the right.
   $rows = array();
@@ -278,6 +284,14 @@ function acquia_purge_manualpurge_form_validate($form, &$form_state) {
  * Callback to drupal_get_form: handle the form submit.
  */
 function acquia_purge_manualpurge_form_submit($form, &$form_state) {
+  $paths = $form_state['values']['paths']['path'];
+
+  // Improve the administrative experience by automatically adding variations
+  // on the given paths, which includes trailing slash versions and pagination.
+  if (_acquia_purge_get('acquia_purge_variations')) {
+    _acquia_purge_input_path_variations($paths);
+  }
+
   acquia_purge_purge_paths($form_state['values']['paths']['path']);
 }
 

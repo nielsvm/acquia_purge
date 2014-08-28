@@ -89,6 +89,16 @@ exist as of this version and documented below:
 ║                          ║       ║ or disk writes (for log files).           ║
 ║                          ║       ║ $conf['acquia_purge_log_success'] = FALSE;║
 ║                          ║       ║                                           ║
+║ acquia_purge_variations  ║ TRUE  ║ If enabled, this aids administrators using║
+║                          ║       ║ 'drush ap-purge' or the manual purge form ║
+║                          ║       ║ as it will automatically purge common     ║
+║                          ║       ║ variations of the paths to be purged. For ║
+║                          ║       ║ instance, versions with ?page parameters  ║
+║                          ║       ║ and paths with trailing slashes are       ║
+║                          ║       ║ made up for every manually purged path but║
+║                          ║       ║ this behavior can be disabled with:       ║
+║                          ║       ║ $conf['acquia_purge_variations'] = FALSE; ║
+║                          ║       ║                                           ║
 ║ acquia_purge_memcache    ║ FALSE ║ EXPERIMENTAL support for letting Acquia   ║
 ║                          ║       ║ Purge store its state data in Memcached,  ║
 ║                          ║       ║ if your site uses it for caching. This    ║
