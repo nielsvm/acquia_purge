@@ -121,10 +121,10 @@ function acquia_purge_init() {
  */
 function acquia_purge_permission() {
   return array(
-    'purge notification' => array(
-      'title' => t('Purge notification'),
-      'description' => t('Show a visual progressbar to the user that reports
-      which URLs are being purged and when all pages have been refreshed.'),
+    'purge on-screen' => array(
+      'title' => t('Purge on-screen'),
+      'description' => t('Process purges visually using a progress bar and '
+        . 'grant access to the editorial manual purge blocks.'),
     ),
   );
 }
@@ -200,7 +200,7 @@ function acquia_purge_menu() {
     = array(
       'type'              => MENU_CALLBACK,
       'page callback'     => 'acquia_purge_manualpurge_autocomplete',
-      'access arguments'  => array('administer site configuration'),
+      'access arguments'  => array('purge on-screen'),
       'file' => 'acquia_purge.admin.inc',
     );
 
@@ -275,7 +275,7 @@ function acquia_purge_expire_cache($paths) {
     $items = theme('item_list', array('items' => $items));
 
     // Warn the user on-screen that purging cannot continue.
-    if (user_access('purge notification') && ($_GET['q'] !== 'batch')) {
+    if (user_access('purge on-screen') && ($_GET['q'] !== 'batch')) {
       drupal_set_message(
         t("<p>The system cannot publicly refresh the changes you just made,
           because of the following error conditions:</p>!items<p>Please
@@ -1940,12 +1940,12 @@ function _acquia_purge_trigger_client_side_purging() {
   $module_path = drupal_get_path('module', 'acquia_purge');
   drupal_add_js($module_path . '/acquia_purge.js');
 
-  // If the user has the permission 'purge notification' it means on-screen
+  // If the user has the permission 'purge on-screen' it means on-screen
   // reporting is enabled and we'll set a standard drupal_set_message() that
   // announces the AJAX powered purging. Because we're abusing the API with a
   // non-standard message type our JQuery logic is smartly able to replace the
   // nodes with the interactive progressbar.
-  if (user_access('purge notification')) {
+  if (user_access('purge on-screen')) {
     $message = t("There have been changes to content, and these needs to be
       refreshed throughout the system. There may be a delay before the changes
       appear to all website visitors.");

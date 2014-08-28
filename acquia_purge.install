@@ -114,3 +114,27 @@ function acquia_purge_update_7102(&$sandbox) {
   // as this will otherwise inevitably lead to sites with queue zombies.
   _acquia_purge_queue_clear();
 }
+
+/**
+ * Rename the 'purge notification' permission into 'purge on-screen'.
+ *
+ * Since version 7.x-1.0, this permission got renamed as its name became
+ * too specific. Before it only reflected on the on-screen purging progress bar
+ * but is now also used for permission to the manual purge form blocks.
+ */
+function acquia_purge_update_7103(&$sandbox) {
+  drupal_static_reset('user_role_permissions');
+
+  // Assign the new role to the site administrator.
+  $rid = variable_get('user_admin_role', 0);
+  if ($rid) {
+    user_role_grant_permissions($rid, array('purge on-screen'));
+  }
+
+  // If other users had the role as well, we should update those too.
+  db_update('role_permission')
+    ->fields(array('permission' => 'purge on-screen',))
+    ->condition('permission', 'purge notification')
+    ->condition('module', 'acquia_purge')
+    ->execute();
+}
