@@ -43,11 +43,12 @@ function acquia_purge_drush_command() {
 
     // Define the 'ap-purge' command.
     'ap-purge' => array(
-      'description' => 'Purge a specified path from your balancers.',
+      'description' => 'Purge a specified path/paths from your balancers.',
       'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
       'aliases' => array('app'),
       'arguments' => array(
-        'path' => 'The Drupal path to be purged, e.g.: "/news" or "<front>".',
+        'paths' => 'The Drupal path to be purged, e.g.: "/news" or "<front>",'
+          . ' multiple separated paths are also accepted: "news contact node/1".',
       ),
       'examples' => array('drush app "/news"'),
     ),
@@ -195,10 +196,11 @@ function drush_acquia_purge_ap_domains() {
 /**
  * Purge a specified path from your balancers.
  *
- * @param string $path
- *   The Drupal path (for example: '<front>', 'user/1' or a alias).
+ * @param string $paths
+ *   The Drupal path to be purged, e.g.: "/news" or "<front>",
+ *   multiple separated paths are also accepted: "news contact node/1".
  */
-function drush_acquia_purge_ap_purge($path = NULL) {
+function drush_acquia_purge_ap_purge($paths = NULL) {
 
   // Stop invocation if we are not detecting Acquia Cloud heuristics.
   if (!_acquia_purge_are_we_on_acquiacloud()) {
@@ -210,13 +212,17 @@ function drush_acquia_purge_ap_purge($path = NULL) {
     return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
   }
 
-  // Validate the given user input.
-  if ($msg = _acquia_purge_input_validate($path)) {
-    return drush_set_error($msg);
+  // The input may be space separated, split out and validate each path.
+  $paths = explode(' ', $paths);
+  foreach ($paths as $path) {
+    if ($msg = _acquia_purge_input_validate($path)) {
+      drush_set_error($path);
+      return drush_set_error($msg);
+    }
   }
 
-  // Add the given path to the queue and dispatch processing to ap-process.
-  acquia_purge_purge_path($path);
+  // Add all paths and dispatch processing to ap-process.
+  acquia_purge_purge_paths($paths);
   drush_acquia_purge_ap_process();
 }
 
