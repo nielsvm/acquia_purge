@@ -349,6 +349,13 @@ function acquia_purge_expire_cache($paths) {
   // If everything is validated, schedule the items for purging which will be
   // triggered automatically on the next page load for the current user.
   else {
+
+    // Specifically trim ending slashes on paths originating from expire,
+    // see the explanation on https://www.drupal.org/node/2295741.
+    foreach ($paths as $i => $path) {
+      $paths[$i] = rtrim($path, '/');
+    }
+
     acquia_purge_purge_paths($paths);
   }
 }
@@ -1117,11 +1124,10 @@ function _acquia_purge_input_clean($path) {
     return '/';
   }
 
-  // Strip the path and remove potentially added double paths.
-  $path = trim($path, '/');
+  // Remove double slashes that might occur in strings.
   $path = str_replace('//', '/', $path);
 
-  // Rewrite '<front>' to a empty string, which will be the frontpage. By using
+  // Rewrite '<front>' to '/', which will always be the frontpage. By using
   // substr() and str_replace() we still allow cases like '<front>?param=1'.
   if (drupal_substr($path, 0, 7) === '<front>') {
     $path = str_replace('<front>', '/', $path);
