@@ -78,28 +78,15 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * Implements hook_init().
  */
 function acquia_purge_init() {
-  // Abort loading the AJAX logic when hitting any of the excluded paths.
-  $excluded_auto_purging_paths = array(
-    '',
-    'admin/config/system/expire',
-    'admin/reports/status',
-    'admin/reports/dblog',
-    'acquia_purge_ajax_processor',
-    'media/browser',
-    'media/browser/testbed',
-    'media/browser/list',
-    'media/browser/library',
-    'system/ajax');
-  if (in_array($_GET['q'], $excluded_auto_purging_paths)) {
+
+  // Do not trigger the on-screen purger if this path is blacklisted.
+  if (_acquia_purge_ui_path_blacklisted()) {
     return;
   }
 
-  // Detect if the current user instantiated a ongoing purge in the queues.
+  // Trigger the on-screen purger if its enabled and if this user triggered it.
   if (_acquia_purge_queue_is_user_purging()) {
-
-    // Trigger the client side candy so it starts doing its work.
-    _acquia_purge_trigger_client_side_purging();
-
+    _acquia_purge_ui_trigger_purge();
   }
 }
 
@@ -254,25 +241,28 @@ function acquia_purge_expire_cache($paths) {
     $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
     _acquia_purge_get_diagnosis_logged($err);
 
-    // Stack all found error messages (can be one too) in a HTML item list.
+    // Stop if this page is blacklisted or if the user isn't allowed to see it.
+    if (_acquia_purge_ui_path_blacklisted()) {
+      return;
+    }
+    if (!user_access('purge on-screen')) {
+      return;
+    }
+
+    // List all critical conditions right in the face of the (editorial) user.
     $items = array();
     foreach ($err as $error) {
       $items[] = '<p>' . $error['description'] . '</p>';
     }
     $items = theme('item_list', array('items' => $items));
-
-    // Warn the user on-screen that purging cannot continue.
-    if (user_access('purge on-screen') && ($_GET['q'] !== 'batch')) {
-      drupal_set_message(
-        t("<p>The system cannot publicly refresh the changes you just made,
-          because of the following error conditions:</p>!items<p>Please
-          contact your system administrator or development partner!</p>",
-          array('!items' => $items)
-        ),
-        'error'
-      );
-    }
-
+    drupal_set_message(
+      t("<p>The system cannot publicly refresh the changes you just made,
+        because of the following error conditions:</p>!items<p>Please
+        contact your system administrator or development partner!</p>",
+        array('!items' => $items)
+      ),
+      'error'
+    );
     return;
   }
 
@@ -2022,12 +2012,71 @@ function _acquia_purge_state_wipe() {
 }
 
 /**
+ * Check if the current request path is blacklisted.
+ *
+ * On-screen notifications and interactive on-screen purge processing is not
+ * always appreciated or can break the layout at places like popups or AJAX
+ * callbacks. Therefore this helper attempts to prevent user annoyances
+ * the best it can, but if error messages or the on-screen purge processor
+ * are shown on a certain page, you know what to patch ;).
+ *
+ * @returns
+ *   FALSE if the current path is approved, TRUE if its blacklisted.
+ */
+function _acquia_purge_ui_path_blacklisted() {
+  $blacklist = array(
+
+    // First register our own paths on which things shouldn't show.
+    'admin/config/development/performance/manualpurge/autocomplete',
+    'acquia_purge_ajax_processor',
+    'admin/config/system/expire',
+
+    // Then common Drupal paths where nothing should happen.
+    'admin/reports/status',
+    'admin/reports/dblog',
+    'admin/dashboard/customize',
+    'admin/dashboard',
+    'system/ajax',
+    'file/ajax',
+    'file/progress',
+    'toolbar/toggle',
+    'batch',
+
+    // Media module.
+    'media/browser',
+    'media/browser/testbed',
+    'media/browser/list',
+    'media/browser/library',
+  );
+
+  // If we're called too early, don't make any noise.
+  if (!isset($_GET['q'])) {
+    return FALSE;
+  }
+
+  // If this page is in our blacklist, return TRUE.
+  elseif (in_array($_GET['q'], $blacklist)) {
+    return TRUE;
+  }
+
+  // Avoid paths that contain any of these snippets.
+  $snippets = array('autocomplete', 'ajax');
+  foreach ($snippets as $snippet) {
+    if (stristr($_GET['q'], $snippet)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
  * Trigger client-side AJAX based purging during this request.
  *
  * @returns
  *   Void, this function doesn't return anything.
  */
-function _acquia_purge_trigger_client_side_purging() {
+function _acquia_purge_ui_trigger_purge() {
 
   // Prevent API misuse and don't trigger when this user doesn't own the queue.
   if (!_acquia_purge_queue_is_user_purging()) {
