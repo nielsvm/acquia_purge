@@ -558,18 +558,18 @@ function _acquia_purge_get_diagnosis_queue($t) {
 
   // Setup our $t() variables.
   $tvars = array(
-    '@total' => $stats['total'],
+    '@total' => $stats['remaining'],
     '@warning' => $warning,
     '@shutdown' => $shutdown,
   );
   $test['value'] = $t('@total (warning: @warning, shutdown: @shutdown)', $tvars);
 
   // Test the queue level for these thresholds and act appropriately.
-  if ($stats['total'] < $warning) {
+  if ($stats['remaining'] < $warning) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
-  elseif (($stats['total'] >= $warning) && ($stats['total'] < $shutdown)) {
-    $test['value'] = $stats['total'];
+  elseif (($stats['remaining'] >= $warning) && ($stats['remaining'] < $shutdown)) {
+    $test['value'] = $stats['remaining'];
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t('Your queue is at @total items which is'
       . ' regarded as dangerous, as it either means that your are purging too'
@@ -580,8 +580,8 @@ function _acquia_purge_get_diagnosis_queue($t) {
       . ' reducing the domains. As safety measure, Acquia Purge will shut'
       . ' itself down once the queue reaches @shutdown items!', $tvars);
   }
-  elseif ($stats['total'] >= $shutdown) {
-    $test['value'] = $stats['total'];
+  elseif ($stats['remaining'] >= $shutdown) {
+    $test['value'] = $stats['remaining'];
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your queue contains @total items and crossed'
       . ' the safety limit of @shutdown items, Acquia Purge has shut itself'
