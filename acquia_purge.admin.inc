@@ -253,21 +253,13 @@ function acquia_purge_manualpurge_form_page($form, &$form_state) {
   $form['#submit'] = array('_acquia_purge_manualpurge_submit');
   unset($form['submits']['paths']);
 
-  // Rewrite the paths array and add the current page and alias as paths.
+  // Rewrite the paths array to just contain this page, variations might be
+  // added later on if _acquia_purge_input_path_variations() gets called.
   $form['paths'] = array();
   $form['paths']['path'][] = array(
     '#type' => 'hidden',
     '#default_value' => $_GET['q'],
   );
-  if (module_exists('path')) {
-    $alias = drupal_get_path_alias();
-    if ($form['paths']['path'][0]['#default_value'] !== $alias) {
-      $form['paths']['path'][] = array(
-        '#type' => 'hidden',
-        '#default_value' => $alias,
-      );
-    }
-  }
   return $form;
 }
 
