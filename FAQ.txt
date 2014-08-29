@@ -185,7 +185,7 @@ Frequently asked questions
     acquia_purge_purge_path('node/5?parameter');
     acquia_purge_purge_paths(array('news/section1', 'contact'));
     $node = node_load(5);
-    acquia_purge_purge_node($node);
+    expire_execute_expiration('node', $node, EXPIRE_NODE_UPDATE);
 
   That will just queue them, you can process the queue with "drush ap-process"
   or you can also process the full queue programatically:

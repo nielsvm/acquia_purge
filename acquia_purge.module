@@ -2093,11 +2093,19 @@ function _acquia_purge_ui_trigger_purge() {
 }
 
 /**
- * Purge the paths from a node from Varnish.
+ * DEPRECATED: Purge the paths from a node from Varnish.
+ *
+ * This function was once added to demonstrate the ability to build up paths
+ * and to quickly purge a node. However, it gives users the false assumption
+ * that this is the way to clear a node while in reality it forgets many, many
+ * things that also need to get cleared (files, terms, references), exact
+ * things what the Expire module was built for. So if you need to clear a node
+ * make sure to use expire_execute_expiration() instead.
  *
  * @param object $node
  *   A Drupal node object that was just inserted or saved.
  *
+ * @deprecated
  * @returns
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'good', 'bad', 'percent' and 'purgehistory'.
