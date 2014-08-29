@@ -1240,7 +1240,7 @@ function _acquia_purge_input_path_variations(&$paths, $path = NULL) {
         $bases[] = $alias;
       }
       if (!in_array($normal, $bases)) {
-        $bases[] = $bases;
+        $bases[] = $normal;
       }
     }
 
