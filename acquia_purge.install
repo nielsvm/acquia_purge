@@ -16,6 +16,9 @@ function acquia_purge_install() {
 
   // Enable Expire 7.x-2.x's most important expiration rules by default.
   $defaults = array(
+    'expire_status' => EXPIRE_STATUS_ENABLED_EXTERNAL,
+    'expire_debug' => EXPIRE_DEBUG_DISABLED,
+    'expire_include_base_url' => FALSE,
     'expire_node_actions' => array(1, 2, 3),
     'expire_node_front_page' => 1,
     'expire_node_term_pages' => 1,
@@ -137,4 +140,18 @@ function acquia_purge_update_7103(&$sandbox) {
     ->condition('permission', 'purge notification')
     ->condition('module', 'acquia_purge')
     ->execute();
+}
+
+/**
+ * Set 'expire_status', 'expire_debug' and 'expire_include_base_url' correctly.
+ *
+ * Before version 7.x-1.0, these variables were set in a hook_boot()
+ * implementation that did more bad than good, and it turned out to not even
+ * always work (Acquia #137455). Now diagnostics report badly whenever these
+ * settings change as well, so hard-forcing them is no longer needed.
+ */
+function acquia_purge_update_7104(&$sandbox) {
+  variable_set('expire_status', EXPIRE_STATUS_ENABLED_EXTERNAL);
+  variable_set('expire_debug', EXPIRE_DEBUG_DISABLED);
+  variable_set('expire_include_base_url', FALSE);
 }

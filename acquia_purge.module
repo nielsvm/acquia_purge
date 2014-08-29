@@ -75,20 +75,6 @@ define('ACQUIA_PURGE_SEVLEVEL_WARNING', 1);
 define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
 
 /**
- * Implements hook_boot().
- */
-function acquia_purge_boot() {
-  global $conf;
-
-  // Enforce Expire 7.x-1.x into functional zombie mode.
-  $conf['expire_include_base_url'] = 0;
-
-  // Enforce Expire 7.x-2.x into functional zombie mode.
-  $conf['expire_debug'] = '0';
-  $conf['expire_status'] = '2';
-}
-
-/**
  * Implements hook_init().
  */
 function acquia_purge_init() {

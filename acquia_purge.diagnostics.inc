@@ -101,18 +101,6 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
     'title' => $t('Module conflicts'),
   );
 
-  // Detect expire's "Include base URL in expires" setting, which causes issues.
-  if (variable_get('expire_include_base_url', FALSE)) {
-    $test['value'] = 'expire';
-    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
-    $test['description'] = $t("We detected that you enabled the 'Include base"
-      . " URL in expires'-setting offered by the expire module, this is known"
-      . " to (potentially) cause issues. The setting causes hook_expire_cache()"
-      . " to be given full urls that breaks its own API and Acquia Purge is not"
-      . " always able to strip these. Check your logs to see if purges execute"
-      . " properly.");
-  }
-
   // Detect the existence of the Boost module which is incompatible.
   if (module_exists('boost')) {
     $test['value'] = 'boost';
@@ -205,6 +193,83 @@ function _acquia_purge_get_diagnosis_domains($t) {
       . ' prevent system failure, pending purges will not be processed!',
       array('!link' => $domains_link, '@no' => $domains_c));
   }
+  return $test;
+}
+
+/**
+ * Diagnose several of the various settings the expire module provides.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @returns
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_expire($t) {
+  $test = array('title' => $t('Cache expiration'));
+
+  // If the module is disabled, Acquia Purge will still work as API, but warn!
+  if (!module_exists('expire')) {
+    $test['value'] = $t('disabled');
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('The expire module is disabled, which only makes'
+      . ' sense if you want to use Acquia Purge as pure API (and have disabled'
+      . ' its dependency in acquia_purge.info). If you want your content to be'
+      . ' cleared when it changes, enable it back on again.');
+    return $test;
+  }
+
+  // Check the 'expire_status' setting, which is dead essential for purging.
+  $mode = variable_get('expire_status', EXPIRE_STATUS_DISABLED);
+  $modes = array(
+    EXPIRE_STATUS_DISABLED => t('disabled'),
+    EXPIRE_STATUS_ENABLED_INTERNAL => t('internal'),
+    EXPIRE_STATUS_ENABLED_EXTERNAL => t('delegated'));
+
+  // Test the configured mode and raise any issues.
+  $test['value'] = isset($modes[$mode]) ? $modes[$mode] : 'n/a';
+  if ((int)$mode === EXPIRE_STATUS_ENABLED_EXTERNAL) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
+  }
+  else {
+    $cmd = 'php -r "print json_decode(' . EXPIRE_STATUS_ENABLED_EXTERNAL;
+    $cmd .= ');"|drush vset --format=json expire_status -';
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('The expire module is operating in @mode detection'
+      . ' mode, this means purges will not happen when your content changes.'
+      . ' Unless you are using the Acquia Purge APIs, put it back with:'
+      . " '!cmd'",
+      array(
+        '@int' => $mode,
+        '@mode' => $modes[$mode],
+        '!cmd' => $cmd
+      )
+    );
+    return $test;
+  }
+
+  // Check if 'expire_include_base_url' is set to TRUE, which is incompatible.
+  if (variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL)) {
+    $test['value'] = $t('include base URL enabled');
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t("The variable 'expire_include_base_url' is set"
+      . ' to TRUE and that is not compatible with Acquia Purge, please disable'
+      . ' the "Include base URL in expires" setting!');
+  }
+
+  // Check if 'expire_debug' has any debugging enabled, which gets expensive.
+  elseif (variable_get('expire_debug', EXPIRE_DEBUG_DISABLED)) {
+    $test['value'] = $t('debugging enabled');
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t("The expire module's debugging mode is enabled"
+      . ' which is highly discouraged! The logging efforts duplicates as'
+      . ' Acquia Purge also logs heavily and this might cause instabilities');
+  }
+
   return $test;
 }
 
