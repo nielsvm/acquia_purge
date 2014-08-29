@@ -186,6 +186,7 @@ function _acquia_purge_get_diagnosis_domains($t) {
   }
   elseif ($domains_c <= 6) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
+    unset($test['description']);
   }
   elseif (($domains_c > 6) && ($domains_c <= 8)) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
@@ -250,7 +251,7 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $cache ? $t('Enabled') : $t('Disabled'),
-    'title' => $t('Cache pages for anonymous users'));
+    'title' => $t('Anonymous page cache'));
   if (!$cache) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your site has Drupal page caching disabled,'

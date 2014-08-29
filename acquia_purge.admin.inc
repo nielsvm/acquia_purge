@@ -395,31 +395,6 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
 }
 
 /**
- * Returns HTML for the Acquia Purge status widget.
- *
- * @param array $variables
- *   An associative array containing:
- *   - total: Total amount of actions initially queued for purging.
- *   - remaining: Remaining number of purge actions still to be processed.
- *   - good: Number of purge actions that have already taken place.
- *   - bad: Number of queue items that failed purging.
- *   - percent: Value between 0-100 representing the progress percentage.
- *   - running: Whether URLs are being purged or not.
- *   - purgehistory: Array with recently purged URL's.
- *
- * @ingroup themeable
- */
-function theme_acquia_purge_status_widget($variables) {
-  if ($variables['running']) {
-    return theme('acquia_purge_status_bar_widget', $variables);
-  }
-  else {
-    $message = t('Idle, accepting purges');
-    return "<div class=\"messages status\">\n$message</div>\n";
-  }
-}
-
-/**
  * Returns HTML for the Acquia Purge progress bar widget.
  *
  * @param array $variables
@@ -447,4 +422,77 @@ function theme_acquia_purge_status_bar_widget($variables) {
 
   return theme('progress_bar', array(
     'percent' => $variables['percent'], 'message' => $message));
+}
+
+/**
+ * Returns HTML for the status report.
+ *
+ * @param $variables
+ *   Requirements array as returned by _acquia_purge_get_diagnosis().
+ *
+ * @see theme_status_report()
+ * @ingroup themeable
+ */
+function theme_acquia_purge_status_report($variables) {
+  $output = '<table class="system-status-report">';
+  $severities = array(
+    REQUIREMENT_INFO => array(
+      'title' => t('Info'),
+      'class' => 'info',
+    ),
+    REQUIREMENT_OK => array(
+      'title' => t('OK'),
+      'class' => 'ok',
+    ),
+    REQUIREMENT_WARNING => array(
+      'title' => t('Warning'),
+      'class' => 'warning',
+    ),
+    REQUIREMENT_ERROR => array(
+      'title' => t('Error'),
+      'class' => 'error',
+    ),
+  );
+
+  foreach ($variables as $requirement) {
+    if (empty($requirement)) continue;
+    $severity = $severities[isset($requirement['severity']) ? (int) $requirement['severity'] : REQUIREMENT_OK];
+
+    // Output table row(s)
+    if (!empty($requirement['description'])) {
+      $output .= '<tr class="' . $severity['class'] . ' merge-down"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . strtolower($requirement['value_plain']) . '</td></tr>';
+      $output .= '<tr class="' . $severity['class'] . ' merge-up"><td colspan="3" class="status-description">' . $requirement['description'] . '</td></tr>';
+    }
+    else {
+      $output .= '<tr class="' . $severity['class'] . '"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . strtolower($requirement['value_plain']) . '</td></tr>';
+    }
+  }
+
+  $output .= '</table>';
+  return $output;
+}
+
+/**
+ * Returns HTML for the Acquia Purge status widget.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - total: Total amount of actions initially queued for purging.
+ *   - remaining: Remaining number of purge actions still to be processed.
+ *   - good: Number of purge actions that have already taken place.
+ *   - bad: Number of queue items that failed purging.
+ *   - percent: Value between 0-100 representing the progress percentage.
+ *   - running: Whether URLs are being purged or not.
+ *   - purgehistory: Array with recently purged URL's.
+ *
+ * @ingroup themeable
+ */
+function theme_acquia_purge_status_widget($variables) {
+  if ($variables['running']) {
+    return theme('acquia_purge_status_bar_widget', $variables);
+  }
+  else {
+    $message = t('Idle, accepting purges');
+    return "<div class=\"messages status\">\n$message</div>\n";
+  }
 }
