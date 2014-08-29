@@ -390,10 +390,18 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
   // Alter expire 7.x-2.x's setting form.
   else {
 
-    // Remove the 'expire_status' and 'expire_debug' settings out of the status
-    // tab as our hook_boot takes care of these to enforce a zero-conf setup.
-    unset($form['tabs']['status']['common']);
-    unset($form['tabs']['status']['debug']);
+    // Remove 'expire_status' and 'expire_debug' from Expire's status tab as we
+    // really don't want users to change them, UNLESS they need to be changed.
+    $trouble = array(
+      (bool) variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL),
+      (bool) variable_get('expire_debug', EXPIRE_DEBUG_DISABLED),
+      intval(variable_get('expire_status', EXPIRE_STATUS_DISABLED))
+        !== EXPIRE_STATUS_ENABLED_EXTERNAL,
+    );
+    if (!in_array(TRUE, $trouble)) {
+      unset($form['tabs']['status']['common']);
+      unset($form['tabs']['status']['debug']);
+    }
 
     // Add a full-blown status report on how Acquia Purge is doing.
     $diagnostics = _acquia_purge_get_diagnosis();
