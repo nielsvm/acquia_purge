@@ -1112,49 +1112,54 @@ function _acquia_purge_input_path_variations(&$paths, $path = NULL) {
     }
     return;
   }
-  else {
-    $add = __FUNCTION__;
-  }
 
-  // Iterate each path and build up $paths_new.
+  // Alias this function as $add, which reads better because of what it does.
+  $add = __FUNCTION__;
+
+  // Iterate all paths, build up $variations for every path and allow other
+  // modules to alter the variations. Then add all variations to $paths_new.
   $paths_new = array();
   foreach ($paths as $path) {
-    $path = _acquia_purge_input_clean($path);
-    $add($paths_new, $path);
+    $path_original = $path;
+    $variations = array();
 
-    // For parameterized paths we'll add just a trailing slashed version, there
-    // is not much more we can do on them.
-    if (strstr($path, '?')) {
-      $add($paths_new, str_replace('?', '/?', $path));
-      continue;
-    }
-
-    // Build a list of base variations on the current path.
-    $bases = array(rtrim($path, '/'));
-    $bases[] = $bases[0] . '/';
+    // Begin all the madness by splitting the path by parameter.
+    $path = explode('?', _acquia_purge_input_clean($path));
+    $path[0] = rtrim($path[0], '/');
+    $add($variations, $path[0]);
+    $add($variations, $path[0] . '/');
     if (module_exists('path')) {
-      $alias = drupal_get_path_alias($bases[0]);
-      $normal = drupal_get_normal_path($bases[0]);
-      if (!in_array($alias, $bases)) {
-        $bases[] = $alias;
-      }
-      if (!in_array($normal, $bases)) {
-        $bases[] = $normal;
-      }
+      $add($variations, drupal_get_path_alias($path[0]));
+      $add($variations, drupal_get_normal_path($path[0]));
+      $add($variations, drupal_get_path_alias($path[0]) . '/');
+      $add($variations, drupal_get_normal_path($path[0]) . '/');
+    }
+    if (isset($path[1])) {
+      $add($variations, implode('?', $path));
+      $add($variations, str_replace('?', '/?', implode('?', $path)));
+      $path_0 = $path[0];
+      $path[0] = drupal_get_path_alias($path_0);
+      $add($variations, implode('?', $path));
+      $path[0] = drupal_get_normal_path($path_0);
+      $add($variations, implode('?', $path));
+      $path[0] = drupal_get_path_alias($path_0) . '/';
+      $add($variations, implode('?', $path));
+      $path[0] = drupal_get_normal_path($path_0) . '/';
+      $add($variations, implode('?', $path));
     }
 
-    // Iterate all path bases and add parameterized variations.
-    foreach ($bases as $base) {
-      $add($paths_new, $base);
-      $add($paths_new, $base . '?page=0');
-      $add($paths_new, $base . '?page=1');
-      $add($paths_new, $base . '?page=2');
-      $add($paths_new, $base . '?page=3');
-      $add($paths_new, $base . '?page=4');
+    // Let hook_acquia_purge_variations_alter() implementations edit the list.
+    foreach (module_implements('acquia_purge_variations_alter') as $module) {
+      $function = $module . '_acquia_purge_variations_alter';
+      $function($path_original, $variations);
+    }
+
+    // Now pump all those variations over into $paths_new.
+    foreach($variations as $variation) {
+      $add($paths_new, $variation);
     }
   }
 
-  // Overwrite the rewritten array with variations.
   $paths = $paths_new;
 }
 
