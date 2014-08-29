@@ -152,7 +152,7 @@ function acquia_purge_cron() {
 function acquia_purge_menu() {
   $items = array();
 
-  // Declare the hidden AJAX processor path which we call client side.
+  // Declare our AJAX callbacks for on-screen queue processing.
   $items['acquia_purge_ajax_processor'] = array(
     'title' => 'Acquia Purge AJAX processor',
     'page callback' => 'acquia_purge_ajax_processor',
@@ -160,9 +160,31 @@ function acquia_purge_menu() {
     'file' => 'acquia_purge.admin.inc',
     'type' => MENU_CALLBACK,
   );
+  $items['acquia_purge_ajax_autocomplete'] = array(
+    'type'              => MENU_CALLBACK,
+    'page callback'     => 'acquia_purge_autocomplete',
+    'access arguments'  => array('purge on-screen'),
+    'file' => 'acquia_purge.admin.inc',
+  );
 
-  // Allow administrators to manual queue purge paths on the performance page.
-  $items['admin/config/development/performance/manualpurge'] = array(
+  // Turn Expire's configuration section into a tabbed interface and add a fake
+  // 'Performance' tab, which will redirect to core's form. Then add our full
+  // manual purge form as last tab.
+  $items['admin/config/system/expire/performance'] = array(
+    'type'              => MENU_LOCAL_TASK,
+    'title'             => 'Performance',
+    'weight'            => -20,
+    'page callback'     => 'drupal_goto',
+    'page arguments'    => array('admin/config/development/performance'),
+    'access arguments'  => array('administer site configuration'),
+  );
+  $items['admin/config/system/expire/default'] = array(
+    'title'            => 'Cache Expiration',
+    'type'              => MENU_DEFAULT_LOCAL_TASK,
+    'file path'         => drupal_get_path('module', 'expire'),
+    'weight'            => -5,
+  );
+  $items['admin/config/system/expire/manualpurge'] = array(
     'type'              => MENU_LOCAL_TASK,
     'title'             => 'Manual purge',
     'page callback'     => 'drupal_get_form',
@@ -170,223 +192,118 @@ function acquia_purge_menu() {
     'access arguments'  => array('administer site configuration'),
     'file' => 'acquia_purge.admin.inc',
   );
-  $items['admin/config/development/performance/manualpurge/autocomplete']
-    = array(
-      'type'              => MENU_CALLBACK,
-      'page callback'     => 'acquia_purge_manualpurge_autocomplete',
-      'access arguments'  => array('purge on-screen'),
-      'file' => 'acquia_purge.admin.inc',
-    );
+
+  // We'll also do the opposite here, by replicating the tabs from above on
+  // core's 'Performance' tab, but by letting them redirect back to the 'Cache
+  // Expiration' and 'Manual purge' tabs as admin/config/system/expire.
+  $items['admin/config/development/performance/default'] = array(
+    'title'             => 'Performance',
+    'type'              => MENU_DEFAULT_LOCAL_TASK,
+    'file path'         => drupal_get_path('module', 'system'),
+    'weight'            => -5,
+  );
+  $items['admin/config/development/performance/expire'] = array(
+    'type'              => MENU_LOCAL_TASK,
+    'title'             => 'Cache Expiration',
+    'page callback'     => 'drupal_goto',
+    'page arguments'    => array('admin/config/system/expire'),
+    'access arguments'  => array('administer site configuration'),
+  );
+  $items['admin/config/development/performance/manualpurge'] = array(
+    'type'              => MENU_LOCAL_TASK,
+    'title'             => 'Manual purge',
+    'page callback'     => 'drupal_goto',
+    'page arguments'    => array(
+      'admin/config/system/expire/manualpurge'),
+    'access arguments'  => array('administer site configuration'),
+  );
 
   return $items;
 }
 
 /**
- * Implements hook_menu_alter().
- */
-function acquia_purge_menu_alter(&$items) {
-
-  // Expire 7.x-2.x moved its settings into its own section which breaks our
-  // manual purge tab and overall navigation experience. By setting up fake
-  // redirecting tabs between 'a./c./development/performance' and
-  // 'a./c./system/expire' we restore the experience without breaking anything.
-  if (isset($items['admin/config/system/expire'])) {
-    $items['admin/config/development/performance/expire'] = array(
-      'type'              => MENU_LOCAL_TASK,
-      'title'             => 'Cache Expiration',
-      'page callback'     => 'drupal_goto',
-      'page arguments'    => array('admin/config/system/expire'),
-      'access arguments'  => array('administer site configuration'),
-    );
-    $items['admin/config/development/performance/default'] = array(
-      'title'             => 'Performance',
-      'type'              => MENU_DEFAULT_LOCAL_TASK,
-      'file path'         => drupal_get_path('module', 'system'),
-      'weight'            => -5,
-    );
-    $items['admin/config/system/expire/default'] = array(
-      'title'            => 'Cache Expiration',
-      'type'              => MENU_DEFAULT_LOCAL_TASK,
-      'file path'         => drupal_get_path('module', 'expire'),
-      'weight'            => -5,
-    );
-    $items['admin/config/system/expire/performance'] = array(
-      'type'              => MENU_LOCAL_TASK,
-      'title'             => 'Performance',
-      'weight'            => -20,
-      'page callback'     => 'drupal_goto',
-      'page arguments'    => array('admin/config/development/performance'),
-      'access arguments'  => array('administer site configuration'),
-    );
-    $items['admin/config/system/expire/manualpurge'] = array(
-      'type'              => MENU_LOCAL_TASK,
-      'title'             => 'Manual purge',
-      'page callback'     => 'drupal_goto',
-      'page arguments'    => array(
-        'admin/config/development/performance/manualpurge'),
-      'access arguments'  => array('administer site configuration'),
-    );
-  }
-}
-
-/**
  * Implements hook_expire_cache().
  */
-function acquia_purge_expire_cache($paths) {
-  static $patterns;
+function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
 
-  // Ask our diagnostics system if there are any blocking issues that should
-  // stop us from queuing the item, log the error and notify the user.
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
-    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
-    _acquia_purge_get_diagnosis_logged($err);
-
-    // Stop if this page is blacklisted or if the user isn't allowed to see it.
-    if (_acquia_purge_ui_path_blacklisted()) {
-      return;
-    }
-    if (!user_access('purge on-screen')) {
-      return;
-    }
-
-    // List all critical conditions right in the face of the (editorial) user.
-    $items = array();
-    foreach ($err as $error) {
-      $items[] = '<p>' . $error['description'] . '</p>';
-    }
-    $items = theme('item_list', array('items' => $items));
-    drupal_set_message(
-      t("<p>The system cannot publicly refresh the changes you just made,
-        because of the following error conditions:</p>!items<p>Please
-        contact your system administrator or development partner!</p>",
-        array('!items' => $items)
-      ),
-      'error'
-    );
+  // Check for errors once, but refuse operation during the entire request.
+  static $error;
+  if ($error) {
     return;
   }
+  if (is_null($error)) {
+    if (($error = !_acquia_purge_are_we_allowed_to_purge())) {
+      $errors = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
+      _acquia_purge_get_diagnosis_logged($errors);
 
-  // HACK: Expire 7.x-2.x changed API and puts paths as array keys, detect that.
-  if (is_string(key($paths))) {
-    $paths = array_keys($paths);
-  }
-
-  // HACK: Expire 7.x-1.x could include full URLs in $paths, strip those out.
-  else {
-
-    // Expire 7.x-1.x is unreliable API-wise as it often gives absolute URLs
-    // instead of relative. In the past we tested for 'expire_include_base_url'
-    // but that didn't always seem to help. We therefore generate a list of
-    // http://domainname patterns to strip them clean. D.o: #2049235, #2133001.
-    if (is_null($patterns)) {
-      foreach (_acquia_purge_get_domains() as $domain) {
-        foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
-          $patterns[] = "$scheme://$domain" . base_path();
-          $patterns[] = "$scheme://$domain";
-        }
+      // Render all critical error conditions to screen, if we should at least.
+      if (_acquia_purge_ui_path_blacklisted() || (php_sapi_name() === 'cli')
+        || (!user_access('purge on-screen'))) {
+        return;
       }
-    }
-
-    // Iterate the given paths and strip everything out we can think off.
-    $new_paths = array();
-    foreach ($paths as $path) {
-      foreach ($patterns as $pattern) {
-        $path = str_replace($pattern, '', $path);
+      foreach ($errors as $i => $error) {
+        $errors[$i] = '<p>' . $error['description'] . '</p>';
       }
-      $path = ltrim($path, '/');
-      if (!in_array($path, $new_paths)) {
-        $new_paths[] = $path;
-      }
-    }
-    $paths = $new_paths;
-  }
-
-  // Detect if what we end up with now are really /paths and not http://urls/.
-  $paths_clean = TRUE;
-  foreach ($paths as $path) {
-    if (!$paths_clean) {
-      break;
-    }
-    foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
-      if (strpos($path, "$scheme://") !== FALSE) {
-        $paths_clean = FALSE;
-        break;
-      }
+      drupal_set_message(
+        t("<p>The system cannot publicly refresh the changes you just made,
+          because of the following error conditions:</p>!items<p>Please
+          contact your system administrator or development partner!</p>",
+          array('!items' => theme('item_list', array('items' => $errors)))),
+        'error');
+      return;
     }
   }
 
-  // If the "cleaned" paths are still dirty we warn the user and abort purging.
-  if (!$paths_clean) {
-    drupal_set_message(t("Please disable the 'Include base URL in expires'
-      setting as it is incompatible with the Acquia Purge module. "), 'error');
+  // Add '<front>' to the list as empty strings don't pass validation.
+  if (in_array('', $urls)) {
+    $urls['<front>'] = '<front>';
   }
 
-  // If everything is validated, schedule the items for purging which will be
-  // triggered automatically on the next page load for the current user.
-  else {
+  // Now test every item against our strict validation checks.
+  foreach ($urls as $id => $path) {
+    if (_acquia_purge_input_validate($path)) {
+      unset($urls[$id]);
+    }
 
     // Specifically trim ending slashes on paths originating from expire,
     // see the explanation on https://www.drupal.org/node/2295741.
-    foreach ($paths as $i => $path) {
-      $paths[$i] = rtrim($path, '/');
+    else {
+      $urls[$id] = rtrim($path, '/');
     }
-
-    acquia_purge_purge_paths($paths);
   }
+
+  // Queue all paths that we received from Expire.
+  acquia_purge_purge_paths($urls);
 }
 
 /**
  * Implements hook_form_BASE_FORM_ID_alter().
  */
 function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state, $form_id) {
-
-  // Alter expire 7.x-1.x's settings form.
   if (!isset($form['tabs']['status'])) {
+    return;
+  }
+  $form['tabs']['status']['#title'] = t('Acquia Purge overview');
 
-    // Add a recommendation to experiment with expire 7.x-2.0-beta2.
-    $form['acquia_purge'] = array(
-      '#weight' => -100,
-      '#type' => 'fieldset',
-      '#title' => t('Acquia Purge recommendation'),
-    );
-    $form['acquia_purge']['markup'] = array(
-      '#type' => 'item',
-      '#markup' => '<i>' . t("Version <b>7.x-2.0-beta2</b> of the Cache
-        Expiration module provides you with much more granular configuration
-        and the ability to purge more items from your site and less of those
-        that you for instance might not need purged. If you are for instance
-        experiencing overzealous purging it might be worth testing with this
-        version to see if it improves your experience.") . '</i>',
-    );
-
-    // Remove "Include base URL in expires", we are doing that in hook_boot.
-    unset($form['format']);
+  // Remove 'expire_status' and 'expire_debug' from Expire's status tab as we
+  // really don't want users to change them, UNLESS they need to be changed.
+  $trouble = array(
+    (bool) variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL),
+    (bool) variable_get('expire_debug', EXPIRE_DEBUG_DISABLED),
+    intval(variable_get('expire_status', EXPIRE_STATUS_DISABLED))
+      !== EXPIRE_STATUS_ENABLED_EXTERNAL,
+  );
+  if (!in_array(TRUE, $trouble)) {
+    unset($form['tabs']['status']['common']);
+    unset($form['tabs']['status']['debug']);
   }
 
-  // Alter expire 7.x-2.x's setting form.
-  else {
-
-    // Remove 'expire_status' and 'expire_debug' from Expire's status tab as we
-    // really don't want users to change them, UNLESS they need to be changed.
-    $trouble = array(
-      (bool) variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL),
-      (bool) variable_get('expire_debug', EXPIRE_DEBUG_DISABLED),
-      intval(variable_get('expire_status', EXPIRE_STATUS_DISABLED))
-        !== EXPIRE_STATUS_ENABLED_EXTERNAL,
-    );
-    if (!in_array(TRUE, $trouble)) {
-      unset($form['tabs']['status']['common']);
-      unset($form['tabs']['status']['debug']);
-    }
-
-    // Add a full-blown status report on how Acquia Purge is doing.
-    $diagnostics = _acquia_purge_get_diagnosis();
-    $form['tabs']['status']['ap_status'] = array(
-      '#markup' => theme('acquia_purge_status_report', $diagnostics),
-      '#title' => '<h3>' . t('Acquia Purge') . '</h3>',
-      '#type' => 'item',
-    );
-  }
+  // Add a full-blown status report on how Acquia Purge is doing.
+  $diagnostics = _acquia_purge_get_diagnosis();
+  $form['tabs']['status']['ap_status'] = array(
+    '#markup' => theme('acquia_purge_status_report', $diagnostics),
+    '#type' => 'item',
+  );
 }
 
 /**

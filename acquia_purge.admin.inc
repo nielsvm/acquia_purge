@@ -62,12 +62,13 @@ function acquia_purge_ajax_processor() {
 }
 
 /**
- * Menu callback to fulfill autocompletes on acquia_purge_manualpurge_form.
+ * Menu callback to fulfill autocompletes on manual purging forms.
  *
+ * @see _acquia_purge_manualpurge_base()
  * @returns
  *   A standard Form API form-array.
  */
-function acquia_purge_manualpurge_autocomplete($string) {
+function acquia_purge_autocomplete($string) {
   $query_limit = 10;
   $matches = array();
 
@@ -281,8 +282,7 @@ function _acquia_purge_manualpurge_base(&$form, &$form_state) {
   for ($i = 0; $i < $form_state['num_paths']; $i++) {
     $form['paths']['path'][$i] = array(
       '#type' => 'textfield',
-      '#autocomplete_path'
-        => 'admin/config/development/performance/manualpurge/autocomplete',
+      '#autocomplete_path' => 'acquia_purge_ajax_autocomplete',
     );
   }
   $form['paths']['add_path'] = array(
