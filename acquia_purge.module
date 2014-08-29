@@ -603,6 +603,8 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'qtotal'        => 0,
         'qgood'         => 0,
         'qbad'          => 0,
+        'queued'        => array(),
+        'purged'        => array(),
         'uiusers'       => array(),
         'logged_errors' => array(),
       ),
@@ -1411,7 +1413,8 @@ function _acquia_purge_queue_add($path) {
 function _acquia_purge_queue_clear($state_only = FALSE) {
 
   // Reset several state data keys to their default value.
-  $names = array('qtotal', 'qgood', 'qbad', 'uiusers', 'logged_errors');
+  $names = array('qtotal', 'qgood', 'qbad',
+    'queued', 'purged', 'uiusers', 'logged_errors');
   foreach ($names as $name) {
     $default = _acquia_purge_get($name, TRUE);
     _acquia_purge_state_set($name, $default);
@@ -1422,6 +1425,69 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
     $queue = _acquia_purge_queue();
     $queue->deleteQueue();
   }
+}
+
+/**
+ * Queue manager: help prevent duplicate path queuing and purging.
+ *
+ * Our queue is database backed and if we would query every path before it ends
+ * up in the queue, the cost would become too expensive. This helper however,
+ * maintains breadcrumb lists of the paths it was given and returns FALSE for
+ * new items and TRUE for old items. Items are theoretically kept till the
+ * queue is emptied.
+ *
+ * If the site has 'acquia_purge_memcache' set to TRUE, the implementation will
+ * use the state storage mechanism in addition to the static variables, which
+ * means that data will persist between requests. With the file-based state
+ * storage, this would result in massive IO activity so less accurate
+ * deduplication is acceptable.
+ *
+ * @warning
+ *   Duplicated paths can still end up in the queue, especially when not using
+ *   the 'acquia_purge_memcache' setting.
+ *
+ * @param string $path
+ *   The Drupal path (for example: '<front>', 'user/1' or a alias).
+ * @param string $list
+ *   Two breadcrumb lists are kept, 'queued' for preventative deduplication
+ *   and 'purged' for deduplication when _acquia_purge_queue_pop() runs.
+ * @param int $l
+ *   The $l parameter stands for 'limit' and represents the rotation limit kept
+ *   for each list, as the list resets when it grew bigger than that.
+ *
+ * @returns
+ *   TRUE when the path exists, FALSE when it doesn't.
+ */
+function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
+  $memcached_backed_storage = _acquia_purge_get('acquia_purge_memcache');
+
+  // Lists is where we keep all data during the requests.
+  static $lists;
+  if (is_null($lists)) {
+    $lists = array();
+  }
+
+  // And then each $list gets its own subsection.
+  if (!isset($lists[$list])) {
+    $lists[$list] = array();
+    if ($memcached_backed_storage) {
+      $lists[$list] = _acquia_purge_get($list);
+    }
+  }
+
+  // Check if it exists before list rotation, then add missing items.
+  $exists = in_array($path, $lists[$list]);
+  if (count($lists[$list]) >= $l) {
+    $lists[$list] = array();
+  }
+  if (!$exists) {
+    $lists[$list][] = $path;
+    if ($memcached_backed_storage) {
+      _acquia_purge_state_set($list, $lists[$list]);
+    }
+  }
+
+  return $exists;
 }
 
 /**
@@ -1446,14 +1512,6 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
   $queue = _acquia_purge_queue();
   $items = array();
 
-  // Prepare a reusable list that we use to track which paths we purged during
-  // this request. When a path - say '/news' - was already purged during this
-  // run, we will discard any new popped item from the queue and move on.
-  static $dedupe_list;
-  if (is_null($dedupe_list)) {
-    $dedupe_list = array();
-  }
-
   // Load up the various counters we keep in state storage.
   $qtotal = _acquia_purge_get('qtotal');
   $qgood  = _acquia_purge_get('qgood');
@@ -1466,7 +1524,7 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
     if ($item = $queue->claimItem()) {
 
       // Discard any items that we already purged during this request.
-      if (!isset($item->data[0]) || in_array($item->data[0], $dedupe_list)) {
+      if (_acquia_purge_queue_deduplicate($item->data[0], 'purged')) {
         $queue->deleteItem($item);
         $qtotal--;
         $i++;
@@ -1481,8 +1539,8 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
 
         // If the processor throws FALSE: release the item and try again later.
         if (call_user_func_array($processor_callback, $item->data)) {
+          _acquia_purge_queue_deduplicate($item->data[0], 'purged');
           $queue->deleteItem($item);
-          $dedupe_list[] = $item->data[0];
           $qgood++;
         }
         else {
@@ -1493,8 +1551,8 @@ function _acquia_purge_queue_pop($processor_callback = NULL) {
 
       // Without provided callback we assume success and delete the item.
       else {
+        _acquia_purge_queue_deduplicate($item->data[0], 'purged');
         $queue->deleteItem($item);
-        $dedupe_list[] = $item->data[0];
         $qgood++;
       }
 
@@ -2148,8 +2206,10 @@ function acquia_purge_purge_node(&$node) {
  */
 function acquia_purge_purge_path($path) {
 
-  // Queue the path.
-  _acquia_purge_queue_add($path);
+  // Queue the path if it didn't match the deduplication log.
+  if (!_acquia_purge_queue_deduplicate($path)) {
+    _acquia_purge_queue_add($path);
+  }
 
   // Return the statistics array based returning useful information about the
   // current state of the purge queue.
@@ -2157,7 +2217,7 @@ function acquia_purge_purge_path($path) {
 }
 
 /**
- * Purge a several Drupal paths from Varnish.
+ * Purge several Drupal paths from Varnish.
  *
  * @param string $paths
  *   Array with Drupal paths (for example: '<front>', 'user/1' or a alias).
@@ -2171,8 +2231,10 @@ function acquia_purge_purge_paths($paths) {
   // Dispatch the paths to acquia_purge_purge_path().
   foreach ($paths as $path) {
 
-    // Add the item to the queue.
-    _acquia_purge_queue_add($path);
+    // Queue the path if it didn't match the deduplication log.
+    if (!_acquia_purge_queue_deduplicate($path)) {
+      _acquia_purge_queue_add($path);
+    }
   }
 
   // Return the statistics array based returning useful information about the
