@@ -2101,7 +2101,7 @@ function _acquia_purge_ui_trigger_purge() {
   // non-standard message type our JQuery logic is smartly able to replace the
   // nodes with the interactive progressbar.
   if (user_access('purge on-screen')) {
-    $message = t("There have been changes to content, and these needs to be
+    $message = t("There have been changes to content, and these need to be
       refreshed throughout the system. There may be a delay before the changes
       appear to all website visitors.");
 
