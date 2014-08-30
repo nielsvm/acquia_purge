@@ -277,46 +277,78 @@ function drush_acquia_purge_ap_list() {
 /**
  * Purge all queued items from the command line.
  */
-function drush_acquia_purge_ap_process() {
-
-  // Stop invocation if we are not detecting Acquia Cloud heuristics.
-  if (!_acquia_purge_are_we_on_acquiacloud()) {
-    return drush_set_error("You must be on Acquia Cloud to use Acquia Purge.");
-  }
-
-  // Acquire a lock and ensure nobody else is purging something.
-  if (!lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
-    return drush_set_error("Unable to acquire lock, ensure that all users "
-      . "close their browser tabs as a different purge seems to be active!");
-  }
-
-  // Stop invocation if serious error conditions have been found.
+function drush_acquia_purge_ap_process(&$context = NULL) {
   if (!_acquia_purge_are_we_allowed_to_purge()) {
+    drush_set_error(dt('Diagnostic error conditions were found, aborting.'));
     return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
   }
 
-  // Retrieve the statistics and determine if processing is needed.
-  $stats = _acquia_purge_queue_stats();
-  if (!$stats['running']) {
-    return drush_set_error("The purge queue seems to be empty!");
-  }
+  //
+  // MAIN DRUSH PROCESS.
+  //
+  if (is_null($context)) {
 
-  // Calculate how many iterations we need and start processing accordingly.
-  $log = array();
-  do {
-    $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
-
-    // Retrieve the statistics and log the purged urls.
+    // Retrieve the statistics and determine if processing is needed.
     $stats = _acquia_purge_queue_stats();
-    foreach ($stats['purgehistory'] as $logitem) {
-      if (!(in_array($logitem, $log))) {
-        drush_log(dt("Purged: @url", array('@url' => $logitem)), 'ok');
-        $log[] = $logitem;
-      }
+    if (!$stats['running']) {
+      return drush_set_error("The purge queue is empty, done!");
     }
 
-  } while (count($items));
+    // Define the batch operation we're going to conduct.
+    $steps = (int) ceil($stats['remaining'] / _acquia_purge_get_capacity());
+    $batch = array(
+      'title' => dt('Purging'),
+      'operations' => array(),
+      'init_message' => t('Initializing'),
+      'error_message' => t('An error occurred'));
+    for ($i=1; $i <= $steps; $i++) {
+      $batch['operations'][] = array(__FUNCTION__, array());
+    }
 
-  // We are done so lets release the lock.
-  lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
+    // Store state data as it else won't be available to the sub processes.
+    _acquia_purge_state_commit();
+
+    // Kick off the batch process, which will start forking processes.
+    batch_set($batch);
+    $batch =& batch_get();
+    drush_backend_batch_process();
+
+  }
+
+  //
+  // SUB PROCESS.
+  //
+  else {
+
+    // Stop invocation if serious error conditions have been found.
+    if (!lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+      return drush_set_error("Unable to acquire lock, ensure that all users "
+        . "close their browser tabs as a different purge seems to be active!");
+    }
+
+    // Log and pop as much items out of the queue as we can + process.
+    printf("\n# %d items left...\n", _acquia_purge_queue_stats()['remaining']);
+    $log = array();
+    do {
+      $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+
+      // Retrieve the statistics and log the purged urls.
+      $stats = _acquia_purge_queue_stats();
+      foreach ($stats['purgehistory'] as $logitem) {
+        if (!(in_array($logitem, $log))) {
+          drush_log(dt("Purged: @url", array('@url' => $logitem)), 'ok');
+          $log[] = $logitem;
+        }
+      }
+
+    } while (count($items));
+
+    // Inform the Batch API when the process is finished.
+    if (!$stats['running']) {
+      $context['finished'] = 1;
+      $context['message'] = dt("Queue processed successfully!");
+    }
+    lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
+  }
 }
+

@@ -187,11 +187,17 @@ Frequently asked questions
     $node = node_load(5);
     expire_execute_expiration('node', $node, EXPIRE_NODE_UPDATE);
 
-  That will just queue them, you can process the queue with "drush ap-process"
-  or you can also process the full queue programatically:
+  That will just queue them, you can process the queue with "drush ap-process",
+  cron or you can process a good chunk of items with:
     do {
       $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
     } while (count($items));
+
+  The while loop does not run until the queue is empty but runs as long as PHP
+  has resources for (and runs longer on the command line). The queue might be
+  empty already in many cases by the end of that loop, but its definitely no
+  guarantee and therefore having permanent processing of the queue (cron) is
+  preferable.
 
   You can always check upon the queue state by querying:
   var_dump(_acquia_purge_queue_stats());

@@ -9,7 +9,7 @@
  * The maximum number of paths to purge per batch step, this max will usually
  * only be necessary on the command line where execution time is endless.
  */
-define('ACQUIA_PURGE_MAX_ITEMS', 20);
+define('ACQUIA_PURGE_MAX_ITEMS', 100);
 
 /**
  * The max amount of outgoing HTTP requests that can be made during script
@@ -17,7 +17,7 @@ define('ACQUIA_PURGE_MAX_ITEMS', 20);
  * in practice as PHP resource limits (max execution time) bring it further
  * down. However, the maximum amount of requests will be higher on the CLI.
  */
-define('ACQUIA_PURGE_MAX_REQUESTS', 60);
+define('ACQUIA_PURGE_MAX_REQUESTS', 100);
 
 /**
  * The number of HTTP requests executed in parallel during purging.
@@ -137,7 +137,6 @@ function acquia_purge_cron() {
   }
 
   // Calculate how many iterations we need and start processing accordingly.
-  $log = array();
   do {
     $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
   } while (count($items));
@@ -688,13 +687,18 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
 }
 
 /**
- * Calculate how many items can be purged during the current script execution.
+ * Calculate how many items can be purged during the execution of this script.
+ *
+ * @param int $subtract
+ *   Optional integer value to subtract from the initially calculated value, so
+ *   passing the number of popped items in from _acquia_purge_queue_pop() will
+ *   lead this return value being updated the next time its requested.
  *
  * @see ACQUIA_PURGE_MAX_ITEMS
  * @returns int
  *   Integer indicating how many items may be popped from the queue.
  */
-function _acquia_purge_get_capacity() {
+function _acquia_purge_get_capacity($subtract = NULL) {
   static $capacity;
   if (is_null($capacity)) {
     $requests_per_item = _acquia_purge_get_capacity_factor();
@@ -715,6 +719,9 @@ function _acquia_purge_get_capacity() {
     if ($capacity > ACQUIA_PURGE_MAX_ITEMS) {
       $capacity = ACQUIA_PURGE_MAX_ITEMS;
     }
+  }
+  if ($capacity && $subtract) {
+    $capacity = $capacity - $subtract;
   }
   return $capacity;
 }
@@ -1415,7 +1422,7 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
 /**
  * Queue manager: pop X amount of items from the queue.
  *
- * @param string $processor_callback
+ * @param string $processor
  *   The name of a PHP function or callable that gets called to process a
  *   individual item popped from the queue. The callback is given the path as
  *   argument. This parameter is optional.
@@ -1430,63 +1437,57 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
  *   HTTP PURGE request. Array items are non-associative arrays itself with the
  *   path in key #0.
  */
-function _acquia_purge_queue_pop($processor_callback = NULL) {
-  $queue = _acquia_purge_queue();
-  $items = array();
-
-  // Load up the various counters we keep in state storage.
+function _acquia_purge_queue_pop($processor = NULL) {
+  $maxitems = _acquia_purge_get_capacity();
   $qtotal = _acquia_purge_get('qtotal');
   $qgood  = _acquia_purge_get('qgood');
   $qbad   = _acquia_purge_get('qbad');
+  $queue  = _acquia_purge_queue();
+  $items  = array();
 
-  // Retrieve a figure of how many items we should be safely able to purge and
-  // keep on claiming as long as the queue runs out.
-  $max_items = _acquia_purge_get_capacity();
-  for ($i = 0; $i < $max_items; $i++) {
-    if ($item = $queue->claimItem()) {
-
-      // Discard any items that we already purged during this request.
-      if (_acquia_purge_queue_deduplicate($item->data[0], 'purged')) {
-        $queue->deleteItem($item);
-        $qtotal--;
-        $i++;
-        continue;
-      }
-
-      // Add this item to the items list released back or being processed.
-      $items[] = $item->data;
-
-      // Call the callback once provided and pass on the arguments to purge.
-      if (!is_null($processor_callback)) {
-
-        // If the processor throws FALSE: release the item and try again later.
-        if (call_user_func_array($processor_callback, $item->data)) {
-          _acquia_purge_queue_deduplicate($item->data[0], 'purged');
-          $queue->deleteItem($item);
-          $qgood++;
-        }
-        else {
-          $queue->releaseItem($item);
-          $qbad++;
-        }
-      }
-
-      // Without provided callback we assume success and delete the item.
-      else {
-        _acquia_purge_queue_deduplicate($item->data[0], 'purged');
-        $queue->deleteItem($item);
-        $qgood++;
-      }
-
-      // Write the counters back to state on each iteration, so we can detect
-      // full-error looping and abort.
-      _acquia_purge_state_set('qtotal', $qtotal);
-      _acquia_purge_state_set('qgood', $qgood);
-      _acquia_purge_state_set('qbad', $qbad);
-    }
+  // No longer pop any items if we reached the resource limits of this script.
+  if (!$maxitems) {
+    return $items;
   }
 
-  // When the queue reports that it is empty, reset our associated state data.
+  // Attempt to pop $maxitems amount of items from the queue.
+  for ($i = 0; $i < $maxitems; $i++) {
+    if (!($item = $queue->claimItem())) {
+      continue;
+    }
+
+    // Discard any items that we already purged since the last queue clear.
+    if (_acquia_purge_queue_deduplicate($item->data[0], 'purged')) {
+      $queue->deleteItem($item);
+      $qtotal--;
+      $i++;
+      continue;
+    }
+
+    // Process the item - or later if $processor is NULL - and add to $items.
+    $result = isset($processor) ?
+      call_user_func_array($processor, $item->data) : TRUE;
+    $items[] = $item->data;
+
+    // Update statistics, the duplication log and tell the queue about $item.
+    _acquia_purge_get_capacity(1);
+    if ($result) {
+      _acquia_purge_queue_deduplicate($item->data[0], 'purged');
+      $queue->deleteItem($item);
+      $qgood++;
+    }
+    else {
+      $queue->releaseItem($item);
+      $qbad++;
+    }
+
+    // Write statistics back to state for early high error-rate detection.
+    _acquia_purge_state_set('qtotal', $qtotal);
+    _acquia_purge_state_set('qgood', $qgood);
+    _acquia_purge_state_set('qbad', $qbad);
+  }
+
+  // As soon as the queue got emptied, reset associated state data.
   if ((int) $queue->numberOfItems() === 0) {
     _acquia_purge_queue_clear(TRUE);
   }
