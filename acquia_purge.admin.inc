@@ -27,7 +27,7 @@ function acquia_purge_ajax_processor() {
 
   // If nothing was found, attempt to acquire the lock and process some items.
   else {
-    if (lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+    if (_acquia_purge_queue_lock()) {
 
       // This automatically pops an X amount of items for which we have enough
       // resource capacity and processes them straight away.
@@ -46,7 +46,7 @@ function acquia_purge_ajax_processor() {
           do ask your technical administrator to check the logs.");
       }
 
-      lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
+      _acquia_purge_queue_lock(NULL);
     }
     else {
       $stats['locked'] = TRUE;
@@ -412,9 +412,12 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
 function theme_acquia_purge_status_bar_widget($variables) {
 
   // Determine status messages based on what the statistics tells us.
-  if ($variables['running']) {
+  if ($variables['locked']) {
     $message = t("Site content is being refreshed, please wait a moment...
     %remaining items to go...", array('%remaining' => $variables['remaining']));
+  }
+  elseif ($variables['running']) {
+    $message = t("%remaining items about to be processed...", array('%remaining' => $variables['remaining']));
   }
   else {
     $message = t("Content changes are now visible for everybody!");

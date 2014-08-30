@@ -640,7 +640,7 @@ function _acquia_purge_get_diagnosis_status($t) {
   $stats = _acquia_purge_queue_stats();
   $test = array(
     'title' => $t('Status'),
-    'value' => $t('inactive'),
+    'value' => $t('idle'),
     'severity' => ACQUIA_PURGE_SEVLEVEL_INFO,
   );
 
@@ -659,7 +659,12 @@ function _acquia_purge_get_diagnosis_status($t) {
   // Report status if the system is running.
   if ($stats['running']) {
     $test['description'] = theme('acquia_purge_status_bar_widget', $stats);
-    $test['value'] = $test['value_plain'] = $t('Purging');
+    if ($stats['locked']) {
+      $test['value'] = $test['value_plain'] = $t('Purging');
+    }
+    else {
+      $test['value'] = $test['value_plain'] = $t('Items queued');
+    }
   }
 
   return $test;

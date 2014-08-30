@@ -30,16 +30,6 @@ define('ACQUIA_PURGE_PARALLEL_REQUESTS', 6);
 define('ACQUIA_PURGE_REQUEST_TIMEOUT', 2);
 
 /**
- * The lock ID used as lock name for all queue processing actors.
- */
-define('ACQUIA_PURGE_QUEUE_LOCK_ID', 'acquia_purge_processor');
-
-/**
- * The amount of time in seconds used to lock purge processing.
- */
-define('ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT', 60);
-
-/**
  * File on disk to store our state data in (if memcached disabled).
  */
 define('ACQUIA_PURGE_STATE_FILE', 'public://acquia_purge_state.raw');
@@ -119,7 +109,7 @@ function acquia_purge_cron() {
   }
 
   // Acquire a lock and ensure nobody else is purging something.
-  if (!lock_acquire(ACQUIA_PURGE_QUEUE_LOCK_ID, ACQUIA_PURGE_QUEUE_LOCK_TIMEOUT)) {
+  if (!_acquia_purge_queue_lock()) {
     return;
   }
 
@@ -142,7 +132,7 @@ function acquia_purge_cron() {
   } while (count($items));
 
   // We are done so lets release the lock.
-  lock_release(ACQUIA_PURGE_QUEUE_LOCK_ID);
+  _acquia_purge_queue_lock(NULL);
 }
 
 /**
@@ -519,6 +509,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'qtotal'        => 0,
         'qgood'         => 0,
         'qbad'          => 0,
+        'locked'        => FALSE,
         'queued'        => array(),
         'purged'        => array(),
         'uiusers'       => array(),
@@ -1342,7 +1333,7 @@ function _acquia_purge_queue_add($path) {
 function _acquia_purge_queue_clear($state_only = FALSE) {
 
   // Reset several state data keys to their default value.
-  $names = array('qtotal', 'qgood', 'qbad',
+  $names = array('qtotal', 'qgood', 'qbad', 'locked',
     'queued', 'purged', 'uiusers', 'logged_errors');
   foreach ($names as $name) {
     $default = _acquia_purge_get($name, TRUE);
@@ -1417,6 +1408,37 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
   }
 
   return $exists;
+}
+
+/**
+ * Queue manager: acquire a lock and get queue processing permission.
+ *
+ * @param boolean $acquire
+ *   TRUE to acquire a lock, NULL to release it.
+ *
+ * @see lock_acquire
+ * @returns
+ *   TRUE when the lock is acquired.
+ *   FALSE if it is still locked
+ *   NULL when $acquire isn't TRUE.
+ */
+function _acquia_purge_queue_lock($acquire = TRUE) {
+  if ($acquire === NULL) {
+    _acquia_purge_state_set('locked', FALSE);
+    _acquia_purge_state_commit();
+    lock_release(__FUNCTION__);
+    return;
+  }
+  if (lock_acquire(__FUNCTION__, 60)) {
+    _acquia_purge_state_set('locked', TRUE);
+    _acquia_purge_state_commit();
+    return TRUE;
+  }
+  else {
+    _acquia_purge_state_set('locked', FALSE);
+    _acquia_purge_state_commit();
+    return FALSE;
+  }
 }
 
 /**
@@ -1734,6 +1756,7 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
 
   // Initialize array with default values, except for the total counter.
   $info = array(
+    'locked' => _acquia_purge_get('locked'),
     'total' => _acquia_purge_get('qtotal'),
     'good'      => _acquia_purge_get('qgood'),
     'bad'       => _acquia_purge_get('qbad'),
