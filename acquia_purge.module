@@ -570,6 +570,103 @@ function _acquia_purge_get_balancers() {
 }
 
 /**
+ * Calculate how many items can be purged during the execution of this script.
+ *
+ * @param int $subtract
+ *   Optional integer value to subtract from the initially calculated value, so
+ *   passing the number of popped items in from _acquia_purge_queue_pop() will
+ *   lead this return value being updated the next time its requested.
+ *
+ * @see ACQUIA_PURGE_MAX_ITEMS
+ * @returns int
+ *   Integer indicating how many items may be popped from the queue.
+ */
+function _acquia_purge_get_capacity($subtract = NULL) {
+  static $capacity;
+  if (is_null($capacity)) {
+    $requests_per_item = _acquia_purge_get_capacity_factor();
+    $max_requests = _acquia_purge_get_capacity_maxrequests();
+
+    // Divide the maximum amount of requests through the number of requests we
+    // need per item to get to the capacity.
+    $capacity = intval($max_requests / $requests_per_item);
+
+    // In scenarios with many balancers or many domains it might happen that even
+    // one item will trigger more HTTP requests than we can handle. To prevent
+    // not purging anything anymore we will always purge one at minimum.
+    if ($capacity < 1) {
+      $capacity = 1;
+    }
+
+    // Cap the capacity if our calculation is higher than the maximum.
+    if ($capacity > ACQUIA_PURGE_MAX_ITEMS) {
+      $capacity = ACQUIA_PURGE_MAX_ITEMS;
+    }
+  }
+  if ($capacity && $subtract) {
+    $capacity = $capacity - $subtract;
+  }
+  return $capacity;
+}
+
+/**
+ * Calculate the slowdown factor based on configuration.
+ *
+ * @returns int
+ *   Integer that represents how many HTTP requests will have to be made for a
+ *   single item to be successfully purged. The lower this is, the better.
+ */
+function _acquia_purge_get_capacity_factor() {
+  static $slowdown_factor;
+  if (is_null($slowdown_factor)) {
+    $balancers = count(_acquia_purge_get_balancers());
+    $domains = count(_acquia_purge_get_domains());
+    $schemes = count(_acquia_purge_get_protocol_schemes());
+
+    // Multiply all configuration actors with each other.
+    $slowdown_factor = $schemes * $domains * $balancers;
+  }
+  return $slowdown_factor;
+}
+
+/**
+ * Calculate the maximum amount of outgoing HTTP requests we can make.
+ *
+ * @see ACQUIA_PURGE_REQUEST_TIMEOUT
+ * @see ACQUIA_PURGE_MAX_REQUESTS
+ * @returns int
+ *   Integer representing how many outgoing HTTP requests we can afford to make
+ *   during the current script execution. Usually it will be higher on the CLI
+ *   and in general this value will be on the safe side, as it assumes each
+ *   request to last as long as ACQUIA_PURGE_REQUEST_TIMEOUT takes place.
+ */
+function _acquia_purge_get_capacity_maxrequests() {
+  static $max_requests;
+  if (is_null($max_requests)) {
+
+    // Get the outer limits, usually only applicable through Drush/CLI.
+    $max_execution_time = (int) ini_get('max_execution_time');
+    $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
+
+    // But if there is a max execution time, cut 20% from it and go lower.
+    if ($max_execution_time != 0) {
+      $max_execution_time = intval(0.8 * $max_execution_time);
+
+      // Calculate how many HTTP requests we should be able to do with the
+      // used parallel processing and set timeout values.
+      $max_requests = $max_execution_time / ACQUIA_PURGE_REQUEST_TIMEOUT;
+      $max_requests = ACQUIA_PURGE_PARALLEL_REQUESTS * $max_requests;
+
+      // That value's usually higher than the outer cap, so use that if needed.
+      if ($max_requests > ACQUIA_PURGE_MAX_REQUESTS) {
+        $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
+      }
+    }
+  }
+  return $max_requests;
+}
+
+/**
  * Perform a series of self-tests against the site and our purging conditions.
  *
  * @param int $verbosity
@@ -684,103 +781,6 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
       _acquia_purge_state_set('logged_errors', $logged);
     }
   }
-}
-
-/**
- * Calculate how many items can be purged during the execution of this script.
- *
- * @param int $subtract
- *   Optional integer value to subtract from the initially calculated value, so
- *   passing the number of popped items in from _acquia_purge_queue_pop() will
- *   lead this return value being updated the next time its requested.
- *
- * @see ACQUIA_PURGE_MAX_ITEMS
- * @returns int
- *   Integer indicating how many items may be popped from the queue.
- */
-function _acquia_purge_get_capacity($subtract = NULL) {
-  static $capacity;
-  if (is_null($capacity)) {
-    $requests_per_item = _acquia_purge_get_capacity_factor();
-    $max_requests = _acquia_purge_get_capacity_maxrequests();
-
-    // Divide the maximum amount of requests through the number of requests we
-    // need per item to get to the capacity.
-    $capacity = intval($max_requests / $requests_per_item);
-
-    // In scenarios with many balancers or many domains it might happen that even
-    // one item will trigger more HTTP requests than we can handle. To prevent
-    // not purging anything anymore we will always purge one at minimum.
-    if ($capacity < 1) {
-      $capacity = 1;
-    }
-
-    // Cap the capacity if our calculation is higher than the maximum.
-    if ($capacity > ACQUIA_PURGE_MAX_ITEMS) {
-      $capacity = ACQUIA_PURGE_MAX_ITEMS;
-    }
-  }
-  if ($capacity && $subtract) {
-    $capacity = $capacity - $subtract;
-  }
-  return $capacity;
-}
-
-/**
- * Calculate the slowdown factor based on configuration.
- *
- * @returns int
- *   Integer that represents how many HTTP requests will have to be made for a
- *   single item to be successfully purged. The lower this is, the better.
- */
-function _acquia_purge_get_capacity_factor() {
-  static $slowdown_factor;
-  if (is_null($slowdown_factor)) {
-    $balancers = count(_acquia_purge_get_balancers());
-    $domains = count(_acquia_purge_get_domains());
-    $schemes = count(_acquia_purge_get_protocol_schemes());
-
-    // Multiply all configuration actors with each other.
-    $slowdown_factor = $schemes * $domains * $balancers;
-  }
-  return $slowdown_factor;
-}
-
-/**
- * Calculate the maximum amount of outgoing HTTP requests we can make.
- *
- * @see ACQUIA_PURGE_REQUEST_TIMEOUT
- * @see ACQUIA_PURGE_MAX_REQUESTS
- * @returns int
- *   Integer representing how many outgoing HTTP requests we can afford to make
- *   during the current script execution. Usually it will be higher on the CLI
- *   and in general this value will be on the safe side, as it assumes each
- *   request to last as long as ACQUIA_PURGE_REQUEST_TIMEOUT takes place.
- */
-function _acquia_purge_get_capacity_maxrequests() {
-  static $max_requests;
-  if (is_null($max_requests)) {
-
-    // Get the outer limits, usually only applicable through Drush/CLI.
-    $max_execution_time = (int) ini_get('max_execution_time');
-    $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
-
-    // But if there is a max execution time, cut 20% from it and go lower.
-    if ($max_execution_time != 0) {
-      $max_execution_time = intval(0.8 * $max_execution_time);
-
-      // Calculate how many HTTP requests we should be able to do with the
-      // used parallel processing and set timeout values.
-      $max_requests = $max_execution_time / ACQUIA_PURGE_REQUEST_TIMEOUT;
-      $max_requests = ACQUIA_PURGE_PARALLEL_REQUESTS * $max_requests;
-
-      // That value's usually higher than the outer cap, so use that if needed.
-      if ($max_requests > ACQUIA_PURGE_MAX_REQUESTS) {
-        $max_requests = ACQUIA_PURGE_MAX_REQUESTS;
-      }
-    }
-  }
-  return $max_requests;
 }
 
 /**
