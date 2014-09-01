@@ -317,7 +317,13 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $cache ? $t('Enabled') : $t('Disabled'),
     'title' => $t('Anonymous page cache'));
-  if (!$cache) {
+
+  // See https://www.drupal.org/node/2330805
+  if ((!$cache) && module_exists('authcache')) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
+    $test['value'] = $t('Disabled because of Authcache');
+  }
+  elseif (!$cache) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your site has Drupal page caching disabled,'
       . ' which is of extreme importance to every website that gets traffic.'
