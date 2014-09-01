@@ -810,13 +810,10 @@ function _acquia_purge_get_domains() {
     // Add the current HTTP_HOST that we're connected to.
     _acquia_purge_get_domains_add($_SERVER['HTTP_HOST'], $domains);
 
-    // Strip an empty absolute URL (which respects $base_url) and make sure
-    // that domain is also in the list of domains to be purged.
-    $base_domain = url('', array('absolute' => TRUE));
-    $base_domain = str_replace('https://', '', $base_domain);
-    $base_domain = str_replace('http://', '', $base_domain);
-    $base_domain = str_replace(base_path(), '', $base_domain);
-    _acquia_purge_get_domains_add($base_domain, $domains);
+    // Now let Drupal render a URL for us from which we extract the domain.
+    if ($parsed_url = parse_url(url('', array('absolute' => TRUE)))) {
+      _acquia_purge_get_domains_add($parsed_url['host'], $domains);
+    }
 
     // Gather potentially defined domains in sites/sites.php, for this site.
     _acquia_purge_get_domains_add_sitesphp($domains);
