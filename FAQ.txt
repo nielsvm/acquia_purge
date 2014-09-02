@@ -98,6 +98,38 @@ Frequently asked questions
   one of its "platform plugins" whilst sharing common infrastructure. In the
   meanwhile the usage of purge on Acquia Cloud is discouraged.
 
+ Can I use 'Acquia Purge' on a third-party hosting environment?
+--------------------------------------------------------------------------------
+  Yes this is technically possible, but doing so is officially unsupported.
+
+  Let me explain you why. The problem of cache invalidation is incredibly hard
+  and its a whole lot more than a simple HTTP PURGE/BAN request when nodes are
+  saved, in fact, its close to black magic. Supporting all kinds of hosting
+  environments would call for a serious API that currently both Acquia Purge
+  and the Purge module are not, and above all of that, purging paths works but
+  isn't as elegant as it will get in Drupal 8. Therefore we decided to build a
+  focused and working module for Acquia Cloud customers but can't support cases
+  where this module is used outside of our platform.
+
+  I already mentioned D8, where things will get inherently better as its whole
+  architecture supports reverse proxies. All pages/urls D8 generates are tagged
+  with little strings that represent everything that's rendered into HTML and
+  includes things as entities, menu items, blocks and much more. Whenever
+  content changes, the tag gets invalidated which external proxies like Varnish
+  can also support with features like BAN. The Purge module for Drupal 8 (which
+  I'm working on) will provide a proper API and its submodules will provide the
+  necessary plugins to make it work on all environments.
+
+  Having that said, Acquia Purge *can be tricked* into thinking its on Acquia
+  Cloud and that will make its diagnostic message go silent. The HTTP requests
+  it makes should work on most Varnish configurations but if it doesn't, its up
+  to you to bring things in line and potentially patch the module if necessary.
+
+  // Trick Acquia Purge into thinking we are on Acquia Cloud.
+  $_ENV['AH_SITE_NAME'] = $_ENV['AH_SITE_GROUP'] = 'fake';
+  $conf['acquia_hosting_site_info'] = array('fake');
+  $conf['reverse_proxies'] = array('127.0.0.1');
+
  Why does admin/uid 1 always see the progressbar since 7.x-1.0-beta2?
 --------------------------------------------------------------------------------
   That is because we removed the 'Report cache purges'-setting that became
