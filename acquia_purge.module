@@ -1177,30 +1177,58 @@ function _acquia_purge_input_validate($path) {
   // Start all the validation checks.
   if (empty($path)) {
     $front = (php_sapi_name() === 'cli') ? '<front>' : '&lt;front&gt;';
-    return t('The path cannot be empty, if you intended to purge the frontpage'
-      . ' of your site, use "/" or "!front".', array('!front' => $front));
+    return _acquia_purge_input_validate_msgs('empty');
   }
   if (!is_string($path)) {
-    return t('The path is not a string!');
+    return _acquia_purge_input_validate_msgs('nostring');
   }
   if (stristr($path, 'http:') || stristr($path, 'https:')) {
-    return t('You provided a URL which is not compatible with the way Acquia '
-      . 'Purge works, as it constructs full URLs for its configured domains.');
+    return _acquia_purge_input_validate_msgs('url');
   }
   if (preg_match('/\s/', $path)) {
-    return t('The path cannot contain a space!');
+    return _acquia_purge_input_validate_msgs('space');
   }
   if (stristr($path, '*')) {
-    return t('You cannot purge paths with wildcard signs (*), unfortunately '
-      . 'this is not supported but may be in future versions.');
+    return _acquia_purge_input_validate_msgs('wildcard');
   }
   if (in_array($path, $history)) {
-    return t('You have already listed this path!');
+    return _acquia_purge_input_validate_msgs('double');
   }
 
   // All tests passed, remember it for future duplication testing.
   $history[] = $path;
   return FALSE;
+}
+
+/**
+ * Retrieve validation messages on user provided path strings.
+ *
+ * @param string $msg
+ *   The message you would like to retrieve, see implementation.
+ *
+ * @see _acquia_purge_input_validate()
+ * @returns
+ *   Returns a fully translated string, or NULL.
+ */
+function _acquia_purge_input_validate_msgs($msg) {
+  static $messages;
+  if (is_null($messages)) {
+    $messages = array();
+    $messages['space'] = t('The path cannot contain a space!');
+    $messages['double'] = t('You have already listed this path!');
+    $messages['nostring'] = t('The path is not a string!');
+    $messages['wildcard'] = t('You cannot purge paths with wildcard signs (*)'
+      . ', unfortunately this is not supported.');
+    $messages['url'] = t('You provided a URL which is not compatible with the way'
+      . ' Acquia Purge works, as it constructs full URLs for its configured'
+      . ' domains.');
+    $messages['empty'] = t('The path cannot be empty, if you intended to purge'
+      . ' the frontpage of your site, use "/" or "!front".',
+      array(
+        '!front' => (php_sapi_name() === 'cli') ? '<front>' : '&lt;front&gt;')
+      );
+  }
+  return isset($messages[$msg]) ? $messages[$msg] : NULL;
 }
 
 /**
