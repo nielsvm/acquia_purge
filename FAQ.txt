@@ -126,10 +126,27 @@ Frequently asked questions
   sites. However, it can't just automatically detect your views or other custom
   paths specific to your site and will therefore almost always miss pieces.
 
-  The Acquia Purge module exposes a rule action named "Purge a path from Varnish
-  on Acquia Cloud" which allows you to include purged to paths like 'news',
-  'news?page=1', '<front>' and 'contact'. For instance whenever content of type
-  news changes you can include the news view and the first 5-10 pages.
+  The Acquia Purge module exposes the rule action "Clear pages on Acquia Cloud"
+  which allows you to purge paths that weren't automatically cleared, for
+  instance a view you created on the path 'news' or your contact form on the
+  path 'contact'. Although discouraged, it is also technically possible to use
+  tokens that generate full URLs (domains will get stripped off).
+
+  What about the rule action 'Purge a path from Varnish on Acquia Cloud'?
+--------------------------------------------------------------------------------
+  This is the original rule action that shipped with Acquia Purge prior to
+  version 7.x-1.0 and is still available but no longer recommended to be used,
+  on your site. The obsoleted rule action now maps its behavior to the new rule
+  action 'Clear pages on Acquia Cloud' and therefore also supports URLs. If
+  your site has rules using the obsoleted rule, you will get periodic error
+  messages in your logs as it will be deleted in the future.
+
+  Where did the 'Clear URL(s) from the page cache' rule action go?
+--------------------------------------------------------------------------------
+  It got renamed and now gets reimplemented by the Acquia Purge module, as we
+  learned that it confused many users and was also less efficient as it mangled
+  paths through all of Expire's code. The rule got renamed into 'Clear pages on
+  Acquia Cloud' and is the only one rule action you should use now.
 
  Why doesn't Acquia Purge work with "Expiration of cached pages" disabled?
 --------------------------------------------------------------------------------
