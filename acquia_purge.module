@@ -1676,6 +1676,7 @@ function _acquia_purge_queue_processpurge_requests($requests) {
         curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
         curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->rtype);
         curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
+        curl_setopt($rqst->curl, CURLOPT_RETURNTRANSFER, TRUE);
 
         // For SSL, we need host and peer verification disabled in some cases.
         if ($rqst->scheme === 'https') {
