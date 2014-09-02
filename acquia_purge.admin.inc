@@ -210,7 +210,8 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
 
   // Decorate the textfields and prepend URL's as helpful guide.
   $schemes = _acquia_purge_get_protocol_schemes();
-  $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], base_path());
+  $base_path = _acquia_purge_get('acquia_purge_base_path');
+  $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], $base_path);
   foreach ($form['paths']['path'] as $i => $item) {
     $form['paths']['path'][$i]['#field_prefix'] = $prefix;
     $form['paths']['path'][$i]['#size'] = 30;

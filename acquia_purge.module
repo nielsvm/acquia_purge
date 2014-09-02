@@ -501,6 +501,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_cron'        => FALSE,
         'acquia_purge_http'        => TRUE,
         'acquia_purge_https'       => FALSE,
+        'acquia_purge_base_path'   => base_path(),
         'acquia_purge_log_success' => TRUE,
         'acquia_purge_variations'  => TRUE,
         'acquia_purge_memcache'    => FALSE,
@@ -1552,7 +1553,7 @@ function _acquia_purge_queue_pop($processor = NULL) {
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
  */
 function _acquia_purge_queue_processpurge($path) {
-  $base_path = base_path();
+  $base_path = _acquia_purge_get('acquia_purge_base_path');
 
   // Ask our built-in diagnostics system to preliminary find issues that are so
   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR

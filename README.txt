@@ -79,6 +79,15 @@ exist as of this version and documented below:
 ║                          ║       ║ is fully https:// based (redirecting).    ║
 ║                          ║       ║ $conf['acquia_purge_https'] = TRUE;       ║
 ║                          ║       ║                                           ║
+║ acquia_purge_base_path   ║(auto) ║ In some cases Drupal isn't served on the  ║
+║                          ║       ║ same URL as where its edited, which will  ║
+║                          ║       ║ cause different paths to be purged than   ║
+║                          ║       ║ necessary. By overriding this setting,    ║
+║                          ║       ║ Drupal's base_path() will no longer be    ║
+║                          ║       ║ used to construct purges. Use only when   ║
+║                          ║       ║ you know what you are doing.              ║
+║                          ║       ║ $conf['acquia_purge_base_path'] = '/sub/';║
+║                          ║       ║                                           ║
 ║ acquia_purge_log_success ║ TRUE  ║ By default this module will log both      ║
 ║                          ║       ║ successes and failure, which is helpful   ║
 ║                          ║       ║ for those setting the module up. But once ║
