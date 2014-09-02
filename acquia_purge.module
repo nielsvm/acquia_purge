@@ -1727,9 +1727,10 @@ function _acquia_purge_queue_processpurge_requests($requests) {
       $results[$i]->error_curl = $info['result'];
       $results[$i]->error_http = curl_getinfo($rqst->curl, CURLINFO_HTTP_CODE);
 
-      // When the result failed but the HTTP code is 404 we turn the result
-      // into a TRUE as Varnish simply couldn't find the entry as its not there.
-      if ((!$results[$i]->result) && ($results[$i]->error_http == 404)) {
+      // Curl hasn't proven to be always as reliable when it comes to result
+      // reporting, and therefore we enforce success whenever the HTTP codes
+      // are 200 or 404, which is Varnish-talk for 'things are good my friend'.
+      if (in_array($results[$i]->error_http, array(404, 200))) {
         $results[$i]->result = TRUE;
       }
 
