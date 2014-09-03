@@ -73,7 +73,7 @@ function acquia_purge_autocomplete($string) {
   $matches = array();
 
   // Overwrite $string and work around Drupal buggingly ignoring slashes.
-  $string = implode('/', array_slice(explode('/', $_GET['q']), 6));
+  $string = implode('/', array_slice(explode('/', $_GET['q']), 1));
 
   // Scan for node/ lookups as they're quite common.
   if (substr($string, 0, 1) == 'n') {
@@ -111,6 +111,7 @@ function acquia_purge_autocomplete($string) {
     $query = db_select('menu_router', 'm')
       ->fields('m', array('path'))
       ->condition('path', db_like($string) . '%', 'LIKE')
+      ->condition('path', 'acquia_purge_ajax_autocomplete', '!=')
       ->condition('path', 'acquia_purge_ajax_processor', '!=')
       ->condition('path', 'admin%', 'NOT LIKE')
       ->range(0, $query_limit)
