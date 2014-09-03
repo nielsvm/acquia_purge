@@ -440,19 +440,19 @@ function theme_acquia_purge_status_bar_widget($variables) {
 function theme_acquia_purge_status_report($variables) {
   $output = '<table class="system-status-report">';
   $severities = array(
-    REQUIREMENT_INFO => array(
+    ACQUIA_PURGE_SEVLEVEL_INFO => array(
       'title' => t('Info'),
       'class' => 'info',
     ),
-    REQUIREMENT_OK => array(
+    ACQUIA_PURGE_SEVLEVEL_OK => array(
       'title' => t('OK'),
       'class' => 'ok',
     ),
-    REQUIREMENT_WARNING => array(
+    ACQUIA_PURGE_SEVLEVEL_WARNING => array(
       'title' => t('Warning'),
       'class' => 'warning',
     ),
-    REQUIREMENT_ERROR => array(
+    ACQUIA_PURGE_SEVLEVEL_ERROR => array(
       'title' => t('Error'),
       'class' => 'error',
     ),
