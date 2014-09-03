@@ -232,12 +232,12 @@ function acquia_purge_manualpurge_form_paths($form, &$form_state) {
   // Retrieve the base form and register our validation and submit callbacks.
   _acquia_purge_manualpurge_base($form, $form_state);
   $form['#validate'] = array('_acquia_purge_manualpurge_validate');
-  $form['#submit'] = array('_acquia_purge_manualpurge_submit');
+  $form['submits']['paths']['#submit'] = array('_acquia_purge_manualpurge_submit');
   unset($form['submits']['page']);
 
   // Decorate the path items.
   foreach ($form['paths']['path'] as $i => $item) {
-    $form['paths']['path'][$i]['#size'] = 15;
+    $form['paths']['path'][$i]['#size'] = 20;
   }
 
   return $form;
@@ -253,7 +253,7 @@ function acquia_purge_manualpurge_form_page($form, &$form_state) {
 
   // Retrieve the base form and register our validation and submit callbacks.
   _acquia_purge_manualpurge_base($form, $form_state);
-  $form['#submit'] = array('_acquia_purge_manualpurge_submit');
+  $form['submits']['page']['#submit'] = array('_acquia_purge_manualpurge_submit');
   unset($form['submits']['paths']);
 
   // Rewrite the paths array to just contain this page, variations might be
@@ -393,7 +393,10 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
       . 'during the next cron iteration.'));
   }
 
-  acquia_purge_purge_paths($form_state['values']['paths']['path']);
+  // Only submit the paths if they really contain something.
+  if (count($form_state['values']['paths']['path'])) {
+    acquia_purge_purge_paths($form_state['values']['paths']['path']);
+  }
 }
 
 /**
