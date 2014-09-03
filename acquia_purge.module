@@ -1610,7 +1610,7 @@ function _acquia_purge_queue_processpurge($path) {
           array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
           WATCHDOG_INFO);
       }
-      _acquia_purge_queue_stats($rqst->uri);
+      _acquia_purge_queue_history($rqst->uri);
     }
     else {
       if ($overall_success) {
@@ -1758,32 +1758,38 @@ function _acquia_purge_queue_processpurge_requests($requests) {
 }
 
 /**
+ * Queue manager: maintain a request-local list of purged URLs.
+ *
+ * @param string $url
+ *   Optional, when passed in the given URL will be added to the history log.
+ *
+ * @returns
+ *   The full non-associative array with URLs kept in memory.
+ */
+function _acquia_purge_queue_history($url = NULL) {
+  static $urls;
+  if (is_null($urls)) {
+    $urls = array();
+  }
+  if (!is_null($url)) {
+    $urls[] = $url;
+  }
+  return $urls;
+}
+
+/**
  * Queue manager: generate progress statistics on the purge queue.
  *
- * @param string $log_purged_url
- *   This optional parameter allows purge processors to record URLs that got
- *   purged successfully during runtime context. This facility is not persistent
- *   trough requests and only intended for GUI elements and statistics.
+ * @param string $key
+ *   The requested statistics key to return.
  *
  * @returns
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'good', 'bad', 'percent' and 'purgehistory'.
  */
-function _acquia_purge_queue_stats($log_purged_url = FALSE) {
-
-  // Initialize the $purgehistory runtime log and add a extra path if provided.
-  static $purgehistory;
-  if (is_null($purgehistory)) {
-    $purgehistory = array();
-  }
-  if ($log_purged_url) {
-    if (!in_array($log_purged_url, $purgehistory)) {
-      $purgehistory[] = $log_purged_url;
-    }
-  }
-
-  // Initialize array with default values, except for the total counter.
+function _acquia_purge_queue_stats($key = NULL) {
   $info = array(
+    'purgehistory' => _acquia_purge_queue_history(),
     'locked' => _acquia_purge_get('locked'),
     'total' => _acquia_purge_get('qtotal'),
     'good'      => _acquia_purge_get('qgood'),
@@ -1791,20 +1797,17 @@ function _acquia_purge_queue_stats($log_purged_url = FALSE) {
     'remaining' => 0,
     'percent' => 100,
     'running' => FALSE,
-    'purgehistory' => $purgehistory);
+  );
 
-  // Cut statistics gathering when the queue counter equals 0: not running.
-  if ($info['total'] === 0) {
-    return $info;
+  // Calculate the percentages when the queue doesn't seem to be empty.
+  if ($info['total'] !== 0) {
+    $info['running'] = TRUE;
+    $info['remaining'] = $info['total'] - $info['good'];
+    $info['percent'] = ($info['remaining'] / $info['total']) * 100;
+    $info['percent'] = (int) (100 - floor($info['percent']));
   }
 
-  // So there is activity going on, update the appropriate data fields.
-  $info['running'] = TRUE;
-  $info['remaining'] = $info['total'] - $info['good'];
-  $info['percent'] = ($info['remaining'] / $info['total']) * 100;
-  $info['percent'] = (int) (100 - floor($info['percent']));
-
-  return $info;
+  return is_null($key) ? $info : $info[$key];
 }
 
 /**

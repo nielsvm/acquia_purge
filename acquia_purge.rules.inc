@@ -79,7 +79,7 @@ function _acquia_purge_action_purge($path) {
   // Rule actions can run very often, and if we would write out a log warning
   // about the deprecation of this rule action every time, we can congest the
   // site. Instead, only put a warning in when the queue's absolutely empty.
-  if (_acquia_purge_queue_stats()['total'] === 0) {
+  if (_acquia_purge_queue_stats('total') === 0) {
     watchdog(
       'acquia_purge',
       'Please switch to using the rule action "Clear pages on Acquia Cloud."'

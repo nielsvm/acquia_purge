@@ -324,7 +324,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
     }
 
     // Log and pop as much items out of the queue as we can + process.
-    printf("\n# %d items left...\n", _acquia_purge_queue_stats()['remaining']);
+    printf("\n# %d items left...\n", _acquia_purge_queue_stats('remaining'));
     $log = array();
     do {
       $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
