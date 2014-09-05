@@ -136,7 +136,7 @@ function acquia_purge_update_7103(&$sandbox) {
 
   // If other users had the role as well, we should update those too.
   db_update('role_permission')
-    ->fields(array('permission' => 'purge on-screen',))
+    ->fields(array('permission' => 'purge on-screen'))
     ->condition('permission', 'purge notification')
     ->condition('module', 'acquia_purge')
     ->execute();

@@ -1176,7 +1176,7 @@ function _acquia_purge_input_path_variations(&$paths, $path = NULL) {
     }
 
     // Now pump all those variations over into $paths_new.
-    foreach($variations as $variation) {
+    foreach ($variations as $variation) {
       $add($paths_new, $variation);
     }
   }
@@ -1467,7 +1467,7 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
  * @param boolean $acquire
  *   TRUE to acquire a lock, NULL to release it.
  *
- * @see lock_acquire
+ * @see lock_acquire()
  * @returns
  *   TRUE when the lock is acquired.
  *   FALSE if it is still locked
