@@ -622,7 +622,7 @@ function _acquia_purge_get_diagnosis_statedata($t) {
     'value' => ACQUIA_PURGE_STATE_FILE,
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
-  if (_acquia_purge_get('acquia_purge_memcache')) {
+  if (_acquia_purge_are_we_using_memcached()) {
     $test['value'] = 'memcache';
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_INFO;
   }

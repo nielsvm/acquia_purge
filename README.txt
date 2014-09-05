@@ -108,13 +108,16 @@ exist as of this version and documented below:
 ║                          ║       ║ this behavior can be disabled with:       ║
 ║                          ║       ║ $conf['acquia_purge_variations'] = FALSE; ║
 ║                          ║       ║                                           ║
-║ acquia_purge_memcache    ║ FALSE ║ EXPERIMENTAL support for letting Acquia   ║
-║                          ║       ║ Purge store its state data in Memcached,  ║
-║                          ║       ║ if your site uses it for caching. This    ║
-║                          ║       ║ prevents I/O activity for every request or║
-║                          ║       ║ Drush command that involves any calls to  ║
-║                          ║       ║ our API's. This might become the default  ║
-║                          ║       ║ in the future if it works well!           ║
-║                          ║       ║ $conf['acquia_purge_memcache'] = TRUE;    ║
+║ acquia_purge_memcache    ║ TRUE  ║ Determines whether Acquia Purge needs to  ║
+║                          ║       ║ store its state data in memory when       ║
+║                          ║       ║ $conf['cache_default_class'] is set to use║
+║                          ║       ║ it. This reduces I/O activity drastically ║
+║                          ║       ║ compared to the fallback file based state ║
+║                          ║       ║ storage and also improves deduplication of║
+║                          ║       ║ queue items drastically. If you are seeing║
+║                          ║       ║ issues with queuing and purging items, you║
+║                          ║       ║ can consider disabling it followed by     ║
+║                          ║       ║ 'drush ap-forget' to see if that works.   ║
+║                          ║       ║ $conf['acquia_purge_memcache'] = FALSE;   ║
 ║                          ║       ║                                           ║
 ╚══════════════════════════╩═══════╩═══════════════════════════════════════════╝

@@ -426,6 +426,31 @@ function _acquia_purge_are_we_allowed_to_purge() {
 }
 
 /**
+ * Determine if its safe to use memcached based features.
+ *
+ * @returns
+ *   Boolean TRUE if we can, FALSE if not.
+ */
+function _acquia_purge_are_we_using_memcached() {
+  static $answer;
+  if (is_null($answer)) {
+    global $conf;
+    $answer = FALSE;
+
+    if (_acquia_purge_get('acquia_purge_memcache')) {
+      if (isset($conf['cache_default_class'])) {
+        if ($conf['cache_default_class'] === 'MemCacheDrupal') {
+          if (function_exists('dmemcache_get')) {
+            $answer = TRUE;
+          }
+        }
+      }
+    }
+  }
+  return $answer;
+}
+
+/**
  * Turn a PHP variable into a string with data type information for debugging.
  *
  * @param mixed $symbols
@@ -504,7 +529,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_base_path'   => base_path(),
         'acquia_purge_log_success' => TRUE,
         'acquia_purge_variations'  => TRUE,
-        'acquia_purge_memcache'    => FALSE,
+        'acquia_purge_memcache'    => TRUE,
       ),
       'state' => array(
         'qtotal'        => 0,
@@ -1405,7 +1430,7 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
  *   TRUE when the path exists, FALSE when it doesn't.
  */
 function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
-  $memcached_backed_storage = _acquia_purge_get('acquia_purge_memcache');
+  $memcached_backed_storage = _acquia_purge_are_we_using_memcached();
 
   // Lists is where we keep all data during the requests.
   static $lists;
@@ -1874,14 +1899,7 @@ function _acquia_purge_state_initialize() {
   }
 
   // Load up the data from memcache if it is enabled.
-  if (_acquia_purge_get('acquia_purge_memcache')) {
-    if (!function_exists('dmemcache_get')) {
-      throw new Exception('Acquia Purge operates on acquia_purge_memcache='
-        . 'TRUE but dmemcache_get() is nowhere to be found! Disable memcache '
-        . 'support for Acquia Purge if you see this.');
-    }
-
-    // Retrieve the data and test it briefly.
+  if (_acquia_purge_are_we_using_memcached()) {
     $state = dmemcache_get(
       ACQUIA_PURGE_STATE_MEMKEY, ACQUIA_PURGE_STATE_MEMBIN);
     if (is_array($state) && count($state)) {
@@ -1995,7 +2013,7 @@ function _acquia_purge_state_commit() {
   }
 
   // Write out the data to memcache if that's enabled.
-  if (_acquia_purge_get('acquia_purge_memcache')) {
+  if (_acquia_purge_are_we_using_memcached()) {
     dmemcache_set(
       ACQUIA_PURGE_STATE_MEMKEY,
       $_acquia_purge_state,
