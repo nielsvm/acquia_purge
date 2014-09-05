@@ -6,7 +6,7 @@
  * is empty and everything is processed. Also works without on-screen reporting.
  */
 (function ($) {
-Drupal.behaviors.AcquiaPurgeAjax = {
+Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
   attach: function (context) {
     $(document).ready(function() {
 
@@ -180,6 +180,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
 
         // Hide ourselves after 4 seconds.
         setTimeout(function() {apbox.slideUp(1000);}, 4000);
+
       }
 
       // Make a request back home and trigger a couple of purges each run.
@@ -241,6 +242,7 @@ Drupal.behaviors.AcquiaPurgeAjax = {
             else {
               if (uiActivated()) {
                 uiTearDown();
+                quit();
               }
             }
           },
@@ -278,6 +280,11 @@ Drupal.behaviors.AcquiaPurgeAjax = {
             }
           }
         });
+      }
+
+      // Remove the behavior so it won't act up when AJAX requests are made.
+      function quit() {
+        delete Drupal.behaviors.AcquiaPurgeAjaxProcessor;
       }
 
       // Initialize the UI when we have detected its base element.
