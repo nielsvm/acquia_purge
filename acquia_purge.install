@@ -126,20 +126,38 @@ function acquia_purge_update_7102(&$sandbox) {
  * but is now also used for permission to the manual purge form blocks.
  */
 function acquia_purge_update_7103(&$sandbox) {
-  drupal_static_reset('user_role_permissions');
+  $admin_rid = variable_get('user_admin_role', 0);
+  $old = 'purge notification';
+  $new = 'purge on-screen';
 
-  // Assign the new role to the site administrator.
-  $rid = variable_get('user_admin_role', 0);
-  if ($rid) {
-    user_role_grant_permissions($rid, array('purge on-screen'));
+  // Query the old 'purge notification' permission to rename it to the new one.
+  if ($admin_rid) {
+    $old_permissions = db_select('role_permission', 'r')
+      ->fields('r')
+      ->condition('permission', $old)
+      ->condition('rid', $admin_rid, '!=')
+      ->execute();
+  }
+  else {
+    $old_permissions = db_select('role_permission', 'r')
+    ->fields('r')
+    ->condition('permission', $old)
+    ->execute();
+  }
+  foreach ($old_permissions as $old_permission) {
+    db_update('role_permission')
+      ->fields(array('permission' => $new))
+      ->condition('permission', $old_permission->permission)
+      ->condition('module', $old_permission->module)
+      ->condition('rid', $old_permission->rid)
+      ->execute();
   }
 
-  // If other users had the role as well, we should update those too.
-  db_update('role_permission')
-    ->fields(array('permission' => 'purge on-screen'))
-    ->condition('permission', 'purge notification')
-    ->condition('module', 'acquia_purge')
-    ->execute();
+  // Assign the new role to the site administrator.
+  drupal_static_reset('user_role_permissions');
+  if ($admin_rid) {
+    user_role_grant_permissions($admin_rid, array('purge on-screen'));
+  }
 }
 
 /**
