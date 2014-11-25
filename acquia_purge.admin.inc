@@ -462,8 +462,11 @@ function theme_acquia_purge_status_report($variables) {
     ),
   );
 
+  // Require all requirement constants from the installer code.
+  include_once DRUPAL_ROOT . '/includes/install.inc';
+
   foreach ($variables as $requirement) {
-    if (empty($requirement)) continue;
+    if (empty($requirement) || !is_array($requirement)) continue;
     $severity = $severities[isset($requirement['severity']) ? (int) $requirement['severity'] : REQUIREMENT_OK];
 
     // Output table row(s)
