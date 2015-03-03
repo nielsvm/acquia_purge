@@ -522,14 +522,16 @@ function _acquia_purge_get($name, $get_default = FALSE) {
   if (is_null($names)) {
     $names = array(
       'variables' => array(
-        'acquia_purge_domains'     => FALSE,
-        'acquia_purge_cron'        => FALSE,
-        'acquia_purge_http'        => TRUE,
-        'acquia_purge_https'       => FALSE,
-        'acquia_purge_base_path'   => base_path(),
-        'acquia_purge_log_success' => TRUE,
-        'acquia_purge_variations'  => TRUE,
-        'acquia_purge_memcache'    => TRUE,
+        'acquia_purge_domains'      => FALSE,
+        'acquia_purge_sphpskippath' => TRUE,
+        'acquia_purge_stripports'   => array(80, 443),
+        'acquia_purge_cron'         => FALSE,
+        'acquia_purge_http'         => TRUE,
+        'acquia_purge_https'        => FALSE,
+        'acquia_purge_base_path'    => base_path(),
+        'acquia_purge_log_success'  => TRUE,
+        'acquia_purge_variations'   => TRUE,
+        'acquia_purge_memcache'     => TRUE,
       ),
       'state' => array(
         'qtotal'        => 0,
@@ -960,6 +962,8 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
  *   format of '<port>.<domain>.<path>' this is relatively hackish.
  */
 function _acquia_purge_get_domains_add_sitesphp(&$domains) {
+  $sitesphpskippath = _acquia_purge_get('acquia_purge_sphpskippath');
+  $stripports = _acquia_purge_get('acquia_purge_stripports');
   $sitedir = str_replace('sites/', '', conf_path());
   $tlds = array();
 
@@ -993,17 +997,29 @@ function _acquia_purge_get_domains_add_sitesphp(&$domains) {
     $site = explode('.', $site);
 
     // Strip TCP port's in '<port>....'.
-    if (is_numeric($site[0])) {
+    if (is_numeric($site[0]) && (in_array((int)$site[0], $stripports))) {
       unset($site[0]);
     }
 
-    // We skip all $site records which don't end on a common known TLD, examples
-    // would be '8080.localhost', 'www.drupal.org.my.dir' and every other site
-    // that's defined with a path appended to it. It's an unfortunate limitation
-    // but a very hard thing to support, so checking on TLD's is the only
-    // sensible thing we can do to support as much scenario's as possible.
+    // Every record in sites.php that has a TLD in the middle of it, are assumed
+    // to be in the '<domain>.<path>' format, which means we have a path we
+    // really need to get rid of.  When the last octet isn't in $tlds, we
+    // assume this scenario to be a reality and start scanning each octet. If
+    // on of the middle octets then matches a valid TLD, we rewrite the domain.
     if (!in_array(end($site), $tlds)) {
-      continue;
+      if ($sitesphpskippath) {
+        continue;
+      }
+      else {
+        $replacement = array();
+        foreach ($site as $octet) {
+          $replacement[] = $octet;
+          if (in_array($octet, $tlds) && ($octet !== end($site)) ) {
+            $site = $replacement;
+            break;
+          }
+        }
+      }
     }
 
     // What's left should be a 99.99% correct domain name we want to see purged.

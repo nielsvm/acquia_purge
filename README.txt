@@ -55,6 +55,18 @@ exist as of this version and documented below:
 ║ acquia_purge_domains     ║ FALSE ║ Allows you to control which domains will  ║
 ║                          ║       ║ get purged, see DOMAINS.txt               ║
 ║                          ║       ║                                           ║
+║ acquia_purge_sphpskippath║ TRUE  ║ By default, the sites.php domain detection║
+║                          ║       ║ skips records that do not end on a known  ║
+║                          ║       ║ TLD, as it assumes the remainder to be a  ║
+║                          ║       ║ path. Disabling this, enables experimental║
+║                          ║       ║ support for supporting all of sites.php.  ║
+║                          ║       ║ $conf['acquia_purge_sphpskippath'] = FALSE║
+║ acquia_purge_stripports  ║ 80,443║ Ports stripped from records in sites.php  ║
+║                          ║       ║ that start with a first octet that is     ║
+║                          ║       ║ numeric, e.g.: '443.domain.com'. Ports    ║
+║                          ║       ║ outside this setting are not stripped     ║
+║                          ║       ║ from detected domains.                    ║
+║                          ║       ║ $conf['acquia_purge_stripports'] = [80];  ║
 ║ acquia_purge_cron        ║ FALSE ║ Once set to TRUE, this will switch the    ║
 ║                          ║       ║ queue processing entirely to cron and     ║
 ║                          ║       ║ disable the client-side progressbar. Do   ║
