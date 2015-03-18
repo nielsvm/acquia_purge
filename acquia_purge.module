@@ -306,7 +306,7 @@ function acquia_purge_block_info() {
       'status' => 0,
       'weight' => 1,
       'region' => 'sidebar_first',
-      'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+      'visibility' => 0,
       'properties' => array('administrative' => TRUE),
     ),
     'paths' => array(
@@ -315,7 +315,7 @@ function acquia_purge_block_info() {
       'status' => 0,
       'weight' => 1,
       'region' => 'sidebar_first',
-      'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+      'visibility' => 0,
       'properties' => array('administrative' => TRUE),
     )
   );
