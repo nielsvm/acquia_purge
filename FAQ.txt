@@ -44,14 +44,14 @@ Frequently asked questions
   domains it detected including your www and your bare domain, the more domains
   it has to purge the slower it will become. For SEO reasons it adds another
   problem, being that all of your content is now available on the web via TWO
-  domains which might degrade the ratings of your site. Its best to use a
+  domains which might degrade the ratings of your site. It's best to use a
   .htaccess redirect from bare-->www domain and to only purge your www domain
   name. See the DOMAINS.txt file on how to achieve this.
 
  Can I see the contents of the Acquia Purge queue?
 --------------------------------------------------------------------------------
   You can at all times visit the status report page to see what the status of
-  the queue is and how many items are in it, whenever its "idle" its safe to
+  the queue is and how many items are in it. Whenever it is "idle", it's safe to
   assume a empty queue. You can print the full queue using "drush ap-list"
 
  Does Acquia Purge purge from cron and/or should I set up cron for it?
@@ -103,8 +103,8 @@ Frequently asked questions
   Yes this is technically possible, but doing so is officially unsupported.
 
   Let me explain you why. The problem of cache invalidation is incredibly hard
-  and its a whole lot more than a simple HTTP PURGE/BAN request when nodes are
-  saved, in fact, its close to black magic. Supporting all kinds of hosting
+  and it is a whole lot more than a simple HTTP PURGE/BAN request when nodes are
+  saved, in fact, it is close to black magic. Supporting all kinds of hosting
   environments would call for a serious API that currently both Acquia Purge
   and the Purge module are not, and above all of that, purging paths works but
   isn't as elegant as it will get in Drupal 8. Therefore we decided to build a
@@ -120,10 +120,11 @@ Frequently asked questions
   I'm working on) will provide a proper API and its submodules will provide the
   necessary plugins to make it work on all environments.
 
-  Having that said, Acquia Purge *can be tricked* into thinking its on Acquia
+  Having that said, Acquia Purge *can be tricked* into thinking it is on Acquia
   Cloud and that will make its diagnostic message go silent. The HTTP requests
-  it makes should work on most Varnish configurations but if it doesn't, its up
-  to you to bring things in line and potentially patch the module if necessary.
+  it makes should work on most Varnish configurations but if it doesn't, it is
+  up to you to bring things in line and potentially patch the module if
+  necessary.
 
   // Trick Acquia Purge into thinking we are on Acquia Cloud.
   $_ENV['AH_SITE_NAME'] = $_ENV['AH_SITE_GROUP'] = 'fake';
@@ -151,7 +152,7 @@ Frequently asked questions
 
  My views and XYZ paths aren't getting purged, this is a bug!
 --------------------------------------------------------------------------------
-  The Acquia Purge module purges whatever its being told to purge, either via
+  The Acquia Purge module purges whatever it is being told to purge, either via
   expire, a rule action or via custom code you wrote. The expire module has
   the difficult task of detecting what pages need to be wiped based on changing
   entities (nodes, taxonomy, menu items..) and does a quite good job for simple
@@ -193,7 +194,7 @@ Frequently asked questions
  Will my sites performance improve once Acquia Purge and expire are set up?
 --------------------------------------------------------------------------------
   Yes, drastically even once you've increased your "Expiration of cached pages"
-  setting to a high value (rather days than hours). The higher its set, the
+  setting to a high value (rather days than hours). The higher it is set, the
   higher the time limit in the Cache-Control HTTP response header will be set.
   That will make your Acquia Cloud site's Varnish instances keep the pages in
   cache longer and frees up many PHP processing slots on your web servers.
@@ -224,7 +225,7 @@ Frequently asked questions
   caching on, a randomly changing URL will continuously wake up your web servers
   and could kill the performance of your site.
 
- Can I use Acquia Purge to programatically purge paths I want to be cleaned?
+ Can I use Acquia Purge to programmatically purge paths I want to be cleaned?
 --------------------------------------------------------------------------------
   Yes, the module has been purely designed to purge things on Acquia Cloud and
   to do it well! Its relation with the expire module is very thin for instance,
@@ -247,14 +248,14 @@ Frequently asked questions
 
   The while loop does not run until the queue is empty but runs as long as PHP
   has resources for (and runs longer on the command line). The queue might be
-  empty already in many cases by the end of that loop, but its definitely no
+  empty already in many cases by the end of that loop, but it's definitely no
   guarantee and therefore having permanent processing of the queue (cron) is
   preferable.
 
   You can always check upon the queue state by querying:
   var_dump(_acquia_purge_queue_stats());
 
-  Its fine to do 10-50 paths in a do-while loop during a single request but
+  It's fine to do 10-50 paths in a do-while loop during a single request but
   whenever the user has many domains or many load balancers, you will quickly
   run into the necessity splitting things out using batch API. Just keep on
   calling _acquia_purge_queue_pop('_acquia_purge_queue_processpurge') till it

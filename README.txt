@@ -11,7 +11,7 @@ technical configuration.
 
 Features:
  * Built with editorial people and end-users in mind.
- * On-screen progressbar showing pages being cleared and made public.
+ * On-screen progress-bar showing pages being cleared and made public.
  * Turn-key installation for simple content sites.
  * Wipes pages based on detected changes by the expire module.
  * Integration with Rules allowing to wipe pages like 'news' and 'contact'.
@@ -69,7 +69,7 @@ exist as of this version and documented below:
 ║                          ║       ║ $conf['acquia_purge_stripports'] = [80];  ║
 ║ acquia_purge_cron        ║ FALSE ║ Once set to TRUE, this will switch the    ║
 ║                          ║       ║ queue processing entirely to cron and     ║
-║                          ║       ║ disable the client-side progressbar. Do   ║
+║                          ║       ║ disable the client-side progress-bar. Do  ║
 ║                          ║       ║ keep an eye on 'drush ap-list' once       ║
 ║                          ║       ║ enabled as the queue can grow too fast    ║
 ║                          ║       ║ requiring a cron interval increase.       ║
@@ -92,7 +92,7 @@ exist as of this version and documented below:
 ║                          ║       ║ $conf['acquia_purge_https'] = TRUE;       ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_base_path   ║(auto) ║ In some cases Drupal isn't served on the  ║
-║                          ║       ║ same URL as where its edited, which will  ║
+║                          ║       ║ same URL as where it's edited, which will ║
 ║                          ║       ║ cause different paths to be purged than   ║
 ║                          ║       ║ necessary. By overriding this setting,    ║
 ║                          ║       ║ Drupal's base_path() will no longer be    ║
