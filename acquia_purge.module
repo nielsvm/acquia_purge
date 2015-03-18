@@ -391,7 +391,7 @@ function acquia_purge_theme($existing, $type, $theme, $path) {
 /**
  * Determine whether we are running on Acquia Cloud or not.
  *
- * @returns
+ * @return bool
  *   A boolean expression indicating if we currently run on Acquia cloud.
  */
 function _acquia_purge_are_we_on_acquiacloud() {
@@ -415,7 +415,7 @@ function _acquia_purge_are_we_on_acquiacloud() {
 /**
  * Determine if critical error conditions exists disallowing purges.
  *
- * @returns
+ * @return bool
  *   Boolean TRUE or FALSE indicating access.
  */
 function _acquia_purge_are_we_allowed_to_purge() {
@@ -433,7 +433,7 @@ function _acquia_purge_are_we_allowed_to_purge() {
 /**
  * Determine if its safe to use memcached based features.
  *
- * @returns
+ * @return bool
  *   Boolean TRUE if we can, FALSE if not.
  */
 function _acquia_purge_are_we_using_memcached() {
@@ -461,7 +461,7 @@ function _acquia_purge_are_we_using_memcached() {
  * @param mixed $symbols
  *   Arbitrary PHP variable, preferably a associative array.
  *
- * @returns
+ * @return string
  *   A one-line comma separated string with data types as var_dump() generates.
  */
 function _acquia_purge_export_debug_symbols($symbols) {
@@ -512,13 +512,14 @@ function _acquia_purge_export_debug_symbols($symbols) {
  *
  * @param string $name
  *   The name of the state data property OR variable to return.
- * @param boolean $get_default
- *   Optional, retrieve the default value instead of the real value.
+ * @param bool $get_default
+ *   (optional) Retrieve the default value instead of the real value.
+
+ * @return
+ *   Either the default or actual value of the item request.
  *
  * @see variable_get()
  * @see _acquia_purge_state_get()
- * @returns
- *   Either the default or actual value of the item request.
  */
 function _acquia_purge_get($name, $get_default = FALSE) {
   static $names;
@@ -578,7 +579,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
  * @warning
  *   Please note that the returned IP addresses are internal addresses.
  *
- * @returns
+ * @return array
  *   Array with string values pointing to every Acquia Cloud load balancer.
  */
 function _acquia_purge_get_balancers() {
@@ -599,13 +600,14 @@ function _acquia_purge_get_balancers() {
  * Calculate how many items can be purged during the execution of this script.
  *
  * @param int $subtract
- *   Optional integer value to subtract from the initially calculated value, so
+ *   (optional) Integer value to subtract from the initially calculated value, so
  *   passing the number of popped items in from _acquia_purge_queue_pop() will
  *   lead this return value being updated the next time its requested.
  *
- * @see ACQUIA_PURGE_MAX_ITEMS
- * @returns int
+ * @return int
  *   Integer indicating how many items may be popped from the queue.
+ *
+ * @see ACQUIA_PURGE_MAX_ITEMS
  */
 function _acquia_purge_get_capacity($subtract = NULL) {
   static $capacity;
@@ -665,13 +667,14 @@ function _acquia_purge_get_capacity_factor() {
 /**
  * Calculate the maximum amount of outgoing HTTP requests we can make.
  *
- * @see ACQUIA_PURGE_REQUEST_TIMEOUT
- * @see ACQUIA_PURGE_MAX_REQUESTS
- * @returns int
+ * @return int
  *   Integer representing how many outgoing HTTP requests we can afford to make
  *   during the current script execution. Usually it will be higher on the CLI
  *   and in general this value will be on the safe side, as it assumes each
  *   request to last as long as ACQUIA_PURGE_REQUEST_TIMEOUT takes place.
+ *
+ * @see ACQUIA_PURGE_REQUEST_TIMEOUT
+ * @see ACQUIA_PURGE_MAX_REQUESTS
  */
 function _acquia_purge_get_capacity_maxrequests() {
   static $max_requests;
@@ -703,10 +706,10 @@ function _acquia_purge_get_capacity_maxrequests() {
  * Perform a series of self-tests against the site and our purging conditions.
  *
  * @param int $verbosity
- *   Optional, the level of diagnostics presented. Test results that match or
+ *   (optional) The level of diagnostics presented. Test results that match or
  *   are higher than the given level are returned.
  *
- * @returns
+ * @return array
  *  Array that complies to the format as seen in hook_requirements().
  */
 function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
@@ -766,7 +769,7 @@ function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
  *
  * @param array $items
  *   Associative array with test results or an individual test result array.
- * @param boolean $deduplicate
+ * @param bool $deduplicate
  *   Prevent diagnostic messages from ending up in the logs multiple times when
  *   they already have been logged since the last queue wipe.
  *
@@ -819,7 +822,7 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
 /**
  * Get a list of defined domains that we can purge for.
  *
- * @returns
+ * @return array
  *   Array with string values mapping to all defined DNS domains for this site.
  */
 function _acquia_purge_get_domains() {
@@ -1044,7 +1047,7 @@ function _acquia_purge_get_domains_add_sitesphp(&$domains) {
 /**
  * Get a list of protocol schemes that will be purged.
  *
- * @returns
+ * @return array
  *   Array with scheme strings like 'http' and 'https'.
  */
 function _acquia_purge_get_protocol_schemes() {
@@ -1067,7 +1070,7 @@ function _acquia_purge_get_protocol_schemes() {
 /**
  * Determine the Acquia site name.
  *
- * @returns
+ * @return false|string
  *   Either a boolean FALSE or a string identifying what site we are on.
  */
 function _acquia_purge_get_site_name() {
@@ -1084,7 +1087,7 @@ function _acquia_purge_get_site_name() {
 /**
  * Determine the Acquia site group.
  *
- * @returns
+ * @return false|string
  *   Either a boolean FALSE or a string identifying what site group this is.
  */
 function _acquia_purge_get_site_group() {
@@ -1107,7 +1110,7 @@ function _acquia_purge_get_site_group() {
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
  *
- * @returns
+ * @return string
  *   The cleaned version of the path.
  */
 function _acquia_purge_input_clean($path) {
@@ -1145,7 +1148,7 @@ function _acquia_purge_input_clean($path) {
  * @param array $paths
  *   Non-associative array with Drupal paths like '<front>' or 'user/1'.
  * @param string $path
- *   INTERNAL, don't use directly! Used to add made up variations to the
+ *   (optional) INTERNAL, don't use directly! Used to add made up variations to the
  *   list by reference and to prevent duplicate paths.
  *
  * @see acquia_purge_manualpurge_form_submit()
@@ -1220,7 +1223,7 @@ function _acquia_purge_input_path_variations(&$paths, $path = NULL) {
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
  *
- * @returns
+ * @return false|string
  *   FALSE on success (!!) or a translated string describing what's wrong with
  *   the given user input.
  */
@@ -1262,9 +1265,10 @@ function _acquia_purge_input_validate($path) {
  * @param string $msg
  *   The message you would like to retrieve, see implementation.
  *
- * @see _acquia_purge_input_validate()
- * @returns
+ * @return string|null
  *   Returns a fully translated string, or NULL.
+ *
+ * @see _acquia_purge_input_validate()
  */
 function _acquia_purge_input_validate_msgs($msg) {
   static $messages;
@@ -1450,13 +1454,14 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
  * @param string $list
- *   Two breadcrumb lists are kept, 'queued' for preventative deduplication
- *   and 'purged' for deduplication when _acquia_purge_queue_pop() runs.
+ *   (optional) Two breadcrumb lists are kept, 'queued' for preventative
+ *   deduplication and 'purged' for deduplication when _acquia_purge_queue_pop()
+ *   runs.
  * @param int $l
- *   The $l parameter stands for 'limit' and represents the rotation limit kept
- *   for each list, as the list resets when it grew bigger than that.
+ *   (optional) The $l parameter stands for 'limit' and represents the rotation
+ *   limit kept for each list, as the list resets when it grew bigger than that.
  *
- * @returns
+ * @return bool
  *   TRUE when the path exists, FALSE when it doesn't.
  */
 function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
@@ -1494,14 +1499,15 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
 /**
  * Queue manager: acquire a lock and get queue processing permission.
  *
- * @param boolean $acquire
- *   TRUE to acquire a lock, NULL to release it.
+ * @param bool $acquire
+ *   (optional) TRUE to acquire a lock, NULL to release it.
  *
- * @see lock_acquire()
- * @returns
+ * @return bool|null
  *   TRUE when the lock is acquired.
  *   FALSE if it is still locked
  *   NULL when $acquire isn't TRUE.
+ *
+ * @see lock_acquire()
  */
 function _acquia_purge_queue_lock($acquire = TRUE) {
   if ($acquire === NULL) {
@@ -1526,16 +1532,17 @@ function _acquia_purge_queue_lock($acquire = TRUE) {
  * Queue manager: pop X amount of items from the queue.
  *
  * @param string $processor
- *   The name of a PHP function or callable that gets called to process a
- *   individual item popped from the queue. The callback is given the path as
- *   argument. This parameter is optional.
+ *   (optional) The name of a PHP function or callable that gets called to
+ *   process a individual item popped from the queue. The callback is given the
+ *   path as argument.
  *
  * @warning
  *   Calling this helper commits the caller into actually processing the items
  *   popped from the queue, either by iterating the return value or by providing
  *   a processing callback that processes individual values. Not processing the
  *   result will lead into confusion and broken functionality.
- * @returns
+ *
+ * @return array
  *   Non-associative array of which every value record represents one resulting
  *   HTTP PURGE request. Array items are non-associative arrays itself with the
  *   path in key #0.
@@ -1604,7 +1611,7 @@ function _acquia_purge_queue_pop($processor = NULL) {
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
  *
- * @returns
+ * @return bool
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
  */
 function _acquia_purge_queue_processpurge($path) {
@@ -1700,7 +1707,7 @@ function _acquia_purge_queue_processpurge($path) {
  *   Unassociative array (list) of simple Stdclass objects with the following
  *   properties: scheme, rtype, server, domain, path, uri, uribal.
  *
- * @returns
+ * @return array
  *   The given requests array with added properties that describe the result of
  *   the request: 'result', 'error_curl', 'error_http', 'error_debug'.
  */
@@ -1816,9 +1823,9 @@ function _acquia_purge_queue_processpurge_requests($requests) {
  * Queue manager: maintain a request-local list of purged URLs.
  *
  * @param string $url
- *   Optional, when passed in the given URL will be added to the history log.
+ *   (optional) When passed in the given URL will be added to the history log.
  *
- * @returns
+ * @return array
  *   The full non-associative array with URLs kept in memory.
  */
 function _acquia_purge_queue_history($url = NULL) {
@@ -1836,9 +1843,9 @@ function _acquia_purge_queue_history($url = NULL) {
  * Queue manager: generate progress statistics on the purge queue.
  *
  * @param string $key
- *   The requested statistics key to return.
+ *   (optional) The requested statistics key to return.
  *
- * @returns
+ * @return array
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'good', 'bad', 'percent' and 'purgehistory'.
  */
@@ -1868,10 +1875,11 @@ function _acquia_purge_queue_stats($key = NULL) {
 /**
  * Queue manager: determines if the current user owns a running purge session.
  *
- * @see _acquia_purge_queue_add()
- * @returns
+ * @return bool
  *   Boolean TRUE when the current user with the exact same session initiated
  *   a purge session earlier and thus owns the purge session.
+ *
+ * @see _acquia_purge_queue_add()
  */
 function _acquia_purge_queue_is_user_purging() {
   global $user;
@@ -1968,10 +1976,10 @@ function _acquia_purge_state_initialize() {
 /**
  * Load a state data property.
  *
- * @param $name
+ * @param string $name
  *   The name of the state data property to return.
  * @param $default
- *   The default value to use if this data entry has never been set.
+ *   (optional) The default value to use if this data entry has never been set.
  *
  * @return
  *   The value of the data entry.
@@ -1995,9 +2003,9 @@ function _acquia_purge_state_get($name, $default = NULL) {
 /**
  * Store a state data property.
  *
- * @param $name
+ * @param string $name
  *   The name of the state data property to store.
- * @param $value
+ * @param string $value
  *   The value to set. This can be any PHP data type.
  *
  * @return
@@ -2047,7 +2055,8 @@ function _acquia_purge_state_commit() {
     dmemcache_set(
       ACQUIA_PURGE_STATE_MEMKEY,
       $_acquia_purge_state,
-      0, // Store the item permanently.
+      // Store the item permanently.
+      0,
       ACQUIA_PURGE_STATE_MEMBIN
     );
     return;
@@ -2103,7 +2112,7 @@ function _acquia_purge_state_wipe() {
  * the best it can, but if error messages or the on-screen purge processor
  * are shown on a certain page, you know what to patch ;).
  *
- * @returns
+ * @return bool
  *   FALSE if the current path is approved, TRUE if its blacklisted.
  */
 function _acquia_purge_ui_path_blacklisted() {
@@ -2209,7 +2218,8 @@ function _acquia_purge_ui_trigger_purge() {
  *   A Drupal node object that was just inserted or saved.
  *
  * @deprecated
- * @returns
+ *
+ * @return array
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'good', 'bad', 'percent' and 'purgehistory'.
  */
@@ -2233,7 +2243,7 @@ function acquia_purge_purge_node(&$node) {
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
  *
- * @returns
+ * @return array
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'good', 'bad', 'percent' and 'purgehistory'.
  */
@@ -2255,7 +2265,7 @@ function acquia_purge_purge_path($path) {
  * @param string $paths
  *   Array with Drupal paths (for example: '<front>', 'user/1' or a alias).
  *
- * @returns
+ * @return array
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'good', 'bad', 'percent' and 'purgehistory'.
  */
