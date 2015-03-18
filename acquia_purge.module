@@ -645,6 +645,13 @@ function _acquia_purge_get_capacity_factor() {
 
     // Multiply all configuration actors with each other.
     $slowdown_factor = $schemes * $domains * $balancers;
+
+    // When running outside of Acquia Cloud, the factor could become 0 and since
+    // we don't need division-by-zero bugs everywhere, we'd make it 1. Module
+    // won't work anyway so this cannot be a big deal.
+    if ($slowdown_factor === 0) {
+      $slowdown_factor = 1;
+    }
   }
   return $slowdown_factor;
 }
