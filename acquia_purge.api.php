@@ -24,12 +24,13 @@
  * called both when $conf['acquia_purge_domains'] has been set and when it has
  * not been set, its up to you to be aware of the data you are operating on.
  *
- * @param $domains
+ * @param string[] $domains
  *   The entity info array, keyed by entity name.
  *
  * @see _acquia_purge_get_domains()
  * @see _acquia_purge_get_domains_add()
  * @see _acquia_purge_get_diagnosis_domains()
+ * @return void
  */
 function hook_acquia_purge_domains_alter(&$domains) {
   $blacklist = array('domain_a', 'domain_b');
@@ -54,15 +55,14 @@ function hook_acquia_purge_domains_alter(&$domains) {
  *
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
- * @param $variations
+ * @param string[] $variations
  *   All the variations that have been made up as possible other incarnations
  *   of the page that needs a manual wipe. You can delete items as well as
  *   adding new ones, as long as they are path sections (and NOT full urls!)
  *   on which Acquia Purge can perform Varnish purges thereafter.
  *
  * @see _acquia_purge_input_path_variations()
- * @return
- *   Void.
+ * @return void
  */
 function hook_acquia_purge_variations_alter($path, &$variations) {
   if (in_array($path, array('<front>', '', '/'))) {

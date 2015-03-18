@@ -11,7 +11,7 @@
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -41,7 +41,7 @@ function _acquia_purge_get_diagnosis_acquiacloud($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -87,7 +87,7 @@ function _acquia_purge_get_diagnosis_balancers($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -137,7 +137,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -213,7 +213,7 @@ function _acquia_purge_get_diagnosis_domains($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -290,7 +290,7 @@ function _acquia_purge_get_diagnosis_expire($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -315,7 +315,7 @@ function _acquia_purge_get_diagnosis_logging($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -352,7 +352,7 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -418,7 +418,7 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -469,7 +469,7 @@ function _acquia_purge_get_diagnosis_processing_mode($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -494,7 +494,7 @@ function _acquia_purge_get_diagnosis_processing_capacity($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -557,7 +557,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -632,7 +632,7 @@ function _acquia_purge_get_diagnosis_queue($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
@@ -658,7 +658,7 @@ function _acquia_purge_get_diagnosis_statedata($t) {
  * @param string $t
  *   Name of the t() function to call.
  *
- * @returns
+ * @return array
  *   Associative array with the following elements:
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).

@@ -8,7 +8,7 @@
 /**
  * Menu callback; process a chunk of purge items via AJAX.
  *
- * @returns
+ * @return string
  *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
  */
 function acquia_purge_ajax_processor() {
@@ -65,7 +65,7 @@ function acquia_purge_ajax_processor() {
  * Menu callback to fulfill autocompletes on manual purging forms.
  *
  * @see _acquia_purge_manualpurge_base()
- * @returns
+ * @return array
  *   A standard Form API form-array.
  */
 function acquia_purge_autocomplete($string) {
@@ -435,7 +435,7 @@ function theme_acquia_purge_status_bar_widget($variables) {
 /**
  * Returns HTML for the status report.
  *
- * @param $variables
+ * @param array $variables
  *   Requirements array as returned by _acquia_purge_get_diagnosis().
  *
  * @see theme_status_report()

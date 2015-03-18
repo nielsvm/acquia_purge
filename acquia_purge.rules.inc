@@ -71,8 +71,7 @@ function acquia_purge_rules_action_info_alter(&$actions) {
  *   '<front>', 'user' or 'news'.
  *
  * @deprecated
- * @returns
- *   NULL
+ * @return null
  */
 function _acquia_purge_action_purge($path) {
 
@@ -101,8 +100,7 @@ function _acquia_purge_action_purge($path) {
  *   Non-associative array with absolute URL(s) or Drupal paths like
  *   '<front>', 'user' or 'news'.
  *
- * @returns
- *   NULL
+ * @return null
  */
 function _acquia_purge_action_flush_url($urls_and_paths) {
   $paths = array();
