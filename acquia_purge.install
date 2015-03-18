@@ -115,7 +115,9 @@ function acquia_purge_update_7102(&$sandbox) {
 
   // As we are losing our old counter and owners state, also clear the queue
   // as this will otherwise inevitably lead to sites with queue zombies.
-  _acquia_purge_queue_clear();
+  if (module_exists('acquia_purge')) {
+    _acquia_purge_queue_clear();
+  }
 }
 
 /**
@@ -155,7 +157,7 @@ function acquia_purge_update_7103(&$sandbox) {
 
   // Assign the new role to the site administrator.
   drupal_static_reset('user_role_permissions');
-  if ($admin_rid) {
+  if ($admin_rid && module_exists('acquia_purge')) {
     user_role_grant_permissions($admin_rid, array('purge on-screen'));
   }
 }
