@@ -316,11 +316,11 @@ function _acquia_purge_manualpurge_base(&$form, &$form_state) {
     '#prefix' => '<p>',
     '#suffix' => '</p>',
     '#value' => _acquia_purge_get('acquia_purge_cron')
-      ? t("Queue") : t("Purge"),
+      ? t("Queue") : t("Refresh"),
   );
   $form['submits']['page'] = array(
     '#type' => 'submit',
-    '#value' => t("Purge this page"),
+    '#value' => t("Refresh this page"),
   );
 
   return $form;

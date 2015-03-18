@@ -341,7 +341,7 @@ function acquia_purge_block_view($delta = '') {
     // Load acquia_purge.admin.inc to be able to call our form callback.
     module_load_include('inc', 'acquia_purge', 'acquia_purge.admin');
     return array(
-      'subject' => ($delta === 'paths') ? t('Purge paths') : NULL,
+      'subject' => ($delta === 'paths') ? t('Refresh paths') : NULL,
       'content' => drupal_get_form("acquia_purge_manualpurge_form_$delta"),
     );
   }
