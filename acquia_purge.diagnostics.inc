@@ -145,6 +145,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_domains($t) {
+  $allriskmode = _acquia_purge_get('acquia_purge_allriskmode');
   $domains_link = drupal_get_path('module', 'acquia_purge') . '/DOMAINS.txt';
   $domains_link = url($domains_link);
   $domains = _acquia_purge_get_domains();
@@ -159,7 +160,8 @@ function _acquia_purge_get_diagnosis_domains($t) {
       . ' 4 domains or when it is incorrect.', array('!link' => $domains_link)),
   );
 
-  // Start evaluating the list of domain names.
+  // Evaluate domain names configuration and kick off warnings or even a full
+  // block when the situation asks for it.
   if (!$domains_c) {
     $test['value'] = $t('0 domains detected.');
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
@@ -184,6 +186,14 @@ function _acquia_purge_get_diagnosis_domains($t) {
       . ' target="_blank">specify your domains</a> to not exceed 6 domains.',
       array('!link' => $domains_link, '@no' => $domains_c));
   }
+  elseif ($allriskmode) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('Because you have @no domain names there is a'
+      . ' <b>high risk</b> that purging your site will put stress on your'
+      . ' servers, it is <b>strongly recommended</b> to <a href="!link"'
+      . ' target="_blank">specify your domains</a> to not exceed 6 domains.',
+      array('!link' => $domains_link, '@no' => $domains_c));
+  }
   else {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Because you have @no domain names there is a'
@@ -193,6 +203,7 @@ function _acquia_purge_get_diagnosis_domains($t) {
       . ' prevent system failure, pending purges will not be processed!',
       array('!link' => $domains_link, '@no' => $domains_c));
   }
+
   return $test;
 }
 
@@ -554,6 +565,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_queue($t) {
+  $allriskmode = _acquia_purge_get('acquia_purge_allriskmode');
   $stats = _acquia_purge_queue_stats();
   $test = array('title' => $t('Queue volume'));
 
@@ -585,6 +597,17 @@ function _acquia_purge_get_diagnosis_queue($t) {
       . ' shorter cron interval. If you have many domain names, consider'
       . ' reducing the domains. As safety measure, Acquia Purge will shut'
       . ' itself down once the queue reaches @shutdown items!', $tvars);
+  }
+  elseif ($allriskmode && ($stats['remaining'] >= $shutdown)) {
+    $test['value'] = $stats['remaining'];
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('Your queue contains @total items and crossed'
+      . ' the safety limit of @shutdown items, Acquia Purge has not shut itself'
+      . ' down because you enabled "all risk mode". Because of this, you are'
+      . ' not entitled to Acquia support for any tickets related to queue'
+      . ' processing. You are being highly encouraged to lower your slowdown'
+      . ' factor by reducing domain names and/or increasing your cron interval'
+      . ' or enable cron processing when you have not yet done this.', $tvars);
   }
   elseif ($stats['remaining'] >= $shutdown) {
     $test['value'] = $stats['remaining'];

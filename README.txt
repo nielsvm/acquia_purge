@@ -131,5 +131,11 @@ exist as of this version and documented below:
 ║                          ║       ║ can consider disabling it followed by     ║
 ║                          ║       ║ 'drush ap-forget' to see if that works.   ║
 ║                          ║       ║ $conf['acquia_purge_memcache'] = FALSE;   ║
+║ acquia_purge_allriskmode ║ FALSE ║ When set to TRUE, this disables full      ║
+║                          ║       ║ blocking checks for too high queue volumes║
+║                          ║       ║ and too many domain names. Using this mode║
+║                          ║       ║ excludes your support SLA entitlement and ║
+║                          ║       ║ rules out support on these checks from the║
+║                          ║       ║ Acquia Purge issue queue.                 ║
 ║                          ║       ║                                           ║
 ╚══════════════════════════╩═══════╩═══════════════════════════════════════════╝

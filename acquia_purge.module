@@ -532,6 +532,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_log_success'  => TRUE,
         'acquia_purge_variations'   => TRUE,
         'acquia_purge_memcache'     => TRUE,
+        'acquia_purge_allriskmode'  => FALSE,
       ),
       'state' => array(
         'qtotal'        => 0,
