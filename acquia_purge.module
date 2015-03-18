@@ -215,6 +215,11 @@ function acquia_purge_menu() {
  */
 function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
 
+  // When running in passive mode, we stop automatic queuing.
+  if (_acquia_purge_get('acquia_purge_passivemode')) {
+    return;
+  }
+
   // Check for errors once, but refuse operation during the entire request.
   static $error;
   if ($error) {
@@ -532,6 +537,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_log_success'  => TRUE,
         'acquia_purge_variations'   => TRUE,
         'acquia_purge_memcache'     => TRUE,
+        'acquia_purge_passivemode'  => FALSE,
         'acquia_purge_allriskmode'  => FALSE,
       ),
       'state' => array(

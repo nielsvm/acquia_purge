@@ -666,10 +666,11 @@ function _acquia_purge_get_diagnosis_statedata($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_status($t) {
+  $passivemode = _acquia_purge_get('acquia_purge_passivemode');
   $stats = _acquia_purge_queue_stats();
   $test = array(
     'title' => $t('Status'),
-    'value' => $t('idle'),
+    'value' => $passivemode ? $t('idle (passive mode)') : t('idle'),
     'severity' => ACQUIA_PURGE_SEVLEVEL_INFO,
   );
 

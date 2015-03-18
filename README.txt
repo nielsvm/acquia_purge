@@ -131,6 +131,11 @@ exist as of this version and documented below:
 ║                          ║       ║ can consider disabling it followed by     ║
 ║                          ║       ║ 'drush ap-forget' to see if that works.   ║
 ║                          ║       ║ $conf['acquia_purge_memcache'] = FALSE;   ║
+║ acquia_purge_passivemode ║ FALSE ║ When set to TRUE, this will cause the     ║
+║                          ║       ║ hook_expire_cache() implementation to stop║
+║                          ║       ║ working and effectively allows the module ║
+║                          ║       ║ to remain enabled in local environments   ║
+║                          ║       ║ without actually purging automatically.   ║
 ║ acquia_purge_allriskmode ║ FALSE ║ When set to TRUE, this disables full      ║
 ║                          ║       ║ blocking checks for too high queue volumes║
 ║                          ║       ║ and too many domain names. Using this mode║
