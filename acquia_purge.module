@@ -1590,36 +1590,6 @@ function _acquia_purge_queue() {
 }
 
 /**
- * Queue manager: add a single purge to the queue.
- *
- * @param string $path
- *   The Drupal path (for example: '<front>', 'user/1' or a alias).
- *
- * @return int The total amount of items in the queue.
- */
-function _acquia_purge_queue_add($path) {
-  $queue = _acquia_purge_queue();
-
-  // Perform input cleaning to end up with a somewhat trustworthy path string.
-  $path = _acquia_purge_input_clean($path);
-
-  // Retrieve and bump the queue counter.
-  $qtotal = _acquia_purge_get('qtotal');
-  $qtotal++;
-
-  // Add the non-associative purge item definition.
-  $queue->createItemMultiple(array(array($path)));
-
-  // Store the queue total counter in our state storage.
-  _acquia_purge_state_set('qtotal', $qtotal);
-
-  // Trigger the AJAX processor the next time the user loads a page.
-  _acquia_purge_ajaxprocessor_trigger();
-
-  return $qtotal;
-}
-
-/**
  * Queue manager: clear the queue and invalidate all running processes.
  *
  * @param bool $state_only
@@ -2308,39 +2278,46 @@ function acquia_purge_purge_node(&$node) {
  *   'good', 'bad', 'percent' and 'purgehistory'.
  */
 function acquia_purge_purge_path($path) {
-
-  // Queue the path if it didn't match the deduplication log.
   if (!_acquia_purge_queue_deduplicate($path)) {
-    _acquia_purge_queue_add($path);
+    $path = _acquia_purge_input_clean($path);
+
+    // Queue the item, update the state counter and trigger the AJAX processor.
+    if (_acquia_purge_queue()->createItem(array($path))) {
+      _acquia_purge_state_set('qtotal',
+        _acquia_purge_get('qtotal') + count($items));
+      _acquia_purge_ajaxprocessor_trigger();
+    }
   }
 
-  // Return the statistics array based returning useful information about the
-  // current state of the purge queue.
   return _acquia_purge_queue_stats();
 }
 
 /**
  * Purge several Drupal paths from Varnish.
  *
- * @param string $paths
+ * @param string[] $paths
  *   Array with Drupal paths (for example: '<front>', 'user/1' or a alias).
  *
  * @return array
  *   Associative array with the keys 'running', 'total', 'remaining',
  *   'good', 'bad', 'percent' and 'purgehistory'.
  */
-function acquia_purge_purge_paths($paths) {
+function acquia_purge_purge_paths(array $paths) {
+  $items = array();
 
-  // Dispatch the paths to acquia_purge_purge_path().
+  // Check the deduplication log, clean the paths and propagate $queue_items.
   foreach ($paths as $path) {
-
-    // Queue the path if it didn't match the deduplication log.
     if (!_acquia_purge_queue_deduplicate($path)) {
-      _acquia_purge_queue_add($path);
+      $items[] = array(_acquia_purge_input_clean($path));
     }
   }
 
-  // Return the statistics array based returning useful information about the
-  // current state of the purge queue.
+  // Queue the items, update the state counter and trigger the AJAX processor.
+  if (_acquia_purge_queue()->createItemMultiple($items)) {
+    _acquia_purge_state_set('qtotal',
+      _acquia_purge_get('qtotal') + count($items));
+    _acquia_purge_ajaxprocessor_trigger();
+  }
+
   return _acquia_purge_queue_stats();
 }
