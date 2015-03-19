@@ -6,62 +6,6 @@
  */
 
 /**
- * Menu callback; process a chunk of purge items via AJAX.
- *
- * @return string
- *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
- */
-function acquia_purge_ajax_processor() {
-  $stats = _acquia_purge_queue_stats();
-  $stats['widget'] = '&nbsp;';
-  $stats['locked'] = FALSE;
-  $stats['error'] = FALSE;
-
-  // Ask our diagnostics system if there are any blocking issues that should
-  // stop us from processing the queue and notify the user about it.
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
-    $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
-    _acquia_purge_get_diagnosis_logged($err);
-    $stats['error'] = $err['description'];
-  }
-
-  // If nothing was found, attempt to acquire the lock and process some items.
-  else {
-    if (_acquia_purge_queue_lock()) {
-
-      // This automatically pops an X amount of items for which we have enough
-      // resource capacity and processes them straight away.
-      _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
-
-      // Processing finished, so update $stats to reflect the new values.
-      foreach (_acquia_purge_queue_stats() as $key => $value) {
-        $stats[$key] = $value;
-      }
-
-      // If errors did occur meanwhile, one indication of this could be that
-      // the history list remained empty, raise an error if it is empty.
-      if (empty($stats['purgehistory'])) {
-        $stats['error'] = t("The system seems to be having difficulties
-          refreshing recent content changes. Your work won't be lost, but please
-          do ask your technical administrator to check the logs.");
-      }
-
-      _acquia_purge_queue_lock(NULL);
-    }
-    else {
-      $stats['locked'] = TRUE;
-    }
-  }
-
-  // Render the status widget and add it to the statistics array.
-  if (!$stats['error']) {
-    $stats['widget'] = theme('acquia_purge_status_bar_widget', $stats);
-  }
-
-  return drupal_json_output($stats);
-}
-
-/**
  * Menu callback to fulfill autocompletes on manual purging forms.
  *
  * @see _acquia_purge_manualpurge_base()
