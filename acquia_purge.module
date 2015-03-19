@@ -1375,7 +1375,7 @@ function _acquia_purge_queue_add($path) {
   $qtotal++;
 
   // Add the non-associative purge item definition.
-  $queue->createItem(array($path));
+  $queue->createItemMultiple(array(array($path)));
 
   // Register the currently logged on user as one of the queue users. These
   // users are given the AJAX client side script until the queue is cleaned up.
@@ -1549,24 +1549,15 @@ function _acquia_purge_queue_pop($processor = NULL) {
   $qgood  = _acquia_purge_get('qgood');
   $qbad   = _acquia_purge_get('qbad');
   $queue  = _acquia_purge_queue();
-  $items  = array();
+  $items  = $deletes = $releases = array();
 
-  // No longer pop any items if we reached the resource limits of this script.
-  if (!$maxitems) {
-    return $items;
-  }
-
-  // Attempt to pop $maxitems amount of items from the queue.
-  for ($i = 0; $i < $maxitems; $i++) {
-    if (!($item = $queue->claimItem())) {
-      continue;
-    }
+  // Work as many items from the queue as we can and are allowed to do.
+  foreach ($queue->claimItemMultiple($maxitems) as $item) {
 
     // Discard any items that we already purged since the last queue clear.
     if (_acquia_purge_queue_deduplicate($item->data[0], 'purged')) {
-      $queue->deleteItem($item);
+      $deletes[] = $item;
       $qtotal--;
-      $i++;
       continue;
     }
 
@@ -1579,11 +1570,11 @@ function _acquia_purge_queue_pop($processor = NULL) {
     _acquia_purge_get_capacity(1);
     if ($result) {
       _acquia_purge_queue_deduplicate($item->data[0], 'purged');
-      $queue->deleteItem($item);
+      $deletes[] = $item;
       $qgood++;
     }
     else {
-      $queue->releaseItem($item);
+      $releases[] = $item;
       $qbad++;
     }
 
@@ -1592,6 +1583,10 @@ function _acquia_purge_queue_pop($processor = NULL) {
     _acquia_purge_state_set('qgood', $qgood);
     _acquia_purge_state_set('qbad', $qbad);
   }
+
+  // Delete and release items from the queue that we identified as such.
+  $queue->deleteItemMultiple($deletes);
+  $queue->releaseItemMultiple($releases);
 
   // As soon as the queue got emptied, reset associated state data.
   if ((int) $queue->numberOfItems() === 0) {

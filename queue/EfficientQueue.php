@@ -143,6 +143,9 @@ class EfficientQueue extends SystemQueue implements EfficientQueueInterface {
    * {@inheritdoc}
    */
   public function deleteItemMultiple(array $items) {
+    if (empty($items)) {
+      return;
+    }
     $item_ids = array();
     foreach ($items as $item) {
       $item_ids[] = $item->item_id;
@@ -156,6 +159,9 @@ class EfficientQueue extends SystemQueue implements EfficientQueueInterface {
    * {@inheritdoc}
    */
   public function releaseItemMultiple(array $items) {
+    if (empty($items)) {
+      return array();
+    }
     $item_ids = array();
     foreach ($items as $item) {
       $item_ids[] = $item->item_id;
