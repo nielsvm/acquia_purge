@@ -1347,7 +1347,10 @@ function _acquia_purge_queue() {
 
   // We cache the queue object statically so create it once per HTTP request.
   if (is_null($queue)) {
-    $queue = DrupalQueue::get('acquia_purge', TRUE);
+    $directory = drupal_get_path('module', 'acquia_purge') . '/queue';
+    require_once($directory . '/EfficientQueueInterface.php');
+    require_once($directory . '/EfficientQueue.php');
+    $queue = new EfficientQueue();
   }
 
   return $queue;
