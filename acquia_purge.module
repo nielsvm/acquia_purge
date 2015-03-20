@@ -1610,8 +1610,7 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
 
   // Only retrieve and really delete the queue if we are asked to.
   if ($state_only === FALSE) {
-    $queue = _acquia_purge_queue();
-    $queue->deleteQueue();
+    _acquia_purge_queue()->deleteQueue();
   }
 }
 
