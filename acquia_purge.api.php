@@ -30,7 +30,6 @@
  * @see _acquia_purge_get_domains()
  * @see _acquia_purge_get_domains_add()
  * @see _acquia_purge_get_diagnosis_domains()
- * @return void
  */
 function hook_acquia_purge_domains_alter(&$domains) {
   $blacklist = array('domain_a', 'domain_b');
@@ -62,7 +61,6 @@ function hook_acquia_purge_domains_alter(&$domains) {
  *   on which Acquia Purge can perform Varnish purges thereafter.
  *
  * @see _acquia_purge_input_path_variations()
- * @return void
  */
 function hook_acquia_purge_variations_alter($path, &$variations) {
   if (in_array($path, array('<front>', '', '/'))) {

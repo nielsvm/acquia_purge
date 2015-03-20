@@ -484,8 +484,6 @@ function _acquia_purge_ajaxprocessor_is_triggered() {
 
 /**
  * AJAX Processor: load the JS/CSS assets and other UI elements.
- *
- * @return void
  */
 function _acquia_purge_ajaxprocessor_loadassets() {
 
@@ -586,8 +584,6 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
 
 /**
  * AJAX Processor: trigger the currently authenticated user for AJAX processing.
- *
- * @return void
  */
 function _acquia_purge_ajaxprocessor_trigger() {
   static $triggered;
@@ -624,7 +620,7 @@ function _acquia_purge_ajaxprocessor_trigger() {
 /**
  * Determine whether we are running on Acquia Cloud or not.
  *
- * @return bool
+ * @return true|false
  *   A boolean expression indicating if we currently run on Acquia cloud.
  */
 function _acquia_purge_are_we_on_acquiacloud() {
@@ -648,7 +644,7 @@ function _acquia_purge_are_we_on_acquiacloud() {
 /**
  * Determine if critical error conditions exists disallowing purges.
  *
- * @return bool
+ * @return true|false
  *   Boolean TRUE or FALSE indicating access.
  */
 function _acquia_purge_are_we_allowed_to_purge() {
@@ -666,7 +662,7 @@ function _acquia_purge_are_we_allowed_to_purge() {
 /**
  * Determine if its safe to use memcached based features.
  *
- * @return bool
+ * @return true|false
  *   Boolean TRUE if we can, FALSE if not.
  */
 function _acquia_purge_are_we_using_memcached() {
@@ -748,7 +744,7 @@ function _acquia_purge_export_debug_symbols($symbols) {
  * @param bool $get_default
  *   (optional) Retrieve the default value instead of the real value.
 
- * @return
+ * @return mixed
  *   Either the default or actual value of the item request.
  *
  * @see variable_get()
@@ -768,6 +764,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_http'         => TRUE,
         'acquia_purge_https'        => FALSE,
         'acquia_purge_base_path'    => base_path(),
+        'acquia_purge_errorlimit'   => TRUE,
         'acquia_purge_log_success'  => TRUE,
         'acquia_purge_variations'   => TRUE,
         'acquia_purge_memcache'     => TRUE,
@@ -1007,7 +1004,6 @@ function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
  *   they already have been logged since the last queue wipe.
  *
  * @see _acquia_purge_get_diagnosis()
- * @return void
  */
 function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
   $map = array(
@@ -1125,8 +1121,6 @@ function _acquia_purge_get_domains() {
  *   The domain string to be added to the list.
  * @param array &$domains
  *   A reference to the array of currently gathered domain names.
- *
- * @return void
  */
 function _acquia_purge_get_domains_add($domain, &$domains) {
   $domain = trim(drupal_strtolower($domain));
@@ -1141,7 +1135,6 @@ function _acquia_purge_get_domains_add($domain, &$domains) {
  * @param array $domains
  *   A reference to the array of currently gathered domain names.
  *
- * @return void
  * @warning
  *   The current implementation is known to be fishy and dangerous. There are
  *   serious plans to make this cleaner (Acquia reference: CL-7068). @TODO
@@ -1199,7 +1192,6 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
  * @param array $domains
  *   A reference to the array of currently gathered domain names.
  *
- * @return void
  * @warning
  *   The way the sites/sites.php array was designed was to make it a
  *   lookup map with the current active URI as lookup resource, it makes
@@ -1382,7 +1374,6 @@ function _acquia_purge_input_clean($path) {
  *
  * @see acquia_purge_manualpurge_form_submit()
  * @see drush_acquia_purge_ap_purge()
- * @return void
  */
 function _acquia_purge_input_path_variations(&$paths, $path = NULL) {
 
@@ -1595,8 +1586,6 @@ function _acquia_purge_queue() {
  * @param bool $state_only
  *   Only wipe associated state data as the queue is already certainly
  *   cleared, for instance when numberOfItems() returned 0.
- *
- * @return void
  */
 function _acquia_purge_queue_clear($state_only = FALSE) {
 
@@ -1643,7 +1632,7 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
  *   (optional) The $l parameter stands for 'limit' and represents the rotation
  *   limit kept for each list, as the list resets when it grew bigger than that.
  *
- * @return bool
+ * @return true|false
  *   TRUE when the path exists, FALSE when it doesn't.
  */
 function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
@@ -2111,7 +2100,7 @@ function _acquia_purge_state_initialize() {
  * @param null|mixed $default
  *   (optional) The default value to use if this data entry has never been set.
  *
- * @return
+ * @return mixed
  *   The value of the data entry.
  *
  * @see _acquia_purge_state_set()
@@ -2137,9 +2126,6 @@ function _acquia_purge_state_get($name, $default = NULL) {
  *   The name of the state data property to store.
  * @param string $value
  *   The value to set. This can be any PHP data type.
- *
- * @return
- *   Void.
  *
  * @see _acquia_purge_state_get()
  * @see _acquia_purge_state_initialize()
