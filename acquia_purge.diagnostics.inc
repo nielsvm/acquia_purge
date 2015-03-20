@@ -667,6 +667,7 @@ function _acquia_purge_get_diagnosis_statedata($t) {
  */
 function _acquia_purge_get_diagnosis_status($t) {
   $passivemode = _acquia_purge_get('acquia_purge_passivemode');
+  $errorlimit = _acquia_purge_get('acquia_purge_errorlimit');
   $stats = _acquia_purge_queue_stats();
   $test = array(
     'title' => $t('Status'),
@@ -674,15 +675,23 @@ function _acquia_purge_get_diagnosis_status($t) {
     'severity' => ACQUIA_PURGE_SEVLEVEL_INFO,
   );
 
-  // If the bad counter is too high, self-shutdown to prevent endless purging.
-  if ($stats['bad'] > 10) {
+  // When the user did not set a static integer as error limit, we calculate
+  // it dynamically with limit = factor^3, with 20 as lowest limit. The higher
+  // the factor is, the more tolerant our limit is. Limits for factors 1-14:
+  // 20, 20, 27, 64, 125, 216, 343, 512, 729, 1000, 1331, 1728, 2197, 2744
+  if (!is_int($errorlimit)) {
+    $factor = _acquia_purge_get_capacity_factor();
+    $errorlimit = ($factor <= 2) ? 20 : ceil(pow($factor, 3));
+  }
+  if ($stats['bad'] > $errorlimit) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
-    $test['description'] = $t('We counted @bad errors since the last time the'
-      . ' queue finished. To prevent the system from endlessly attempting to'
-      . ' process the queue, it is recommended to check your logs to see what'
-      . ' is going on. Once resolved, you should clear Varnish manually and'
-      . ' clear the queue by calling drush ap-forget, processing will then'
-      . ' start over from scratch.', array('@bad' => $stats['bad']));
+    $test['description'] = $t(
+        'Acquia Purge failed more then @limit times (@bad) at clearing pages,'
+      . ' since the queue finished last time. To prevent endless attempts to'
+      . ' process the queue, external cache invalidation has been disabled.'
+      . ' It is recommended to ask your site maintainer to analyze the logs'
+      . ' for errors, before lifting the blockade with "drush ap-forget".',
+      array('@limit' => $errorlimit, '@bad' => $stats['bad']));
     return $test;
   }
 

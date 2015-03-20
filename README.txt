@@ -100,6 +100,14 @@ exist as of this version and documented below:
 ║                          ║       ║ you know what you are doing.              ║
 ║                          ║       ║ $conf['acquia_purge_base_path'] = '/sub/';║
 ║                          ║       ║                                           ║
+║ acquia_purge_errorlimit  ║ TRUE  ║ The system shuts down when it counted too ║
+║                          ║       ║ many HTTP errors. When TRUE, this limit is║
+║                          ║       ║ calculated with "slowdown factor^3", use  ║
+║                          ║       ║ 'drush apd' to see the actual factor. If  ║
+║                          ║       ║ you want a static limit instead, this has ║
+║                          ║       ║ to be set as integer value, e.g:          ║
+║                          ║       ║ $conf['acquia_purge_errorlimit'] = 500;   ║
+║                          ║       ║                                           ║
 ║ acquia_purge_log_success ║ TRUE  ║ By default this module will log both      ║
 ║                          ║       ║ successes and failure, which is helpful   ║
 ║                          ║       ║ for those setting the module up. But once ║
