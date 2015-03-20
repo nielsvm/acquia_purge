@@ -1789,7 +1789,7 @@ function _acquia_purge_queue_pop($processor = NULL) {
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
  *
- * @return bool
+ * @return true|false
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
  */
 function _acquia_purge_queue_processpurge($path) {
