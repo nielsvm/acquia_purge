@@ -1646,19 +1646,36 @@ function _acquia_purge_purge($path) {
         $overall_success = FALSE;
       }
 
-      // Log the failing attempt and include verbose debugging information.
-      watchdog(
-        'acquia_purge',
-        "Failed attempt to purge '%url' from load balancer %balancer for "
-          . "unknown reasons as curl failed. The path item is re-queued! "
-          . "Debugging symbols: '%debug',",
+      // Write the failure to watchdog and be as descriptive as we can.
+      switch ($rqst->error_curl) {
+        case CURLE_COULDNT_CONNECT:
+          $msg = "Cannot connect to %bal:80, '%path' goes back to queue!";
+          break;
+        case CURLE_COULDNT_RESOLVE_HOST:
+          $msg = "Cannot resolve host %bal, '%path' goes back to queue!";
+          break;
+        case CURLE_OPERATION_TIMEDOUT:
+          $msg = "Connecting to %bal exceeded %timeout seconds, '%path'"
+            . ' goes back to queue!';
+          break;
+        case CURLE_URL_MALFORMAT:
+          $msg = "Cannot purge malformed URL '%uri', '%path' goes back to"
+            . ' queue! DEBUG: %debug';
+          break;
+        default:
+          $msg = "Failed purging '%uri' from %bal, '%path' goes back to queue!"
+            . ' CURL: %curl; DEBUG: %debug';
+          break;
+      }
+      watchdog('acquia_purge', $msg,
         array(
-          '%url' => $rqst->uri,
-          '%balancer' => $rqst->balancer,
+          '%uri' => $rqst->uri,
+          '%bal' => $rqst->balancer,
+          '%path' => $rqst->path,
+          '%curl' => (string)curl_strerror($rqst->error_curl),
           '%debug' => $rqst->error_debug,
-        ),
-        WATCHDOG_ERROR
-      );
+          '%timeout' => ACQUIA_PURGE_REQUEST_TIMEOUT
+        ), WATCHDOG_ERROR);
     }
   }
 
