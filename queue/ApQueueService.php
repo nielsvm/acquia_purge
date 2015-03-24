@@ -241,13 +241,11 @@ class ApQueueService {
     // How much can we safely process during this request?
     $maxitems = _acquia_purge_get_capacity();
     if ($maxitems < 1) {
-      var_dump($maxitems);
       return FALSE;
     }
 
     // Claim a number of items we can maximally process during request lifetime.
     if (!($claims = $this->queue()->claimItemMultiple($maxitems))) {
-      var_dump($claims);
       $this->clearState();
       return FALSE;
     }
@@ -278,6 +276,12 @@ class ApQueueService {
     _acquia_purge_get_capacity(count($deletes) + count($releases));
     $this->queue()->deleteItemMultiple($deletes);
     $this->queue()->releaseItemMultiple($releases);
+
+    // When the bottom of the queue has been reached, reset all state data.
+    if ($this->queue()->numberOfItems() === 0) {
+      $this->clearState();
+    }
+
     return TRUE;
   }
 

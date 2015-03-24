@@ -30,16 +30,6 @@ class EfficientQueue extends SystemQueue implements ApQueueInterface {
 
   /**
    * {@inheritdoc}
-   */
-  public function counter($state_key) {
-    if (!isset($this->counters[$state_key])) {
-      $this->counters[$state_key] = new ApQueueCounter($state_key);
-    }
-    return $this->counters[$state_key];
-  }
-
-  /**
-   * {@inheritdoc}
    *
    * SystemQueue::claimItem() doesn't included expired items in its query
    * which means that it essentially breaks its own interface promise. Therefore
@@ -171,6 +161,16 @@ class EfficientQueue extends SystemQueue implements ApQueueInterface {
   /**
    * {@inheritdoc}
    */
+  public function counter($state_key) {
+    if (!isset($this->counters[$state_key])) {
+      $this->counters[$state_key] = new ApQueueCounter($state_key);
+    }
+    return $this->counters[$state_key];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function deleteItemMultiple(array $items) {
     if (empty($items)) {
       return;
@@ -182,6 +182,23 @@ class EfficientQueue extends SystemQueue implements ApQueueInterface {
     db_delete('queue')
       ->condition('item_id', $item_ids, 'IN')
       ->execute();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function deleteQueue() {
+    parent::deleteQueue();
+    $this->counter('total')->set(0);
+    $this->counter('bad')->set(0);
+    $this->counter('good')->set(0);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function numberOfItems() {
+    return (int) parent::numberOfItems();
   }
 
   /**
@@ -205,16 +222,6 @@ class EfficientQueue extends SystemQueue implements ApQueueInterface {
     else {
       return $items;
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function deleteQueue() {
-    parent::deleteQueue();
-    $this->counter('total')->set(0);
-    $this->counter('bad')->set(0);
-    $this->counter('good')->set(0);
   }
 
 }

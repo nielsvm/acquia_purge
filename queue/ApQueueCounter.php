@@ -39,7 +39,7 @@ class ApQueueCounter implements ApQueueCounterInterface {
    */
   public function __construct($state_key) {
     $this->state_key = 'q' . $state_key;
-    $this->current = _acquia_purge_state_get($this->state_key, SELF::INITIAL);
+    $this->current = _acquia_purge_state_get($this->state_key, self::INITIAL);
   }
 
   /**
