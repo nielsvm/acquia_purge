@@ -130,7 +130,7 @@ function acquia_purge_cron() {
   }
 
   // Process as much items as we can and release the lock when done.
-  ApQueueService::i()->process('_acquia_purge_purge');
+  ApQueueService::i()->process();
   ApQueueService::i()->lock(NULL);
 }
 
@@ -558,7 +558,7 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
 
       // This automatically pops an X amount of items for which we have enough
       // resource capacity and processes them straight away.
-      ApQueueService::i()->process('_acquia_purge_purge');
+      ApQueueService::i()->process();
 
       // Processing finished, so update $stats to reflect the new values.
       foreach (ApQueueService::i()->stats() as $key => $value) {
@@ -1503,7 +1503,7 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  *   @code
  *   $queue = ApQueueService::i();
  *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
- *   $queue->process('_acquia_purge_purge');
+ *   $queue->process();
  *   @endcode
  *
  * @param string $path

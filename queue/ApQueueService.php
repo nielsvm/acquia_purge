@@ -253,9 +253,9 @@ class ApQueueService {
    * Process as many items from the queue as the runtime capacity allows.
    *
    * @param string $callback
-   *   A PHP callable that processes one queue item, which will get called
-   *   using call_user_func_array(). The callback MUST return TRUE on success
-   *   and FALSE when it failed so queue items can get released or deleted.
+   *   (optional) A PHP callable that processes one queue item, which will get
+   *   called with call_user_func_array(). The callback MUST return TRUE on
+   *   success and FALSE when it failed so queue items can get released/deleted.
    *
    *   The $callback is committed to processing the item. Crashes during the
    *   callback's execution, will result in a claimed queue item not getting
@@ -265,7 +265,7 @@ class ApQueueService {
    *   Returns TRUE when it processed items, FALSE when the capacity limit has
    *   been reached or when the queue is empty and there's nothing left to do.
    */
-  function process($callback) {
+  function process($callback = '_acquia_purge_purge') {
 
     // Do not even attempt to process when the total counter is zero.
     if ($this->queue()->counter('qtotal')->get() === 0) {

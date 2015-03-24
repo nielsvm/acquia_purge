@@ -242,7 +242,7 @@ Frequently asked questions
   depend on cron or do it yourself with:
     $queue = ApQueueService::i();
     if ($queue->lock()) {
-      $queue->process('_acquia_purge_purge');
+      $queue->process();
       $queue->lock(NULL);
     }
 
