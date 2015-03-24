@@ -46,10 +46,7 @@ function acquia_purge_install() {
  */
 function acquia_purge_uninstall() {
   drupal_load('module', 'acquia_purge');
-
-  // Delete all the items within the queue we maintained.
-  $queue = DrupalQueue::get('acquia_purge', TRUE);
-  $queue->deleteQueue();
+  ApQueueService::i()->queue()->deleteQueue();
 
   // Wipe out state data in the case the user re-enables the module.
   _acquia_purge_state_wipe();
@@ -116,7 +113,7 @@ function acquia_purge_update_7102(&$sandbox) {
   // As we are losing our old counter and owners state, also clear the queue
   // as this will otherwise inevitably lead to sites with queue zombies.
   if (module_exists('acquia_purge')) {
-    _acquia_purge_queue_clear();
+    ApQueueService::i()->queue()->clear();
   }
 }
 

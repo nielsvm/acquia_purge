@@ -2,16 +2,26 @@
 
 /**
  * @file
- * Contains EfficientQueueInterface.
+ * Contains ApQueueInterface.
  */
 
 /**
- * Describes a DrupalReliableQueueInterface compliant queue that supports
- * efficient storage and access models.
+ * DrupalReliableQueueInterface derivative supporting efficient storage models.
  *
+ * @see DrupalReliableQueueInterface
  * @see http://github.com/nielsvm/purge/blob/8.x-3.x/src/Queue/PluginInterface.php
  */
-interface EfficientQueueInterface extends DrupalReliableQueueInterface {
+interface ApQueueInterface extends DrupalReliableQueueInterface {
+
+  /**
+   * Retrieve the requested counter object.
+   *
+   * @param int $state_key
+   *   The key with which the counter is stored in state storage.
+   *
+   * @return ApQueueCounterInterface
+   */
+  public function counter($state_key);
 
   /**
    * Add multiple items to the queue and store them efficiently.

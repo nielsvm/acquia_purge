@@ -69,6 +69,16 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  */
 function acquia_purge_init() {
 
+  // Load the queue service - which is in acquia_purge.info - but we are
+  // preventing autoload failures for users that upgraded.
+
+  // To assure availability and because we want to prevent autoloader issues for
+  // upgrading users at all cost, we always load ApQueueService a
+
+  $modulepath = drupal_get_path('module', 'acquia_purge');
+  require_once($modulepath . '/queue/ApQueueService.php');
+  require_once($modulepath . '/acquia_purge.deprecated.inc');
+
   // Load the Ajax processor's assets - only happens when all its checks passed.
   _acquia_purge_ajaxprocessor_loadassets();
 }
@@ -102,7 +112,7 @@ function acquia_purge_cron() {
   }
 
   // Acquire a lock and ensure nobody else is purging something.
-  if (!_acquia_purge_queue_lock()) {
+  if (!ApQueueService::i()->lock()) {
     return;
   }
 
@@ -114,18 +124,14 @@ function acquia_purge_cron() {
   }
 
   // Retrieve the statistics and determine if processing is needed at all.
-  $stats = _acquia_purge_queue_stats();
+  $stats = ApQueueService::i()->stats();
   if (!$stats['running']) {
     return;
   }
 
-  // Calculate how many iterations we need and start processing accordingly.
-  do {
-    $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
-  } while (count($items));
-
-  // We are done so lets release the lock.
-  _acquia_purge_queue_lock(NULL);
+  // Process as much items as we can and release the lock when done.
+  ApQueueService::i()->process('_acquia_purge_purge');
+  ApQueueService::i()->lock(NULL);
 }
 
 /**
@@ -259,7 +265,7 @@ function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
   }
 
   // Queue all paths that we received from Expire.
-  acquia_purge_purge_paths($urls);
+  ApQueueService::i()->addPaths($urls);
 }
 
 /**
@@ -533,7 +539,7 @@ function _acquia_purge_ajaxprocessor_loadassets() {
  *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
  */
 function _acquia_purge_ajaxprocessor_processorcallback() {
-  $stats = _acquia_purge_queue_stats();
+  $stats = ApQueueService::i()->stats();
   $stats['widget'] = '&nbsp;';
   $stats['locked'] = FALSE;
   $stats['error'] = FALSE;
@@ -548,14 +554,14 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
 
   // If nothing was found, attempt to acquire the lock and process some items.
   else {
-    if (_acquia_purge_queue_lock()) {
+    if (ApQueueService::i()->lock()) {
 
       // This automatically pops an X amount of items for which we have enough
       // resource capacity and processes them straight away.
-      _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
+      ApQueueService::i()->process('_acquia_purge_purge');
 
       // Processing finished, so update $stats to reflect the new values.
-      foreach (_acquia_purge_queue_stats() as $key => $value) {
+      foreach (ApQueueService::i()->stats() as $key => $value) {
         $stats[$key] = $value;
       }
 
@@ -567,7 +573,7 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
           do ask your technical administrator to check the logs.");
       }
 
-      _acquia_purge_queue_lock(NULL);
+      ApQueueService::i()->lock(NULL);
     }
     else {
       $stats['locked'] = TRUE;
@@ -772,16 +778,12 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_allriskmode'  => FALSE,
       ),
       'state' => array(
-        'qtotal'        => 0,
-        'qgood'         => 0,
-        'qbad'          => 0,
         'locked'        => FALSE,
         'queued'        => array(),
         'purged'        => array(),
         'uiusers'       => array(),
         'logged_errors' => array(),
       ),
-
     );
   }
 
@@ -830,9 +832,9 @@ function _acquia_purge_get_balancers() {
  * Calculate how many items can be purged during the execution of this script.
  *
  * @param int $subtract
- *   (optional) Integer value to subtract from the initially calculated value, so
- *   passing the number of popped items in from _acquia_purge_queue_pop() will
- *   lead this return value being updated the next time its requested.
+ *   (optional) Integer to subtract from the initially calculated capacity. The
+ *   queue service uses this in ApQueueService::process() when it processed
+ *   a number of items.
  *
  * @return int
  *   Integer indicating how many items may be popped from the queue.
@@ -1561,218 +1563,17 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
 }
 
 /**
- * Queue manager: return the queue object in use for Acquia Purge.
- *
- * @return DrupalQueue
- * @see DrupalQueue::get
- */
-function _acquia_purge_queue() {
-  static $queue;
-
-  // We cache the queue object statically so create it once per HTTP request.
-  if (is_null($queue)) {
-    $directory = drupal_get_path('module', 'acquia_purge') . '/queue';
-    require_once($directory . '/EfficientQueueInterface.php');
-    require_once($directory . '/EfficientQueue.php');
-    $queue = new EfficientQueue();
-  }
-
-  return $queue;
-}
-
-/**
- * Queue manager: clear the queue and invalidate all running processes.
- *
- * @param bool $state_only
- *   Only wipe associated state data as the queue is already certainly
- *   cleared, for instance when numberOfItems() returned 0.
- */
-function _acquia_purge_queue_clear($state_only = FALSE) {
-
-  // Reset several state data keys to their default value.
-  $names = array('qtotal', 'qgood', 'qbad', 'locked',
-    'queued', 'purged', 'uiusers', 'logged_errors');
-  foreach ($names as $name) {
-    $default = _acquia_purge_get($name, TRUE);
-    _acquia_purge_state_set($name, $default);
-  }
-
-  // Only retrieve and really delete the queue if we are asked to.
-  if ($state_only === FALSE) {
-    _acquia_purge_queue()->deleteQueue();
-  }
-}
-
-/**
- * Queue manager: help prevent duplicate path queuing and purging.
- *
- * Our queue is database backed and if we would query every path before it ends
- * up in the queue, the cost would become too expensive. This helper however,
- * maintains breadcrumb lists of the paths it was given and returns FALSE for
- * new items and TRUE for old items. Items are theoretically kept till the
- * queue is emptied.
- *
- * If the site has 'acquia_purge_memcache' set to TRUE, the implementation will
- * use the state storage mechanism in addition to the static variables, which
- * means that data will persist between requests. With the file-based state
- * storage, this would result in massive IO activity so less accurate
- * deduplication is acceptable.
+ * Purge a single path on all domains and load balancers.
  *
  * @warning
- *   Duplicated paths can still end up in the queue, especially when not using
- *   the 'acquia_purge_memcache' setting.
- *
- * @param string $path
- *   The Drupal path (for example: '<front>', 'user/1' or a alias).
- * @param string $list
- *   (optional) Two breadcrumb lists are kept, 'queued' for preventative
- *   deduplication and 'purged' for deduplication when _acquia_purge_queue_pop()
- *   runs.
- * @param int $l
- *   (optional) The $l parameter stands for 'limit' and represents the rotation
- *   limit kept for each list, as the list resets when it grew bigger than that.
- *
- * @return true|false
- *   TRUE when the path exists, FALSE when it doesn't.
- */
-function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
-  $memcached_backed_storage = _acquia_purge_are_we_using_memcached();
-
-  // Lists is where we keep all data during the requests.
-  static $lists;
-  if (is_null($lists)) {
-    $lists = array();
-  }
-
-  // And then each $list gets its own subsection.
-  if (!isset($lists[$list])) {
-    $lists[$list] = array();
-    if ($memcached_backed_storage) {
-      $lists[$list] = _acquia_purge_get($list);
-    }
-  }
-
-  // Check if it exists before list rotation, then add missing items.
-  $exists = in_array($path, $lists[$list]);
-  if (count($lists[$list]) >= $l) {
-    $lists[$list] = array();
-  }
-  if (!$exists) {
-    $lists[$list][] = $path;
-    if ($memcached_backed_storage) {
-      _acquia_purge_state_set($list, $lists[$list]);
-    }
-  }
-
-  return $exists;
-}
-
-/**
- * Queue manager: acquire a lock and get queue processing permission.
- *
- * @param bool $acquire
- *   (optional) TRUE to acquire a lock, NULL to release it.
- *
- * @return bool|null
- *   TRUE when the lock is acquired.
- *   FALSE if it is still locked
- *   NULL when $acquire isn't TRUE.
- *
- * @see lock_acquire()
- */
-function _acquia_purge_queue_lock($acquire = TRUE) {
-  if ($acquire === NULL) {
-    _acquia_purge_state_set('locked', FALSE);
-    _acquia_purge_state_commit();
-    lock_release(__FUNCTION__);
-    return;
-  }
-  if (lock_acquire(__FUNCTION__, 60)) {
-    _acquia_purge_state_set('locked', TRUE);
-    _acquia_purge_state_commit();
-    return TRUE;
-  }
-  else {
-    _acquia_purge_state_set('locked', FALSE);
-    _acquia_purge_state_commit();
-    return FALSE;
-  }
-}
-
-/**
- * Queue manager: pop X amount of items from the queue.
- *
- * @param string $processor
- *   (optional) The name of a PHP function or callable that gets called to
- *   process a individual item popped from the queue. The callback is given the
- *   path as argument.
- *
- * @warning
- *   Calling this helper commits the caller into actually processing the items
- *   popped from the queue, either by iterating the return value or by providing
- *   a processing callback that processes individual values. Not processing the
- *   result will lead into confusion and broken functionality.
- *
- * @return array
- *   Non-associative array of which every value record represents one resulting
- *   HTTP PURGE request. Array items are non-associative arrays itself with the
- *   path in key #0.
- */
-function _acquia_purge_queue_pop($processor = NULL) {
-  $maxitems = _acquia_purge_get_capacity();
-  $qtotal = _acquia_purge_get('qtotal');
-  $qgood  = _acquia_purge_get('qgood');
-  $qbad   = _acquia_purge_get('qbad');
-  $queue  = _acquia_purge_queue();
-  $items  = $deletes = $releases = array();
-
-  // Work as many items from the queue as we can and are allowed to do.
-  foreach ($queue->claimItemMultiple($maxitems) as $item) {
-
-    // Discard any items that we already purged since the last queue clear.
-    if (_acquia_purge_queue_deduplicate($item->data[0], 'purged')) {
-      $deletes[] = $item;
-      $qtotal--;
-      continue;
-    }
-
-    // Process the item - or later if $processor is NULL - and add to $items.
-    $result = isset($processor) ?
-      call_user_func_array($processor, $item->data) : TRUE;
-    $items[] = $item->data;
-
-    // Update statistics, the duplication log and tell the queue about $item.
-    _acquia_purge_get_capacity(1);
-    if ($result) {
-      _acquia_purge_queue_deduplicate($item->data[0], 'purged');
-      $deletes[] = $item;
-      $qgood++;
-    }
-    else {
-      $releases[] = $item;
-      $qbad++;
-    }
-
-    // Write statistics back to state for early high error-rate detection.
-    _acquia_purge_state_set('qtotal', $qtotal);
-    _acquia_purge_state_set('qgood', $qgood);
-    _acquia_purge_state_set('qbad', $qbad);
-  }
-
-  // Delete and release items from the queue that we identified as such.
-  $queue->deleteItemMultiple($deletes);
-  $queue->releaseItemMultiple($releases);
-
-  // As soon as the queue got emptied, reset associated state data.
-  if ((int) $queue->numberOfItems() === 0) {
-    _acquia_purge_queue_clear(TRUE);
-  }
-
-  return $items;
-}
-
-/**
- * Queue manager: process a single path (on all domains and balancers).
+ *   Calling this function directly disregards all safety nets such as capacity
+ *   handling, statistic counters and more. Instead you want to use the queue
+ *   service, e.g.:
+ *   @code
+ *   $queue = ApQueueService::i();
+ *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
+ *   $queue->process('_acquia_purge_purge');
+ *   @endcode
  *
  * @param string $path
  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
@@ -1780,7 +1581,7 @@ function _acquia_purge_queue_pop($processor = NULL) {
  * @return true|false
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
  */
-function _acquia_purge_queue_processpurge($path) {
+function _acquia_purge_purge($path) {
   $base_path = _acquia_purge_get('acquia_purge_base_path');
 
   // Ask our built-in diagnostics system to preliminary find issues that are so
@@ -1829,7 +1630,7 @@ function _acquia_purge_queue_processpurge($path) {
 
   // Execute the prepared requests efficiently and log their results.
   $overall_success = TRUE;
-  foreach (_acquia_purge_queue_processpurge_requests($requests) as $rqst) {
+  foreach (_acquia_purge_purge_requests($requests) as $rqst) {
     if ($rqst->result == TRUE) {
       if (_acquia_purge_get('acquia_purge_log_success') === TRUE) {
         watchdog(
@@ -1838,7 +1639,7 @@ function _acquia_purge_queue_processpurge($path) {
           array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
           WATCHDOG_INFO);
       }
-      _acquia_purge_queue_history($rqst->uri);
+      ApQueueService::i()->history($rqst->uri);
     }
     else {
       if ($overall_success) {
@@ -1867,17 +1668,18 @@ function _acquia_purge_queue_processpurge($path) {
 }
 
 /**
- * Queue manager: process the given HTTP requests and do it efficiently.
+ * Process the HTTP requests for a single purge.
  *
  * @param string $requests
  *   Unassociative array (list) of simple Stdclass objects with the following
  *   properties: scheme, rtype, server, domain, path, uri, uribal.
  *
+ * @see _acquia_purge_purge()
  * @return array
  *   The given requests array with added properties that describe the result of
  *   the request: 'result', 'error_curl', 'error_http', 'error_debug'.
  */
-function _acquia_purge_queue_processpurge_requests($requests) {
+function _acquia_purge_purge_requests($requests) {
   $single_mode = (count($requests) === 1);
   $results = array();
 
@@ -1983,59 +1785,6 @@ function _acquia_purge_queue_processpurge_requests($requests) {
   }
 
   return $results;
-}
-
-/**
- * Queue manager: maintain a request-local list of purged URLs.
- *
- * @param string $url
- *   (optional) When passed in the given URL will be added to the history log.
- *
- * @return array
- *   The full non-associative array with URLs kept in memory.
- */
-function _acquia_purge_queue_history($url = NULL) {
-  static $urls;
-  if (is_null($urls)) {
-    $urls = array();
-  }
-  if (!is_null($url)) {
-    $urls[] = $url;
-  }
-  return $urls;
-}
-
-/**
- * Queue manager: generate progress statistics on the purge queue.
- *
- * @param string $key
- *   (optional) The requested statistics key to return.
- *
- * @return array
- *   Associative array with the keys 'running', 'total', 'remaining',
- *   'good', 'bad', 'percent' and 'purgehistory'.
- */
-function _acquia_purge_queue_stats($key = NULL) {
-  $info = array(
-    'purgehistory' => _acquia_purge_queue_history(),
-    'locked' => _acquia_purge_get('locked'),
-    'total' => _acquia_purge_get('qtotal'),
-    'good'      => _acquia_purge_get('qgood'),
-    'bad'       => _acquia_purge_get('qbad'),
-    'remaining' => 0,
-    'percent' => 100,
-    'running' => FALSE,
-  );
-
-  // Calculate the percentages when the queue doesn't seem to be empty.
-  if ($info['total'] !== 0) {
-    $info['running'] = TRUE;
-    $info['remaining'] = $info['total'] - $info['good'];
-    $info['percent'] = ($info['remaining'] / $info['total']) * 100;
-    $info['percent'] = (int) (100 - floor($info['percent']));
-  }
-
-  return is_null($key) ? $info : $info[$key];
 }
 
 /**
@@ -2217,92 +1966,4 @@ function _acquia_purge_state_wipe() {
   if (file_exists(ACQUIA_PURGE_STATE_FILE)) {
     drupal_unlink(ACQUIA_PURGE_STATE_FILE);
   }
-}
-
-/**
- * DEPRECATED: Purge the paths from a node from Varnish.
- *
- * This function was once added to demonstrate the ability to build up paths
- * and to quickly purge a node. However, it gives users the false assumption
- * that this is the way to clear a node while in reality it forgets many, many
- * things that also need to get cleared (files, terms, references), exact
- * things what the Expire module was built for. So if you need to clear a node
- * make sure to use expire_execute_expiration() instead.
- *
- * @param object $node
- *   A Drupal node object that was just inserted or saved.
- *
- * @deprecated
- *
- * @return array
- *   Associative array with the keys 'running', 'total', 'remaining',
- *   'good', 'bad', 'percent' and 'purgehistory'.
- */
-function acquia_purge_purge_node(&$node) {
-  $paths = array('node/' . $node->nid);
-  if (isset($node->path['alias']) && !empty($node->path['alias'])) {
-    $paths[] = $node->path['alias'];
-  }
-  if (isset($node->promote) && $node->promote) {
-    $paths[] = '<front>';
-    $paths[] = 'rss.xml';
-  }
-
-  // Return the paths routine and return the statistics from the queue manager.
-  return acquia_purge_purge_paths($paths);
-}
-
-/**
- * Purge a certain Drupal path from Varnish.
- *
- * @param string $path
- *   The Drupal path (for example: '<front>', 'user/1' or a alias).
- *
- * @return array
- *   Associative array with the keys 'running', 'total', 'remaining',
- *   'good', 'bad', 'percent' and 'purgehistory'.
- */
-function acquia_purge_purge_path($path) {
-  if (!_acquia_purge_queue_deduplicate($path)) {
-    $path = _acquia_purge_input_clean($path);
-
-    // Queue the item, update the state counter and trigger the AJAX processor.
-    if (_acquia_purge_queue()->createItem(array($path))) {
-      _acquia_purge_state_set('qtotal',
-        _acquia_purge_get('qtotal') + count($items));
-      _acquia_purge_ajaxprocessor_trigger();
-    }
-  }
-
-  return _acquia_purge_queue_stats();
-}
-
-/**
- * Purge several Drupal paths from Varnish.
- *
- * @param string[] $paths
- *   Array with Drupal paths (for example: '<front>', 'user/1' or a alias).
- *
- * @return array
- *   Associative array with the keys 'running', 'total', 'remaining',
- *   'good', 'bad', 'percent' and 'purgehistory'.
- */
-function acquia_purge_purge_paths(array $paths) {
-  $items = array();
-
-  // Check the deduplication log, clean the paths and propagate $queue_items.
-  foreach ($paths as $path) {
-    if (!_acquia_purge_queue_deduplicate($path)) {
-      $items[] = array(_acquia_purge_input_clean($path));
-    }
-  }
-
-  // Queue the items, update the state counter and trigger the AJAX processor.
-  if (_acquia_purge_queue()->createItemMultiple($items)) {
-    _acquia_purge_state_set('qtotal',
-      _acquia_purge_get('qtotal') + count($items));
-    _acquia_purge_ajaxprocessor_trigger();
-  }
-
-  return _acquia_purge_queue_stats();
 }

@@ -566,7 +566,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
  */
 function _acquia_purge_get_diagnosis_queue($t) {
   $allriskmode = _acquia_purge_get('acquia_purge_allriskmode');
-  $stats = _acquia_purge_queue_stats();
+  $stats = ApQueueService::i()->stats();
   $test = array('title' => $t('Queue volume'));
 
   // Define our warning and shutdown thresholds.
@@ -668,7 +668,7 @@ function _acquia_purge_get_diagnosis_statedata($t) {
 function _acquia_purge_get_diagnosis_status($t) {
   $passivemode = _acquia_purge_get('acquia_purge_passivemode');
   $errorlimit = _acquia_purge_get('acquia_purge_errorlimit');
-  $stats = _acquia_purge_queue_stats();
+  $stats = ApQueueService::i()->stats();
   $test = array(
     'title' => $t('Status'),
     'value' => $passivemode ? $t('idle (passive mode)') : t('idle'),

@@ -228,7 +228,7 @@ function drush_acquia_purge_ap_purge($paths = NULL) {
   }
 
   // Add all paths and dispatch processing to ap-process.
-  acquia_purge_purge_paths($paths);
+  ApQueueService::i()->addPaths($paths);
   drush_acquia_purge_ap_process();
 }
 
@@ -243,10 +243,10 @@ function drush_acquia_purge_ap_forget() {
   }
 
   // Retrieve statistics, clear the queue and log to Drush.
-  $stats = _acquia_purge_queue_stats();
-  _acquia_purge_queue_clear();
+  $remaining = ApQueueService::i()->stats('remaining');
+  ApQueueService::i()->clear();
   drush_log(dt("Removed @remaining items from the queue.",
-    array('@remaining' => $stats['remaining'])), 'ok');
+    array('@remaining' => $remaining)), 'ok');
 }
 
 /**
@@ -286,7 +286,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
   if (is_null($context)) {
 
     // Retrieve the statistics and determine if processing is needed.
-    $stats = _acquia_purge_queue_stats();
+    $stats = ApQueueService::i()->stats();
     if (!$stats['running']) {
       return drush_set_error("The purge queue is empty, done!");
     }
@@ -309,43 +309,36 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
     batch_set($batch);
     $batch =& batch_get();
     drush_backend_batch_process();
-
   }
 
   //
   // SUB PROCESS.
   //
   else {
-
-    // Stop invocation if serious error conditions have been found.
-    if (!_acquia_purge_queue_lock()) {
+    if (!ApQueueService::i()->lock()) {
       return drush_set_error("Unable to acquire lock, ensure that all users "
         . "close their browser tabs as a different purge seems to be active!");
     }
 
-    // Log and pop as much items out of the queue as we can + process.
-    printf("\n# %d items left...\n", _acquia_purge_queue_stats('remaining'));
-    $log = array();
-    do {
-      $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
-
-      // Retrieve the statistics and log the purged urls.
-      $stats = _acquia_purge_queue_stats();
-      foreach ($stats['purgehistory'] as $logitem) {
-        if (!(in_array($logitem, $log))) {
-          drush_log(dt("Purged: @url", array('@url' => $logitem)), 'ok');
-          $log[] = $logitem;
+    // Process the maximum amount of paths we can process during runtime.
+    printf("\n# %d items left...\n", ApQueueService::i()->stats('remaining'));
+    if (ApQueueService::i()->process('_acquia_purge_purge')) {
+      foreach (ApQueueService::i()->history() as $url) {
+        if (!isset($log)) {
+          $log = array();
+        }
+        if (!(in_array($url, $log))) {
+          drush_log(dt("Purged: @url", array('@url' => $url)), 'ok');
+          $log[] = $url;
         }
       }
-
-    } while (count($items));
+    }
 
     // Inform the Batch API when the process is finished.
-    if (!$stats['running']) {
+    if (!ApQueueService::i()->stats('running')) {
       $context['finished'] = 1;
       $context['message'] = dt("Queue processed successfully!");
     }
-    _acquia_purge_queue_lock(NULL);
+    ApQueueService::i()->lock(NULL);
   }
 }
-

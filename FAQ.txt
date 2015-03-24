@@ -232,34 +232,27 @@ Frequently asked questions
   it receives paths and wraps those to its own publicly facing API functions.
 
   You can queue items for purging like this:
-    acquia_purge_purge_path('node/5?parameter');
-    acquia_purge_purge_paths(array('news/section1', 'contact'));
-    $node = node_load(5);
-    expire_execute_expiration('node', $node, EXPIRE_NODE_UPDATE);
+    $queue = ApQueueService::i();
+    $queue->addPath('node/5?parameter');
+    $queue->addPaths(array('news/section1', 'contact'));
 
-  That will just queue them, you can process the queue with "drush ap-process",
-  cron or you can process a good chunk of items with:
-
-    if (_acquia_purge_queue_lock()) {
-      do {
-        $items = _acquia_purge_queue_pop('_acquia_purge_queue_processpurge');
-      } while (count($items));
+  If you run the code above as authenticated user and you aren't using cron, it
+  will trigger the UI processor for that user on the next page load. However, if
+  you need to do direct processing yourself, you can use "drush ap-process",
+  depend on cron or do it yourself with:
+    $queue = ApQueueService::i();
+    if ($queue->lock()) {
+      $queue->process('_acquia_purge_purge');
+      $queue->lock(NULL);
     }
 
-  The while loop does not run until the queue is empty but runs as long as PHP
-  has resources for (and runs longer on the command line). The queue might be
-  empty already in many cases by the end of that loop, but it's definitely no
-  guarantee and therefore having permanent processing of the queue (cron) is
-  preferable.
+  The ApQueueService::i()->process() call will run as long as PHP has resources
+  for and depends on Acquia Purge's internal capacity calculation. When it runs
+  from the CLI, it has a higher max_execution_time and will therefore process
+  much more at once, then it will when triggered through a web server.
 
   You can always check upon the queue state by querying:
-  var_dump(_acquia_purge_queue_stats());
-
-  It's fine to do 10-50 paths in a do-while loop during a single request but
-  whenever the user has many domains or many load balancers, you will quickly
-  run into the necessity splitting things out using batch API. Just keep on
-  calling _acquia_purge_queue_pop('_acquia_purge_queue_processpurge') till it
-  returns a fully empty array.
+  var_dump(ApQueueService::i()->stats());
 
  Should I disable Drupal's page cache because of my special module or feature?
 --------------------------------------------------------------------------------

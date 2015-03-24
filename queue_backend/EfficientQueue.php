@@ -8,17 +8,34 @@
 /**
  * Efficient query bundling database queue.
  *
- * Enriches SystemQueue with methods defined in EfficientQueueInterface which
+ * Enriches SystemQueue with methods defined in ApQueueInterface which
  * attempt to reduce database communication as much as possible. By bundling
  * items into single queries, total queries and roundtrips reduce drastically!
  */
-class EfficientQueue extends SystemQueue implements EfficientQueueInterface {
+class EfficientQueue extends SystemQueue implements ApQueueInterface {
+
+  /**
+   * Instantiated counter objects.
+   *
+   * @var ApQueueCounterInterface[]
+   */
+  protected $counters = array();
 
   /**
    * Construct a EfficientQueue instance.
    */
   public function __construct() {
     parent::__construct('acquia_purge');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function counter($state_key) {
+    if (!isset($this->counters[$state_key])) {
+      $this->counters[$state_key] = new ApQueueCounter($state_key);
+    }
+    return $this->counters[$state_key];
   }
 
   /**
@@ -111,6 +128,17 @@ class EfficientQueue extends SystemQueue implements EfficientQueueInterface {
   /**
    * {@inheritdoc}
    */
+  public function createItem($data) {
+    if (parent::createItem($data)) {
+      $this->counter('total')->increase();
+      return TRUE;
+    }
+    return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function createItemMultiple(array $items) {
     $records = array();
 
@@ -132,6 +160,7 @@ class EfficientQueue extends SystemQueue implements EfficientQueueInterface {
 
     // Execute the query and finish the call.
     if ($query->execute()) {
+      $this->counter('total')->increase(count($records));
       return TRUE;
     }
     else {
@@ -176,6 +205,16 @@ class EfficientQueue extends SystemQueue implements EfficientQueueInterface {
     else {
       return $items;
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function deleteQueue() {
+    parent::deleteQueue();
+    $this->counter('total')->set(0);
+    $this->counter('bad')->set(0);
+    $this->counter('good')->set(0);
   }
 
 }
