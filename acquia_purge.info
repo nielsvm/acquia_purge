@@ -7,5 +7,5 @@ files[] = queue/ApQueueService.php
 files[] = queue/ApQueueInterface.php
 files[] = queue/ApQueueCounterInterface.php
 files[] = queue/ApQueueCounter.php
-files[] = queue_backend/EfficientQueue.php
-files[] = queue_backend/OpportunisticQueue.php
+files[] = queue_backend/ApEfficientQueue.php
+files[] = queue_backend/ApSmartQueue.php

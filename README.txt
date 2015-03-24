@@ -144,11 +144,24 @@ exist as of this version and documented below:
 ║                          ║       ║ working and effectively allows the module ║
 ║                          ║       ║ to remain enabled in local environments   ║
 ║                          ║       ║ without actually purging automatically.   ║
+║                          ║       ║ $conf['acquia_purge_passivemode'] = TRUE; ║
 ║ acquia_purge_allriskmode ║ FALSE ║ When set to TRUE, this disables full      ║
 ║                          ║       ║ blocking checks for too high queue volumes║
 ║                          ║       ║ and too many domain names. Using this mode║
 ║                          ║       ║ excludes your support SLA entitlement and ║
 ║                          ║       ║ rules out support on these checks from the║
 ║                          ║       ║ Acquia Purge issue queue.                 ║
+║                          ║       ║ $conf['acquia_purge_allriskmode'] = TRUE; ║
+║ acquia_purge_smartqueue  ║ FALSE ║ When set to TRUE, the ApSmartQueue backend║
+║                          ║       ║ will be loaded instead. It automatically  ║
+║                          ║       ║ disregards items that Varnish has already ║
+║                          ║       ║ dropped and this backend can be a big     ║
+║                          ║       ║ efficiency improvement on sites with TTLs ║
+║                          ║       ║ not set to weeks or months. One BIG FAT   ║
+║                          ║       ║ WARNING: if your site dynamically sets the║
+║                          ║       ║ page_cache_maximum_age variable or max-age║
+║                          ║       ║ Cache-Control header value, using this    ║
+║                          ║       ║ backend will make purging VERY UNRELIABLE!║
+║                          ║       ║ $conf['acquia_purge_smartqueue'] = TRUE;  ║
 ║                          ║       ║                                           ║
 ╚══════════════════════════╩═══════╩═══════════════════════════════════════════╝

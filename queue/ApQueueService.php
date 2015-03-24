@@ -329,10 +329,15 @@ class ApQueueService {
       require_once($directory . '/queue/ApQueueInterface.php');
       require_once($directory . '/queue/ApQueueCounterInterface.php');
       require_once($directory . '/queue/ApQueueCounter.php');
-      require_once($directory . '/queue_backend/EfficientQueue.php');
-      $this->queue = new EfficientQueue();
-      // require_once($directory . '/queue_backend/OpportunisticQueue.php');
-      // $queue_instance = new OpportunisticQueue();
+      if (_acquia_purge_get('acquia_purge_smartqueue')) {
+        require_once($directory . '/queue_backend/ApEfficientQueue.php');
+        require_once($directory . '/queue_backend/ApSmartQueue.php');
+        $this->queue = new ApSmartQueue();
+      }
+      else {
+        require_once($directory . '/queue_backend/ApEfficientQueue.php');
+        $this->queue = new ApEfficientQueue();
+      }
     }
     return $this->queue;
   }

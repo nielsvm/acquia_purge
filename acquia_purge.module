@@ -776,6 +776,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
         'acquia_purge_memcache'     => TRUE,
         'acquia_purge_passivemode'  => FALSE,
         'acquia_purge_allriskmode'  => FALSE,
+        'acquia_purge_smartqueue'   => FALSE,
       ),
       'state' => array(
         'locked'        => FALSE,

@@ -12,7 +12,7 @@
  * attempt to reduce database communication as much as possible. By bundling
  * items into single queries, total queries and roundtrips reduce drastically!
  */
-class EfficientQueue extends SystemQueue implements ApQueueInterface {
+class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
 
   /**
    * Instantiated counter objects.
@@ -22,7 +22,7 @@ class EfficientQueue extends SystemQueue implements ApQueueInterface {
   protected $counters = array();
 
   /**
-   * Construct a EfficientQueue instance.
+   * Construct a ApEfficientQueue instance.
    */
   public function __construct() {
     parent::__construct('acquia_purge');

@@ -552,6 +552,31 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
 }
 
 /**
+ * Report which queue backend is in use.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ *
+ * @return array
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_queue_backend($t) {
+  $test = array(
+    'title' => $t('Queue backend'),
+    'value' => t('Database'),
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK
+  );
+  if (_acquia_purge_get('acquia_purge_smartqueue')) {
+    $test['value'] = t('Smart queue (drops very old queue items)');
+  }
+  return $test;
+}
+
+/**
  * Test and report the current queue volume.
  *
  * @param string $t
@@ -564,7 +589,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_queue($t) {
+function _acquia_purge_get_diagnosis_queue_volume($t) {
   $allriskmode = _acquia_purge_get('acquia_purge_allriskmode');
   $stats = ApQueueService::i()->stats();
   $test = array('title' => $t('Queue volume'));
