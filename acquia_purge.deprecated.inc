@@ -1,4 +1,30 @@
-<?PHP
+<?php
+
+/**
+ * @file
+ * API functions and helper code past their expiration date.
+ */
+
+/**
+ * Retrieve a variable or state data property.
+ *
+ * @deprecated
+ * @see _acquia_purge_variable()
+ * @see ApQueueService::state()
+ */
+function _acquia_purge_get($name, $get_default = FALSE) {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_variable()'),
+    WATCHDOG_WARNING);
+  try {
+    return _acquia_purge_variable($name);
+  }
+  catch (Exception $e) {
+    return ApQueueService::i()->state()->get($name)->get();
+  }
+}
 
 /**
  * DEPRECATED: return the queue object in use for Acquia Purge.
@@ -18,13 +44,9 @@ function _acquia_purge_queue() {
 /**
  * DEPRECATED: clear the queue and invalidate all running processes.
  *
- * @param bool $state_only
- *   Only wipe associated state data as the queue is already certainly
- *   cleared, for instance when ApQueueInterface::numberOfItems() returned 0.
- *
  * @deprecated
  * @see ApQueueService::clear()
- * @see ApQueueService::clearState()
+ * @see ApStateStorageInterface::wipe()
  */
 function _acquia_purge_queue_clear($state_only = FALSE) {
   watchdog(
@@ -33,7 +55,7 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
     array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->clear()'),
     WATCHDOG_WARNING);
   if ($state_only) {
-    ApQueueService::i()->clearState();
+    ApQueueService::i()->state()->wipe();
   }
   else {
     ApQueueService::i()->clear();
@@ -148,6 +170,92 @@ function _acquia_purge_queue_stats($key = NULL) {
     array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->stats()'),
     WATCHDOG_WARNING);
   return ApQueueService::i()->stats($key);
+}
+
+/**
+ * DEPRECATED: load state data from the persistent storage location.
+ *
+ * @deprecated
+ * @see ApStateStorageInterface::commit()
+ */
+function _acquia_purge_state_initialize() {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApQueueService::i()->state()'),
+    WATCHDOG_WARNING);
+  ApQueueService::i()->state();
+}
+
+/**
+ * DEPRECATED: commit the state data to its persistent storage location.
+ *
+ * @deprecated
+ * @see ApStateStorageInterface::commit()
+ */
+function _acquia_purge_state_commit() {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApQueueService::i()->state()->commit()'),
+    WATCHDOG_WARNING);
+  ApQueueService::i()->state()->commit();
+}
+
+/**
+ * DEPRECATED: load a state data property.
+ *
+ * @deprecated
+ * @see ApStateStorageInterface::get()
+ */
+function _acquia_purge_state_get($name, $default = NULL) {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApQueueService::i()->state()->get($name)->get()'),
+    WATCHDOG_WARNING);
+  return ApQueueService::i()->state()->get($name, $default)->get();
+}
+
+/**
+ * DEPRECATED: store a state data property.
+ *
+ * @deprecated
+ * @see ApStateStorageInterface::get()
+ * @see ApStateItemInterface::set()
+ */
+function _acquia_purge_state_set($name, $value) {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApQueueService::i()->state()->get($name)->set($value)'),
+    WATCHDOG_WARNING);
+  ApQueueService::i()->state()->get($name)->set($value);
+}
+
+/**
+ * DEPRECATED: wipe all state data.
+ *
+ * @deprecated
+ * @see ApStateStorageInterface::wipe()
+ */
+function _acquia_purge_state_wipe() {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApQueueService::i()->state()->wipe()'),
+    WATCHDOG_WARNING);
+  ApQueueService::i()->state()->wipe();
 }
 
 /**

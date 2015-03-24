@@ -7,19 +7,16 @@
 
 /**
  * Describes a object, providing access to counters (int) kept in state storage.
- *
- * @see _acquia_purge_state_get
- * @see _acquia_purge_state_set
  */
 interface ApQueueCounterInterface {
 
   /**
-   * Construct the counter object.
+   * Construct the counter state item object.
    *
-   * @param int $state_key
-   *   The key with which the counter is stored in state storage.
+   * @param ApStateItemInterface $item
+   *   The state item object that holds the raw counter data.
    */
-  public function __construct($state_key);
+  public function __construct(ApStateItemInterface $item);
 
   /**
    * Decrease the counter.

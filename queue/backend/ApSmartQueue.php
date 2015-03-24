@@ -23,9 +23,12 @@ class ApSmartQueue extends ApEfficientQueue implements ApQueueInterface {
 
   /**
    * Construct a ApSmartQueue instance.
+   *
+   * @param ApStateStorageInterface $state
+   *   The state storage required for the queue counters.
    */
-  public function __construct() {
-    parent::__construct();
+  public function __construct(ApStateStorageInterface $state) {
+    parent::__construct($state);
     $this->ttl = (int) variable_get('page_cache_maximum_age', 0);
   }
 
@@ -53,7 +56,7 @@ class ApSmartQueue extends ApEfficientQueue implements ApQueueInterface {
         'acquia_purge',
         "Disregarded %n expired items from the queue (smart queue backend).",
         array('%n' => $deleted_items), WATCHDOG_INFO);
-      $this->counter('total')->decrease($deleted_items);
+      $this->counter('qtotal')->decrease($deleted_items);
     }
   }
 

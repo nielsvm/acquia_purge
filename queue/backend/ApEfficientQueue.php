@@ -15,16 +15,20 @@
 class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
 
   /**
-   * Instantiated counter objects.
+   * The state storage which holds the counter state items.
    *
-   * @var ApQueueCounterInterface[]
+   * @var ApStateStorageInterface
    */
-  protected $counters = array();
+  protected $state;
 
   /**
    * Construct a ApEfficientQueue instance.
+   *
+   * @param ApStateStorageInterface $state
+   *   The state storage required for the queue counters.
    */
-  public function __construct() {
+  public function __construct(ApStateStorageInterface $state) {
+    $this->state = $state;
     parent::__construct('acquia_purge');
   }
 
@@ -120,7 +124,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
    */
   public function createItem($data) {
     if (parent::createItem($data)) {
-      $this->counter('total')->increase();
+      $this->counter('qtotal')->increase();
       return TRUE;
     }
     return FALSE;
@@ -150,7 +154,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
 
     // Execute the query and finish the call.
     if ($query->execute()) {
-      $this->counter('total')->increase(count($records));
+      $this->counter('qtotal')->increase(count($records));
       return TRUE;
     }
     else {
@@ -161,11 +165,8 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
   /**
    * {@inheritdoc}
    */
-  public function counter($state_key) {
-    if (!isset($this->counters[$state_key])) {
-      $this->counters[$state_key] = new ApQueueCounter($state_key);
-    }
-    return $this->counters[$state_key];
+  public function counter($key) {
+    return new ApQueueCounter($this->state->get($key, 0));
   }
 
   /**
@@ -182,6 +183,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
     db_delete('queue')
       ->condition('item_id', $item_ids, 'IN')
       ->execute();
+    $this->counter('qgood')->increase(count($item_ids));
   }
 
   /**
@@ -189,9 +191,9 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
    */
   public function deleteQueue() {
     parent::deleteQueue();
-    $this->counter('total')->set(0);
-    $this->counter('bad')->set(0);
-    $this->counter('good')->set(0);
+    $this->counter('qtotal')->set(0);
+    $this->counter('qbad')->set(0);
+    $this->counter('qgood')->set(0);
   }
 
   /**
@@ -217,6 +219,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
       ->condition('item_id', $item_ids, 'IN')
       ->execute();
     if ($update) {
+      $this->counter('qbad')->increase(count($item_ids));
       return array();
     }
     else {

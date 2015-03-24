@@ -129,7 +129,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
   // Define a list of example paths so users know what they can/should purge.
   $examples = array('&lt;front&gt;', '&lt;front&gt;?page=0', '&lt;front&gt;/',
     'node/1', 'node/1/', 'news?page=0');
-  if (_acquia_purge_get('acquia_purge_variations')) {
+  if (_acquia_purge_variable('acquia_purge_variations')) {
     $examples = array('&lt;front&gt;', 'node/1', 'news');
   }
 
@@ -155,7 +155,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
 
   // Decorate the textfields and prepend URL's as helpful guide.
   $schemes = _acquia_purge_get_protocol_schemes();
-  $base_path = _acquia_purge_get('acquia_purge_base_path');
+  $base_path = _acquia_purge_variable('acquia_purge_base_path');
   $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], $base_path);
   foreach ($form['paths']['path'] as $i => $item) {
     $form['paths']['path'][$i]['#field_prefix'] = $prefix;
@@ -259,7 +259,7 @@ function _acquia_purge_manualpurge_base(&$form, &$form_state) {
     '#type' => 'submit',
     '#prefix' => '<p>',
     '#suffix' => '</p>',
-    '#value' => _acquia_purge_get('acquia_purge_cron')
+    '#value' => _acquia_purge_variable('acquia_purge_cron')
       ? t("Queue") : t("Refresh"),
   );
   $form['submits']['page'] = array(
@@ -326,13 +326,13 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
 
   // Improve the administrative experience by automatically adding variations
   // on the given paths, which includes trailing slash versions and pagination.
-  if (_acquia_purge_get('acquia_purge_variations')) {
+  if (_acquia_purge_variable('acquia_purge_variations')) {
     _acquia_purge_input_path_variations(
       $form_state['values']['paths']['path']);
   }
 
   // Nothing visual will happen in cron-mode, unless we notify.
-  if (_acquia_purge_get('acquia_purge_cron') === TRUE) {
+  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
     drupal_set_message(t('Your paths have been queued and will get processed '
       . 'during the next cron iteration.'));
   }

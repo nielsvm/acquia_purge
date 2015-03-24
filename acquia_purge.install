@@ -10,10 +10,6 @@
  */
 function acquia_purge_install() {
 
-  // Install our queuing queue using Drupal's Queue API.
-  $queue = DrupalQueue::get('acquia_purge', TRUE);
-  $queue->createQueue();
-
   // Enable Expire 7.x-2.x's most important expiration rules by default.
   $defaults = array(
     'expire_status' => EXPIRE_STATUS_ENABLED_EXTERNAL,
@@ -46,10 +42,9 @@ function acquia_purge_install() {
  */
 function acquia_purge_uninstall() {
   drupal_load('module', 'acquia_purge');
-  ApQueueService::i()->queue()->deleteQueue();
-
-  // Wipe out state data in the case the user re-enables the module.
-  _acquia_purge_state_wipe();
+  require_once(drupal_get_path('module', 'acquia_purge')
+    . '/queue/ApQueueService.php');
+  ApQueueService::i()->clear();
 }
 
 /**
@@ -112,9 +107,10 @@ function acquia_purge_update_7102(&$sandbox) {
 
   // As we are losing our old counter and owners state, also clear the queue
   // as this will otherwise inevitably lead to sites with queue zombies.
-  if (module_exists('acquia_purge')) {
-    ApQueueService::i()->queue()->clear();
-  }
+  drupal_load('module', 'acquia_purge');
+  require_once(drupal_get_path('module', 'acquia_purge')
+    . '/queue/ApQueueService.php');
+  ApQueueService::i()->clear();
 }
 
 /**

@@ -145,7 +145,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_domains($t) {
-  $allriskmode = _acquia_purge_get('acquia_purge_allriskmode');
+  $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
   $domains_link = drupal_get_path('module', 'acquia_purge') . '/DOMAINS.txt';
   $domains_link = url($domains_link);
   $domains = _acquia_purge_get_domains();
@@ -302,7 +302,7 @@ function _acquia_purge_get_diagnosis_logging($t) {
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('successes and failures'),
     'title' => $t('Logging verbosity'));
-  if (_acquia_purge_get('acquia_purge_log_success') !== TRUE) {
+  if (_acquia_purge_variable('acquia_purge_log_success') !== TRUE) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_INFO;
     $test['value'] = $t('failures only');
   }
@@ -426,7 +426,7 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_processing_mode($t) {
-  $cron = _acquia_purge_get('acquia_purge_cron') === TRUE;
+  $cron = _acquia_purge_variable('acquia_purge_cron') === TRUE;
   $test = array(
     'title' => $t('Processing mode'),
     'value' => $t('client-side (js)'),
@@ -570,7 +570,7 @@ function _acquia_purge_get_diagnosis_queue_backend($t) {
     'value' => t('Database'),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK
   );
-  if (_acquia_purge_get('acquia_purge_smartqueue')) {
+  if (_acquia_purge_variable('acquia_purge_smartqueue')) {
     $test['value'] = t('Smart queue (drops very old queue items)');
   }
   return $test;
@@ -590,7 +590,7 @@ function _acquia_purge_get_diagnosis_queue_backend($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_queue_volume($t) {
-  $allriskmode = _acquia_purge_get('acquia_purge_allriskmode');
+  $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
   $stats = ApQueueService::i()->stats();
   $test = array('title' => $t('Queue volume'));
 
@@ -691,8 +691,8 @@ function _acquia_purge_get_diagnosis_statedata($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_status($t) {
-  $passivemode = _acquia_purge_get('acquia_purge_passivemode');
-  $errorlimit = _acquia_purge_get('acquia_purge_errorlimit');
+  $passivemode = _acquia_purge_variable('acquia_purge_passivemode');
+  $errorlimit = _acquia_purge_variable('acquia_purge_errorlimit');
   $stats = ApQueueService::i()->stats();
   $test = array(
     'title' => $t('Status'),

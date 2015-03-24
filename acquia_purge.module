@@ -68,15 +68,15 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * Implements hook_init().
  */
 function acquia_purge_init() {
-
-  // Load the queue service - which is in acquia_purge.info - but we are
-  // preventing autoload failures for users that upgraded.
-
-  // To assure availability and because we want to prevent autoloader issues for
-  // upgrading users at all cost, we always load ApQueueService a
-
   $modulepath = drupal_get_path('module', 'acquia_purge');
-  require_once($modulepath . '/queue/ApQueueService.php');
+
+  // To prevent autoload failure, load the service code if the class isn't here.
+  if (!class_exists('ApQueueService')) {
+    require_once($modulepath . '/queue/ApQueueService.php');
+  }
+
+  // Load legacy helpers to prevent third-party code from breaking horribly. The
+  // helpers will go in the future and are terribly vocal about it in the logs.
   require_once($modulepath . '/acquia_purge.deprecated.inc');
 
   // Load the Ajax processor's assets - only happens when all its checks passed.
@@ -102,7 +102,7 @@ function acquia_purge_permission() {
 function acquia_purge_cron() {
 
   // If cron-based purging isn't specifically enabled, don't do anything.
-  if (_acquia_purge_get('acquia_purge_cron') !== TRUE) {
+  if (_acquia_purge_variable('acquia_purge_cron') !== TRUE) {
     return;
   }
 
@@ -214,7 +214,7 @@ function acquia_purge_menu() {
 function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
 
   // When running in passive mode, we stop automatic queuing.
-  if (_acquia_purge_get('acquia_purge_passivemode')) {
+  if (_acquia_purge_variable('acquia_purge_passivemode')) {
     return;
   }
 
@@ -462,12 +462,12 @@ function _acquia_purge_ajaxprocessor_is_triggered() {
   // If the site administrator has deliberately enabled cron-based processing,
   // there's no reason to assume a user is purging. The latter might have
   // initiated it, but is not the one who's going to process it as cron will.
-  if (_acquia_purge_get('acquia_purge_cron') === TRUE) {
+  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
     return FALSE;
   }
 
   // Retrieve the list of user names owning an ongoing purge process.
-  $uiusers = _acquia_purge_get('uiusers');
+  $uiusers = ApQueueService::i()->uiUsers()->get();
 
   // If the uiusers list is empty, that means no active purges are ongoing.
   if (!count($uiusers)) {
@@ -598,7 +598,7 @@ function _acquia_purge_ajaxprocessor_trigger() {
   }
 
   // Don't trigger anything when the module operates in cron-processing mode.
-  if (_acquia_purge_get('acquia_purge_cron') === TRUE) {
+  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
     return;
   }
 
@@ -614,10 +614,10 @@ function _acquia_purge_ajaxprocessor_trigger() {
 
   // Only register authenticated users, anonymous users will only queue.
   if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-    $uiusers = _acquia_purge_get('uiusers');
+    $uiusers = ApQueueService::i()->uiUsers()->get();
     if (!in_array($user->name, $uiusers)) {
       $uiusers[] = $user->name;
-      _acquia_purge_state_set('uiusers', $uiusers);
+      ApQueueService::i()->uiUsers()->set($uiusers);
     }
     $triggered = TRUE;
   }
@@ -677,7 +677,7 @@ function _acquia_purge_are_we_using_memcached() {
     global $conf;
     $answer = FALSE;
 
-    if (_acquia_purge_get('acquia_purge_memcache')) {
+    if (_acquia_purge_variable('acquia_purge_memcache')) {
       if (isset($conf['cache_default_class'])) {
         if ($conf['cache_default_class'] === 'MemCacheDrupal') {
           if (function_exists('dmemcache_get')) {
@@ -735,75 +735,6 @@ function _acquia_purge_export_debug_symbols($symbols) {
 
   // Return the resulting string.
   return $symbols;
-}
-
-/**
- * Retrieve a variable or state data property.
- *
- * This function exists to prevent a wilderness of calls to variable_get()
- * and _acquia_purge_state_get() but *especially* to keep all their defaults
- * in one place. Having default values centralized means less risk on bugs,
- * which is exactly why Drupal 8 fixes this with defaults in CMI.
- *
- * @param string $name
- *   The name of the state data property OR variable to return.
- * @param bool $get_default
- *   (optional) Retrieve the default value instead of the real value.
-
- * @return mixed
- *   Either the default or actual value of the item request.
- *
- * @see variable_get()
- * @see _acquia_purge_state_get()
- */
-function _acquia_purge_get($name, $get_default = FALSE) {
-  static $names;
-
-  // Document all names that are in use.
-  if (is_null($names)) {
-    $names = array(
-      'variables' => array(
-        'acquia_purge_domains'      => FALSE,
-        'acquia_purge_sphpskippath' => TRUE,
-        'acquia_purge_stripports'   => array(80, 443),
-        'acquia_purge_cron'         => FALSE,
-        'acquia_purge_http'         => TRUE,
-        'acquia_purge_https'        => FALSE,
-        'acquia_purge_base_path'    => base_path(),
-        'acquia_purge_errorlimit'   => TRUE,
-        'acquia_purge_log_success'  => TRUE,
-        'acquia_purge_variations'   => TRUE,
-        'acquia_purge_memcache'     => TRUE,
-        'acquia_purge_passivemode'  => FALSE,
-        'acquia_purge_allriskmode'  => FALSE,
-        'acquia_purge_smartqueue'   => FALSE,
-      ),
-      'state' => array(
-        'locked'        => FALSE,
-        'queued'        => array(),
-        'purged'        => array(),
-        'uiusers'       => array(),
-        'logged_errors' => array(),
-      ),
-    );
-  }
-
-  // Now return the requested item, or their defaults as documented.
-  if (isset($names['variables'][$name])) {
-    if ($get_default) {
-      return $names['variables'][$name];
-    }
-    return variable_get($name, $names['variables'][$name]);
-  }
-  if (isset($names['state'][$name])) {
-    if ($get_default) {
-      return $names['state'][$name];
-    }
-    return _acquia_purge_state_get($name, $names['state'][$name]);
-  }
-
-  // Code should never get here, but if it does, throw exceptions.
-  throw new Exception("_acquia_purge_get: invalid variable '$name'!");
 }
 
 /**
@@ -1035,17 +966,16 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
 
     // Run a duplicate check by hashing and checking state data.
     else {
-      $logged = _acquia_purge_get('logged_errors');
+      $logged_errors = ApQueueService::i()->loggedErrors()->get();
       $hash = sha1($description);
-
-      if (in_array($hash, $logged)) {
+      if (in_array($hash, $logged_errors)) {
         return;
       }
 
       // Log the message and add the hash to the deduplication list.
       watchdog('acquia_purge', $description, array(), $map[$item['severity']]);
-      $logged[] = $hash;
-      _acquia_purge_state_set('logged_errors', $logged);
+      $logged_errors[] = $hash;
+      ApQueueService::i()->loggedErrors()->set($logged_errors);
     }
   }
 }
@@ -1065,7 +995,7 @@ function _acquia_purge_get_domains() {
 
     // If the configuration key 'acquia_purge_domains' is set we skip automatic
     // detection fully and add that list of domains to be purged.
-    if ($acquia_purge_domains = _acquia_purge_get('acquia_purge_domains')) {
+    if ($acquia_purge_domains = _acquia_purge_variable('acquia_purge_domains')) {
       if (is_array($acquia_purge_domains) && count($acquia_purge_domains)) {
         foreach ($acquia_purge_domains as $domain) {
           _acquia_purge_get_domains_add($domain, $domains);
@@ -1203,8 +1133,8 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
  *   format of '<port>.<domain>.<path>' this is relatively hackish.
  */
 function _acquia_purge_get_domains_add_sitesphp(&$domains) {
-  $sitesphpskippath = _acquia_purge_get('acquia_purge_sphpskippath');
-  $stripports = _acquia_purge_get('acquia_purge_stripports');
+  $sitesphpskippath = _acquia_purge_variable('acquia_purge_sphpskippath');
+  $stripports = _acquia_purge_variable('acquia_purge_stripports');
   $sitedir = str_replace('sites/', '', conf_path());
   $tlds = array();
 
@@ -1278,10 +1208,10 @@ function _acquia_purge_get_protocol_schemes() {
   static $schemes;
   if (is_null($schemes)) {
     $schemes = array();
-    if (_acquia_purge_get('acquia_purge_http') === TRUE) {
+    if (_acquia_purge_variable('acquia_purge_http') === TRUE) {
       $schemes[] = 'http';
     }
-    if (_acquia_purge_get('acquia_purge_https') === TRUE) {
+    if (_acquia_purge_variable('acquia_purge_https') === TRUE) {
       $schemes[] = 'https';
     }
     if (empty($schemes)) {
@@ -1583,7 +1513,7 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
  */
 function _acquia_purge_purge($path) {
-  $base_path = _acquia_purge_get('acquia_purge_base_path');
+  $base_path = _acquia_purge_variable('acquia_purge_base_path');
 
   // Ask our built-in diagnostics system to preliminary find issues that are so
   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
@@ -1633,7 +1563,7 @@ function _acquia_purge_purge($path) {
   $overall_success = TRUE;
   foreach (_acquia_purge_purge_requests($requests) as $rqst) {
     if ($rqst->result == TRUE) {
-      if (_acquia_purge_get('acquia_purge_log_success') === TRUE) {
+      if (_acquia_purge_variable('acquia_purge_log_success') === TRUE) {
         watchdog(
           'acquia_purge',
           "Purged '%url' from load balancer %balancer.",
@@ -1806,182 +1736,46 @@ function _acquia_purge_purge_requests($requests) {
 }
 
 /**
- * Load state data from the persistent storage location.
+ * Retrieve a Drupal variable or its default.
  *
- * @see _acquia_purge_state_set()
- * @see _acquia_purge_state_get()
- */
-function _acquia_purge_state_initialize() {
-  global $_acquia_purge_state;
-
-  // Initialize the global variable.
-  if (!is_null($_acquia_purge_state)) {
-    return;
-  }
-  else {
-    $_acquia_purge_state = array();
-  }
-
-  // Load up the data from memcache if it is enabled.
-  if (_acquia_purge_are_we_using_memcached()) {
-    $state = dmemcache_get(
-      ACQUIA_PURGE_STATE_MEMKEY, ACQUIA_PURGE_STATE_MEMBIN);
-    if (is_array($state) && count($state)) {
-      $_acquia_purge_state = $state;
-    }
-    return;
-  }
-
-  // Load the state data from a file on disk. This is obviously slower than
-  // through memory but compared to the variable_set() we used before and given
-  // the fact that we cannot rely on the Cache API directly (as it is not
-  // disposable information), this is still a whole lot better.
-  else {
-
-    // We are keeping the raw payload globally, so that we can check if we
-    // really need to write out to disk in _acquia_purge_state_commit().
-    global $_acquia_purge_state_raw;
-
-    // Check if the file exists and if so, load up its raw content.
-    if (!file_exists(ACQUIA_PURGE_STATE_FILE)) {
-      return;
-    }
-    $_acquia_purge_state_raw = file_get_contents(ACQUIA_PURGE_STATE_FILE);
-    if (!$_acquia_purge_state_raw) {
-      return;
-    }
-
-    // Now that we have the payload, unserialize and share it.
-    $data = unserialize($_acquia_purge_state_raw);
-    if (is_array($data) && count($data)) {
-      $_acquia_purge_state = $data;
-    }
-  }
-}
-
-/**
- * Load a state data property.
+ * The sole reason this helper exists is to prevent a wilderness of direct calls
+ * to variable_get() and to mitigate the risk of different default values. In
+ * Drupal 8, this problem is addressed in its shiny configuration API but here
+ * we have to deal with it this way by keeping all defaults in one place.
  *
  * @param string $name
- *   The name of the state data property to return.
- * @param null|mixed $default
- *   (optional) The default value to use if this data entry has never been set.
+ *   The name of the variable to return.
  *
+ * @see variable_get()
  * @return mixed
- *   The value of the data entry.
- *
- * @see _acquia_purge_state_set()
- * @see _acquia_purge_state_initialize()
  */
-function _acquia_purge_state_get($name, $default = NULL) {
-  global $_acquia_purge_state;
-  if (is_null($_acquia_purge_state)) {
-    _acquia_purge_state_initialize();
-  }
+function _acquia_purge_variable($name) {
+  static $defaults;
+  if (is_null($defaults)) {
 
-  // Return the data if it exists, else the default.
-  if (isset($_acquia_purge_state[$name])) {
-    return $_acquia_purge_state[$name];
-  }
-  return $default;
-}
-
-/**
- * Store a state data property.
- *
- * @param string $name
- *   The name of the state data property to store.
- * @param string $value
- *   The value to set. This can be any PHP data type.
- *
- * @see _acquia_purge_state_get()
- * @see _acquia_purge_state_initialize()
- */
-function _acquia_purge_state_set($name, $value) {
-  global $_acquia_purge_state;
-  if (is_null($_acquia_purge_state)) {
-    _acquia_purge_state_initialize();
-  }
-
-  // Store the data locally first.
-  $_acquia_purge_state[$name] = $value;
-
-  // Register a shutdown function to commit the state data in one go.
-  if (!isset($_acquia_purge_state['__commit_registered'])) {
-    $_acquia_purge_state['__commit_registered'] = TRUE;
-    drupal_register_shutdown_function('_acquia_purge_state_commit');
-  }
-}
-
-/**
- * Commit the state data to its persistent storage location.
- *
- * @see _acquia_purge_state_set()
- */
-function _acquia_purge_state_commit() {
-  global $_acquia_purge_state;
-  if (is_null($_acquia_purge_state)) {
-    _acquia_purge_state_initialize();
-  }
-
-  // Do not commit anything when the cookie isn't set, which might occur
-  // when something got written while _acquia_purge_state_wipe() followed.
-  if (!isset($_acquia_purge_state['__commit_registered'])) {
-    return;
-  }
-  else {
-    unset($_acquia_purge_state['__commit_registered']);
-  }
-
-  // Write out the data to memcache if that's enabled.
-  if (_acquia_purge_are_we_using_memcached()) {
-    dmemcache_set(
-      ACQUIA_PURGE_STATE_MEMKEY,
-      $_acquia_purge_state,
-      // Store the item permanently.
-      0,
-      ACQUIA_PURGE_STATE_MEMBIN
+    // All default variable values, see README.txt as well for further info.
+    $defaults = array(
+      'acquia_purge_domains'      => FALSE,
+      'acquia_purge_sphpskippath' => TRUE,
+      'acquia_purge_stripports'   => array(80, 443),
+      'acquia_purge_cron'         => FALSE,
+      'acquia_purge_http'         => TRUE,
+      'acquia_purge_https'        => FALSE,
+      'acquia_purge_base_path'    => base_path(),
+      'acquia_purge_errorlimit'   => TRUE,
+      'acquia_purge_log_success'  => TRUE,
+      'acquia_purge_variations'   => TRUE,
+      'acquia_purge_memcache'     => TRUE,
+      'acquia_purge_passivemode'  => FALSE,
+      'acquia_purge_allriskmode'  => FALSE,
+      'acquia_purge_smartqueue'   => FALSE,
     );
-    return;
   }
 
-  // Write the data to disk.
-  else {
-
-    // We are keeping the raw payload globally, so that we can check if we
-    // really need to write out to disk here.
-    global $_acquia_purge_state_raw;
-
-    // Serialize the current store and compare the raw data with the initial
-    // raw data, if they match exactly we won't write to disk to reduce IO.
-    $new_raw_payload = serialize($_acquia_purge_state);
-    if ($_acquia_purge_state_raw === $new_raw_payload) {
-      return;
-    }
-    $_acquia_purge_state_raw = $new_raw_payload;
-    file_put_contents(ACQUIA_PURGE_STATE_FILE, $new_raw_payload);
-  }
-}
-
-/**
- * Wipe all state data.
- *
- * @see _acquia_purge_state_set()
- * @see _acquia_purge_state_get()
- * @see _acquia_purge_state_initialize()
- * @see _acquia_purge_state_commit()
- */
-function _acquia_purge_state_wipe() {
-  global $_acquia_purge_state;
-  unset($_acquia_purge_state);
-
-  // Always attempt to delete the memcached object if the function's here.
-  if (function_exists('dmemcache_delete')) {
-    dmemcache_delete(ACQUIA_PURGE_STATE_MEMKEY, ACQUIA_PURGE_STATE_MEMBIN);
+  // Be explicit about requested variables we don't know about.
+  if (!isset($defaults[$name])) {
+    throw new Exception("_acquia_purge_variable: invalid variable '$name'!");
   }
 
-  // Check if the state file exists and wipe it if it does.
-  if (file_exists(ACQUIA_PURGE_STATE_FILE)) {
-    drupal_unlink(ACQUIA_PURGE_STATE_FILE);
-  }
+  return variable_get($name, $defaults[$name]);
 }

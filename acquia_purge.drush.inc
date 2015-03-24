@@ -223,7 +223,7 @@ function drush_acquia_purge_ap_purge($paths = NULL) {
 
   // Improve the administrative experience by automatically adding variations
   // on the given paths, which includes trailing slash versions and pagination.
-  if (_acquia_purge_get('acquia_purge_variations')) {
+  if (_acquia_purge_variable('acquia_purge_variations')) {
     _acquia_purge_input_path_variations($paths);
   }
 
@@ -303,7 +303,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
     }
 
     // Store state data as it else won't be available to the sub processes.
-    _acquia_purge_state_commit();
+    ApQueueService::i()->state()->commit();
 
     // Kick off the batch process, which will start forking processes.
     batch_set($batch);
