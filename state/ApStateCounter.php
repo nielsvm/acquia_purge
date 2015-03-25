@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApQueueCounter.
+ * Contains ApStateCounter.
  */
 
 /**
  * Integer counter kept in Acquia Purge's state storage mechanism.
  */
-class ApQueueCounter implements ApQueueCounterInterface {
+class ApStateCounter implements ApStateCounterInterface {
 
   /**
    * The state item that contains our int value.

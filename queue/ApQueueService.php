@@ -309,11 +309,9 @@ class ApQueueService {
    */
   public function queue() {
     if (is_null($this->queue)) {
-      $state = $this->state();
 
-      // Require all code if the autoloader has not yet done so already.
-      require_once($this->module_path . '/queue/ApQueueCounterInterface.php');
-      require_once($this->module_path . '/queue/ApQueueCounter.php');
+      // Assure that all dependent code is loaded, lets not rely on registry.
+      $state = $this->state();
       require_once($this->module_path . '/queue/ApQueueInterface.php');
       require_once($this->module_path . '/queue/backend/ApEfficientQueue.php');
 
@@ -341,6 +339,9 @@ class ApQueueService {
       require_once($this->module_path . '/state/ApStateStorageInterface.php');
       require_once($this->module_path . '/state/ApStateItemInterface.php');
       require_once($this->module_path . '/state/ApStateItem.php');
+      require_once($this->module_path . '/state/ApStateCounterInterface.php');
+      require_once($this->module_path . '/state/ApStateCounter.php');
+
       if (_acquia_purge_are_we_using_memcached()) {
         require_once($this->module_path
           . '/state/backend/ApMemcachedStateStorage.php');

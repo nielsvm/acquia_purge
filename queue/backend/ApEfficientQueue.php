@@ -166,7 +166,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
    * {@inheritdoc}
    */
   public function counter($key) {
-    return new ApQueueCounter($this->state->get($key, 0));
+    return new ApStateCounter($this->state->get($key, 0));
   }
 
   /**

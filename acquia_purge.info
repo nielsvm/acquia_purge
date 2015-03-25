@@ -5,11 +5,11 @@ core = 7.x
 dependencies[] = expire (>=2.0-rc2)
 files[] = state/ApStateItemInterface.php
 files[] = state/ApStateItem.php
+files[] = state/ApStateCounter.php
+files[] = state/ApStateCounterInterface.php
 files[] = state/ApStateStorageInterface.php
 files[] = state/backend/ApDiskStateStorage.php
 files[] = state/backend/ApMemcachedStateStorage.php
-files[] = queue/ApQueueCounterInterface.php
-files[] = queue/ApQueueCounter.php
 files[] = queue/backend/ApSmartQueue.php
 files[] = queue/backend/ApEfficientQueue.php
 files[] = queue/ApQueueInterface.php

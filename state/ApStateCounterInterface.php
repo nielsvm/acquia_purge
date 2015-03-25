@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApQueueCounterInterface.
+ * Contains ApStateCounterInterface.
  */
 
 /**
  * Describes a object, providing access to counters (int) kept in state storage.
  */
-interface ApQueueCounterInterface {
+interface ApStateCounterInterface {
 
   /**
    * Construct the counter state item object.

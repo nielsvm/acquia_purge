@@ -27,7 +27,7 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
    * @param int $key
    *   The key with which the counter is stored in state storage.
    *
-   * @return ApQueueCounterInterface
+   * @return ApStateCounterInterface
    */
   public function counter($key);
 
