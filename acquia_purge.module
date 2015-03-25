@@ -765,8 +765,6 @@ function _acquia_purge_get_balancers() {
  *
  * @return int
  *   Integer indicating how many items may be popped from the queue.
- *
- * @see ACQUIA_PURGE_MAX_ITEMS
  */
 function _acquia_purge_get_capacity($subtract = NULL) {
   static $capacity;
@@ -831,9 +829,6 @@ function _acquia_purge_get_capacity_factor() {
  *   during the current script execution. Usually it will be higher on the CLI
  *   and in general this value will be on the safe side, as it assumes each
  *   request to last as long as ACQUIA_PURGE_REQUEST_TIMEOUT takes place.
- *
- * @see ACQUIA_PURGE_REQUEST_TIMEOUT
- * @see ACQUIA_PURGE_MAX_REQUESTS
  */
 function _acquia_purge_get_capacity_maxrequests() {
   static $max_requests;

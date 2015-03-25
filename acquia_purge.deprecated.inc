@@ -9,8 +9,6 @@
  * Retrieve a variable or state data property.
  *
  * @deprecated
- * @see _acquia_purge_variable()
- * @see ApQueueService::state()
  */
 function _acquia_purge_get($name, $get_default = FALSE) {
   watchdog(
@@ -30,7 +28,6 @@ function _acquia_purge_get($name, $get_default = FALSE) {
  * DEPRECATED: return the queue object in use for Acquia Purge.
  *
  * @deprecated
- * @see ApQueueService::queue()
  */
 function _acquia_purge_queue() {
   watchdog(
@@ -45,8 +42,6 @@ function _acquia_purge_queue() {
  * DEPRECATED: clear the queue and invalidate all running processes.
  *
  * @deprecated
- * @see ApQueueService::clear()
- * @see ApStateStorageInterface::wipe()
  */
 function _acquia_purge_queue_clear($state_only = FALSE) {
   watchdog(
@@ -66,7 +61,6 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
  * DEPRECATED: help prevent duplicate path queuing and purging.
  *
  * @deprecated
- * @see ApQueueService::deduplicate()
  */
 function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
   watchdog(
@@ -83,7 +77,6 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
  * DEPRECATED: maintains a runtime list of purged URLs for UI visualization.
  *
  * @deprecated
- * @see ApQueueService::history()
  */
 function _acquia_purge_queue_history($url = NULL) {
   watchdog(
@@ -98,7 +91,6 @@ function _acquia_purge_queue_history($url = NULL) {
  * DEPRECATED: acquire a lock and get permission to process the queue.
  *
  * @deprecated
- * @see ApQueueService::lock()
  */
 function _acquia_purge_queue_lock($acquire = TRUE) {
   watchdog(
@@ -113,7 +105,6 @@ function _acquia_purge_queue_lock($acquire = TRUE) {
  * DEPRECATED: process as many items from the queue as capacity allows.
  *
  * @deprecated
- * @see ApQueueService::process()
  */
 function _acquia_purge_queue_pop($processor = NULL) {
   watchdog(
@@ -131,7 +122,6 @@ function _acquia_purge_queue_pop($processor = NULL) {
  * DEPRECATED: purge a single path on all domains and load balancers.
  *
  * @deprecated
- * @see _acquia_purge_purge()
  */
 function _acquia_purge_queue_processpurge($path) {
   watchdog(
@@ -146,7 +136,6 @@ function _acquia_purge_queue_processpurge($path) {
  * DEPRECATED: process the given HTTP requests and do it efficiently.
  *
  * @deprecated
- * @see _acquia_purge_purge_requests()
  */
 function _acquia_purge_queue_processpurge_requests($requests) {
   watchdog(
@@ -161,7 +150,6 @@ function _acquia_purge_queue_processpurge_requests($requests) {
  * DEPRECATED: generate progress statistics on the purge queue.
  *
  * @deprecated
- * @see ApQueueService::stats()
  */
 function _acquia_purge_queue_stats($key = NULL) {
   watchdog(
@@ -176,7 +164,6 @@ function _acquia_purge_queue_stats($key = NULL) {
  * DEPRECATED: load state data from the persistent storage location.
  *
  * @deprecated
- * @see ApStateStorageInterface::commit()
  */
 function _acquia_purge_state_initialize() {
   watchdog(
@@ -193,7 +180,6 @@ function _acquia_purge_state_initialize() {
  * DEPRECATED: commit the state data to its persistent storage location.
  *
  * @deprecated
- * @see ApStateStorageInterface::commit()
  */
 function _acquia_purge_state_commit() {
   watchdog(
@@ -210,7 +196,6 @@ function _acquia_purge_state_commit() {
  * DEPRECATED: load a state data property.
  *
  * @deprecated
- * @see ApStateStorageInterface::get()
  */
 function _acquia_purge_state_get($name, $default = NULL) {
   watchdog(
@@ -227,8 +212,6 @@ function _acquia_purge_state_get($name, $default = NULL) {
  * DEPRECATED: store a state data property.
  *
  * @deprecated
- * @see ApStateStorageInterface::get()
- * @see ApStateItemInterface::set()
  */
 function _acquia_purge_state_set($name, $value) {
   watchdog(
@@ -245,7 +228,6 @@ function _acquia_purge_state_set($name, $value) {
  * DEPRECATED: wipe all state data.
  *
  * @deprecated
- * @see ApStateStorageInterface::wipe()
  */
 function _acquia_purge_state_wipe() {
   watchdog(
@@ -262,7 +244,6 @@ function _acquia_purge_state_wipe() {
  * DEPRECATED: queue a path and trigger the UI processor (if not using cron).
  *
  * @deprecated
- * @see ApQueueService::addPath()
  */
 function acquia_purge_purge_path($path) {
   watchdog(
@@ -277,7 +258,6 @@ function acquia_purge_purge_path($path) {
  * DEPRECATED: queue paths and trigger the UI processor (if not using cron).
  *
  * @deprecated
- * @see ApQueueService::addPaths()
  */
 function acquia_purge_purge_paths(array $paths) {
   watchdog(

@@ -8,7 +8,7 @@
 /**
  * DrupalReliableQueueInterface derivative supporting efficient storage models.
  *
- * @see DrupalReliableQueueInterface
+ * @see DrupalReliableQueueInterface()
  * @see http://github.com/nielsvm/purge/blob/8.x-3.x/src/Queue/PluginInterface.php
  */
 interface ApQueueInterface extends DrupalReliableQueueInterface {
