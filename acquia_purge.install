@@ -42,9 +42,7 @@ function acquia_purge_install() {
  */
 function acquia_purge_uninstall() {
   drupal_load('module', 'acquia_purge');
-  require_once(drupal_get_path('module', 'acquia_purge')
-    . '/queue/ApQueueService.php');
-  ApQueueService::i()->clear();
+  _acquia_purge_qs()->clear();
 }
 
 /**
@@ -108,9 +106,7 @@ function acquia_purge_update_7102(&$sandbox) {
   // As we are losing our old counter and owners state, also clear the queue
   // as this will otherwise inevitably lead to sites with queue zombies.
   drupal_load('module', 'acquia_purge');
-  require_once(drupal_get_path('module', 'acquia_purge')
-    . '/queue/ApQueueService.php');
-  ApQueueService::i()->clear();
+  _acquia_purge_qs()->clear();
 }
 
 /**

@@ -22,7 +22,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
     return _acquia_purge_variable($name);
   }
   catch (Exception $e) {
-    return ApQueueService::i()->state()->get($name)->get();
+    return _acquia_purge_qs()->state()->get($name)->get();
   }
 }
 
@@ -36,9 +36,9 @@ function _acquia_purge_queue() {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->queue()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->queue()'),
     WATCHDOG_WARNING);
-  return ApQueueService::i()->queue();
+  return _acquia_purge_qs()->queue();
 }
 
 /**
@@ -52,13 +52,13 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->clear()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->clear()'),
     WATCHDOG_WARNING);
   if ($state_only) {
-    ApQueueService::i()->state()->wipe();
+    _acquia_purge_qs()->state()->wipe();
   }
   else {
-    ApQueueService::i()->clear();
+    _acquia_purge_qs()->clear();
   }
 }
 
@@ -74,9 +74,9 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
     "Function %old() is deprecated, port your code to !new immediately!",
     array(
       '%old' => __FUNCTION__,
-      '!new' => 'ApQueueService::i()->deduplicate()'
+      '!new' => '_acquia_purge_qs()->deduplicate()'
       ), WATCHDOG_WARNING);
-  return ApQueueService::i()->deduplicate($path, $list, $l);
+  return _acquia_purge_qs()->deduplicate($path, $list, $l);
 }
 
 /**
@@ -89,9 +89,9 @@ function _acquia_purge_queue_history($url = NULL) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->history()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->history()'),
     WATCHDOG_WARNING);
-  return ApQueueService::i()->history($url);
+  return _acquia_purge_qs()->history($url);
 }
 
 /**
@@ -104,9 +104,9 @@ function _acquia_purge_queue_lock($acquire = TRUE) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->lock()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->lock()'),
     WATCHDOG_WARNING);
-  return ApQueueService::i()->lock($acquire);
+  return _acquia_purge_qs()->lock($acquire);
 }
 
 /**
@@ -119,12 +119,12 @@ function _acquia_purge_queue_pop($processor = NULL) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->process()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->process()'),
     WATCHDOG_WARNING);
   if (is_null($processor)) {
     $processor = '_acquia_purge_purge';
   }
-  return ApQueueService::i()->process($processor);
+  return _acquia_purge_qs()->process($processor);
 }
 
 /**
@@ -167,9 +167,9 @@ function _acquia_purge_queue_stats($key = NULL) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->stats()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->stats()'),
     WATCHDOG_WARNING);
-  return ApQueueService::i()->stats($key);
+  return _acquia_purge_qs()->stats($key);
 }
 
 /**
@@ -184,9 +184,9 @@ function _acquia_purge_state_initialize() {
     "Function %old() is deprecated, port your code to !new immediately!",
     array(
       '%old' => __FUNCTION__,
-      '!new' => 'ApQueueService::i()->state()'),
+      '!new' => '_acquia_purge_qs()->state()'),
     WATCHDOG_WARNING);
-  ApQueueService::i()->state();
+  _acquia_purge_qs()->state();
 }
 
 /**
@@ -201,9 +201,9 @@ function _acquia_purge_state_commit() {
     "Function %old() is deprecated, port your code to !new immediately!",
     array(
       '%old' => __FUNCTION__,
-      '!new' => 'ApQueueService::i()->state()->commit()'),
+      '!new' => '_acquia_purge_qs()->state()->commit()'),
     WATCHDOG_WARNING);
-  ApQueueService::i()->state()->commit();
+  _acquia_purge_qs()->state()->commit();
 }
 
 /**
@@ -218,9 +218,9 @@ function _acquia_purge_state_get($name, $default = NULL) {
     "Function %old() is deprecated, port your code to !new immediately!",
     array(
       '%old' => __FUNCTION__,
-      '!new' => 'ApQueueService::i()->state()->get($name)->get()'),
+      '!new' => '_acquia_purge_qs()->state()->get($name)->get()'),
     WATCHDOG_WARNING);
-  return ApQueueService::i()->state()->get($name, $default)->get();
+  return _acquia_purge_qs()->state()->get($name, $default)->get();
 }
 
 /**
@@ -236,9 +236,9 @@ function _acquia_purge_state_set($name, $value) {
     "Function %old() is deprecated, port your code to !new immediately!",
     array(
       '%old' => __FUNCTION__,
-      '!new' => 'ApQueueService::i()->state()->get($name)->set($value)'),
+      '!new' => '_acquia_purge_qs()->state()->get($name)->set($value)'),
     WATCHDOG_WARNING);
-  ApQueueService::i()->state()->get($name)->set($value);
+  _acquia_purge_qs()->state()->get($name)->set($value);
 }
 
 /**
@@ -253,9 +253,9 @@ function _acquia_purge_state_wipe() {
     "Function %old() is deprecated, port your code to !new immediately!",
     array(
       '%old' => __FUNCTION__,
-      '!new' => 'ApQueueService::i()->state()->wipe()'),
+      '!new' => '_acquia_purge_qs()->state()->wipe()'),
     WATCHDOG_WARNING);
-  ApQueueService::i()->state()->wipe();
+  _acquia_purge_qs()->state()->wipe();
 }
 
 /**
@@ -268,9 +268,9 @@ function acquia_purge_purge_path($path) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->addPath()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->addPath()'),
     WATCHDOG_WARNING);
-  return ApQueueService::i()->addPath($path);
+  return _acquia_purge_qs()->addPath($path);
 }
 
 /**
@@ -283,9 +283,9 @@ function acquia_purge_purge_paths(array $paths) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => 'ApQueueService::i()->addPaths()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->addPaths()'),
     WATCHDOG_WARNING);
-  return ApQueueService::i()->addPaths($paths);
+  return _acquia_purge_qs()->addPaths($paths);
 }
 
 /**

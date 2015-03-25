@@ -232,7 +232,7 @@ Frequently asked questions
   it receives paths and wraps those to its own publicly facing API functions.
 
   You can queue items for purging like this:
-    $queue = ApQueueService::i();
+    $queue = _acquia_purge_qs();
     $queue->addPath('node/5?parameter');
     $queue->addPaths(array('news/section1', 'contact'));
 
@@ -240,19 +240,19 @@ Frequently asked questions
   will trigger the UI processor for that user on the next page load. However, if
   you need to do direct processing yourself, you can use "drush ap-process",
   depend on cron or do it yourself with:
-    $queue = ApQueueService::i();
+    $queue = _acquia_purge_qs();
     if ($queue->lock()) {
       $queue->process();
       $queue->lock(NULL);
     }
 
-  The ApQueueService::i()->process() call will run as long as PHP has resources
+  The ApQueueService::process() call will run as long as PHP has resources
   for and depends on Acquia Purge's internal capacity calculation. When it runs
   from the CLI, it has a higher max_execution_time and will therefore process
   much more at once, then it will when triggered through a web server.
 
   You can always check upon the queue state by querying:
-  var_dump(ApQueueService::i()->stats());
+  var_dump(_acquia_purge_qs()->stats());
 
  Should I disable Drupal's page cache because of my special module or feature?
 --------------------------------------------------------------------------------

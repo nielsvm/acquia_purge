@@ -339,7 +339,7 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
 
   // Only submit the paths if they really contain something.
   if (count($form_state['values']['paths']['path'])) {
-    ApQueueService::i()->addPaths($form_state['values']['paths']['path']);
+    _acquia_purge_qs()->addPaths($form_state['values']['paths']['path']);
   }
 }
 

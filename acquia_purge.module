@@ -68,16 +68,11 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
  * Implements hook_init().
  */
 function acquia_purge_init() {
-  $modulepath = drupal_get_path('module', 'acquia_purge');
-
-  // To prevent autoload failure, load the service code if the class isn't here.
-  if (!class_exists('ApQueueService')) {
-    require_once($modulepath . '/queue/ApQueueService.php');
-  }
 
   // Load legacy helpers to prevent third-party code from breaking horribly. The
   // helpers will go in the future and are terribly vocal about it in the logs.
-  require_once($modulepath . '/acquia_purge.deprecated.inc');
+  require_once(drupal_get_path('module', 'acquia_purge')
+    . '/acquia_purge.deprecated.inc');
 
   // Load the Ajax processor's assets - only happens when all its checks passed.
   _acquia_purge_ajaxprocessor_loadassets();
@@ -112,7 +107,7 @@ function acquia_purge_cron() {
   }
 
   // Acquire a lock and ensure nobody else is purging something.
-  if (!ApQueueService::i()->lock()) {
+  if (!_acquia_purge_qs()->lock()) {
     return;
   }
 
@@ -124,14 +119,14 @@ function acquia_purge_cron() {
   }
 
   // Retrieve the statistics and determine if processing is needed at all.
-  $stats = ApQueueService::i()->stats();
+  $stats = _acquia_purge_qs()->stats();
   if (!$stats['running']) {
     return;
   }
 
   // Process as much items as we can and release the lock when done.
-  ApQueueService::i()->process();
-  ApQueueService::i()->lock(NULL);
+  _acquia_purge_qs()->process();
+  _acquia_purge_qs()->lock(NULL);
 }
 
 /**
@@ -265,7 +260,7 @@ function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
   }
 
   // Queue all paths that we received from Expire.
-  ApQueueService::i()->addPaths($urls);
+  _acquia_purge_qs()->addPaths($urls);
 }
 
 /**
@@ -467,7 +462,7 @@ function _acquia_purge_ajaxprocessor_is_triggered() {
   }
 
   // Retrieve the list of user names owning an ongoing purge process.
-  $uiusers = ApQueueService::i()->uiUsers()->get();
+  $uiusers = _acquia_purge_qs()->uiUsers()->get();
 
   // If the uiusers list is empty, that means no active purges are ongoing.
   if (!count($uiusers)) {
@@ -539,7 +534,7 @@ function _acquia_purge_ajaxprocessor_loadassets() {
  *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
  */
 function _acquia_purge_ajaxprocessor_processorcallback() {
-  $stats = ApQueueService::i()->stats();
+  $stats = _acquia_purge_qs()->stats();
   $stats['widget'] = '&nbsp;';
   $stats['locked'] = FALSE;
   $stats['error'] = FALSE;
@@ -554,14 +549,14 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
 
   // If nothing was found, attempt to acquire the lock and process some items.
   else {
-    if (ApQueueService::i()->lock()) {
+    if (_acquia_purge_qs()->lock()) {
 
       // This automatically pops an X amount of items for which we have enough
       // resource capacity and processes them straight away.
-      ApQueueService::i()->process();
+      _acquia_purge_qs()->process();
 
       // Processing finished, so update $stats to reflect the new values.
-      foreach (ApQueueService::i()->stats() as $key => $value) {
+      foreach (_acquia_purge_qs()->stats() as $key => $value) {
         $stats[$key] = $value;
       }
 
@@ -573,7 +568,7 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
           do ask your technical administrator to check the logs.");
       }
 
-      ApQueueService::i()->lock(NULL);
+      _acquia_purge_qs()->lock(NULL);
     }
     else {
       $stats['locked'] = TRUE;
@@ -614,10 +609,10 @@ function _acquia_purge_ajaxprocessor_trigger() {
 
   // Only register authenticated users, anonymous users will only queue.
   if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-    $uiusers = ApQueueService::i()->uiUsers()->get();
+    $uiusers = _acquia_purge_qs()->uiUsers()->get();
     if (!in_array($user->name, $uiusers)) {
       $uiusers[] = $user->name;
-      ApQueueService::i()->uiUsers()->set($uiusers);
+      _acquia_purge_qs()->uiUsers()->set($uiusers);
     }
     $triggered = TRUE;
   }
@@ -966,7 +961,7 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
 
     // Run a duplicate check by hashing and checking state data.
     else {
-      $logged_errors = ApQueueService::i()->loggedErrors()->get();
+      $logged_errors = _acquia_purge_qs()->loggedErrors()->get();
       $hash = sha1($description);
       if (in_array($hash, $logged_errors)) {
         return;
@@ -975,7 +970,7 @@ function _acquia_purge_get_diagnosis_logged($items, $deduplicate = TRUE) {
       // Log the message and add the hash to the deduplication list.
       watchdog('acquia_purge', $description, array(), $map[$item['severity']]);
       $logged_errors[] = $hash;
-      ApQueueService::i()->loggedErrors()->set($logged_errors);
+      _acquia_purge_qs()->loggedErrors()->set($logged_errors);
     }
   }
 }
@@ -1501,7 +1496,7 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  *   handling, statistic counters and more. Instead you want to use the queue
  *   service, e.g.:
  *   @code
- *   $queue = ApQueueService::i();
+ *   $queue = _acquia_purge_qs();
  *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
  *   $queue->process();
  *   @endcode
@@ -1570,7 +1565,7 @@ function _acquia_purge_purge($path) {
           array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
           WATCHDOG_INFO);
       }
-      ApQueueService::i()->history($rqst->uri);
+      _acquia_purge_qs()->history($rqst->uri);
     }
     else {
       if ($overall_success) {
@@ -1733,6 +1728,27 @@ function _acquia_purge_purge_requests($requests) {
   }
 
   return $results;
+}
+
+/**
+ * Retrieve the global ApQueueService instance.
+ *
+ * To avoid exposing end-users to 'Class ApQueueService not found' registry
+ * madness, this wrapper includes the PHP when the class isn't defined. Apart
+ * from that, it serves as the single access point to the queue service.
+ *
+ * @return ApQueueService
+ */
+function _acquia_purge_qs() {
+  static $queue_service;
+  if (is_null($queue_service)) {
+    if (!class_exists('ApQueueService')) {
+      require_once(drupal_get_path('module', 'acquia_purge')
+        . '/queue/ApQueueService.php');
+    }
+    $queue_service = new ApQueueService();
+  }
+  return $queue_service;
 }
 
 /**

@@ -53,17 +53,6 @@ class ApQueueService {
   }
 
   /**
-   * Construct or retrieve the active ApQueueService instance.
-   */
-  public static function i() {
-    static $service;
-    if (is_null($service)) {
-      $service = new ApQueueService();
-    }
-    return $service;
-  }
-
-  /**
    * Queue a single path and trigger the UI processor (if not using cron).
    *
    * @param string $path
