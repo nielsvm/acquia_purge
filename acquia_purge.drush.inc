@@ -106,8 +106,9 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
   $longest = 25;
   foreach ($tests as $id => $test) {
     $tests[$id]['drush_type'] = $severitymap[$test['severity']];
-    if (strlen($test['name']) > $longest) {
-      $longest = strlen($test['name']) + 2;
+    $len = drupal_strlen($test['name']);
+    if ($len > $longest) {
+      $longest = $len + 2;
     }
   }
 
@@ -162,9 +163,9 @@ function _drush_acquia_purge_ap_diagnosis_log($test, $longest) {
     sprintf($colors[$test['drush_type']], "%s%s%s%s%s\n"),
     $type,
     str_repeat(' ', $pad_maxlength - strlen($type)),
-    strtoupper($test['name']),
+    drupal_strtoupper($test['name']),
     str_repeat(' ', $longest - strlen($test['name'])),
-    strtolower($test['value_plain'])
+    drupal_strtolower($test['value_plain'])
   );
 
   // Print descriptions for warnings and errors.

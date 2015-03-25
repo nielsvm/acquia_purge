@@ -20,13 +20,13 @@ function acquia_purge_autocomplete($string) {
   $string = implode('/', array_slice(explode('/', $_GET['q']), 1));
 
   // Scan for node/ lookups as they're quite common.
-  if (substr($string, 0, 1) == 'n') {
+  if (drupal_substr($string, 0, 1) == 'n') {
     $query = db_select('node', 'n')
       ->fields('n', array('nid'))
       ->range(0, $query_limit);
 
     // Lookup node IDs if the user entered node/, else limit on 15.
-    if (strlen($string) > 5) {
+    if (drupal_strlen($string) > 5) {
       $string = (int) str_replace('node/', '', $string);
       $query->condition('n.nid', '%' . db_like($string) . '%', 'LIKE');
     }
@@ -415,11 +415,11 @@ function theme_acquia_purge_status_report($variables) {
 
     // Output table row(s)
     if (!empty($requirement['description'])) {
-      $output .= '<tr class="' . $severity['class'] . ' merge-down"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . strtolower($requirement['value_plain']) . '</td></tr>';
+      $output .= '<tr class="' . $severity['class'] . ' merge-down"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . drupal_strtolower($requirement['value_plain']) . '</td></tr>';
       $output .= '<tr class="' . $severity['class'] . ' merge-up"><td colspan="3" class="status-description">' . $requirement['description'] . '</td></tr>';
     }
     else {
-      $output .= '<tr class="' . $severity['class'] . '"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . strtolower($requirement['value_plain']) . '</td></tr>';
+      $output .= '<tr class="' . $severity['class'] . '"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . drupal_strtolower($requirement['value_plain']) . '</td></tr>';
     }
   }
 
