@@ -16,7 +16,7 @@ interface ApStateStorageInterface {
   public function commit();
 
   /**
-   * Retrieve the object named $key from state storage.
+   * Retrieve the object named $key.
    *
    * @param int $key
    *   The key with which the object is stored in state storage.
@@ -26,6 +26,16 @@ interface ApStateStorageInterface {
    * @return ApStateItemInterface
    */
   public function get($key, $default = NULL);
+
+  /**
+   * Retrieve a counter object named $key.
+   *
+   * @param int $key
+   *   The key with which the object is stored in state storage.
+   *
+   * @return ApStateCounterInterface
+   */
+  public function getCounter($key);
 
   /**
    * Store the state item in state item storage.

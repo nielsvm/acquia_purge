@@ -6,50 +6,48 @@
  */
 
 /**
- * Integer counter kept in Acquia Purge's state storage mechanism.
+ * Provides a single counter kept in state storage.
  */
-class ApStateCounter implements ApStateCounterInterface {
-
-  /**
-   * The state item that contains our int value.
-   *
-   * @var ApStateItemInterface
-   */
-  protected $item;
+class ApStateCounter extends ApStateItem implements ApStateCounterInterface {
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(ApStateItemInterface $item) {
-    $this->item = $item;
+  public function __construct(ApStateStorageInterface $storage, $key, $value) {
+    parent::__construct($storage, $key, $value);
+    if (!is_int($this->value)) {
+      $this->value = (int) $this->value;
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function decrease($amount = 1) {
-    $this->item->set(intval($this->item->get()) - intval($amount));
+    if (!is_int($amount)) {
+      $amount = (int) $amount;
+    }
+    $this->set($this->value - $amount);
   }
 
   /**
    * {@inheritdoc}
    */
   public function increase($amount = 1) {
-    $this->item->set(intval($this->item->get()) + intval($amount));
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function get() {
-    return intval($this->item->get());
+    if (!is_int($amount)) {
+      $amount = (int) $amount;
+    }
+    $this->set($this->value + $amount);
   }
 
   /**
    * {@inheritdoc}
    */
   public function set($value) {
-    $this->item->set(intval($value));
+    if (!is_int($value)) {
+      $value = (int) $value;
+    }
+    parent::set($value);
   }
 
 }

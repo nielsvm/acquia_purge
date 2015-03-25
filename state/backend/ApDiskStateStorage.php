@@ -96,6 +96,25 @@ class ApDiskStateStorage implements ApStateStorageInterface {
   /**
    * {@inheritdoc}
    */
+  public function getCounter($key) {
+    if (isset($this->items[$key])) {
+      if (!($this->items[$key] instanceof ApStateCounterInterface)) {
+        $this->items[$key] = new ApStateCounter(
+          $this,
+          $key,
+          $this->items[$key]->get()
+        );
+      }
+    }
+    else {
+      $this->items[$key] = new ApStateCounter($this, $key, 0);
+    }
+    return $this->items[$key];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function set(ApStateItemInterface $item) {
     if (!$this->commit_registered) {
       $this->commit_registered = TRUE;
