@@ -8,6 +8,7 @@ files[] = state/ApStateItem.php
 files[] = state/ApStateCounter.php
 files[] = state/ApStateCounterInterface.php
 files[] = state/ApStateStorageInterface.php
+files[] = state/ApStateStorageBase.php
 files[] = state/backend/ApDiskStateStorage.php
 files[] = state/backend/ApMemcachedStateStorage.php
 files[] = queue/backend/ApSmartQueue.php

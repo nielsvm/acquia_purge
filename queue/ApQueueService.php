@@ -337,6 +337,7 @@ class ApQueueService {
     // Initialize the state storage backend.
     if (is_null($this->state)) {
       require_once($this->module_path . '/state/ApStateStorageInterface.php');
+      require_once($this->module_path . '/state/ApStateStorageBase.php');
       require_once($this->module_path . '/state/ApStateItemInterface.php');
       require_once($this->module_path . '/state/ApStateItem.php');
       require_once($this->module_path . '/state/ApStateCounterInterface.php');
