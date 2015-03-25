@@ -47,8 +47,7 @@ function acquia_purge_drush_command() {
       'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_DATABASE,
       'aliases' => array('app'),
       'arguments' => array(
-        'paths' => 'The Drupal path to be purged, e.g.: "news" or "<front>",'
-          . ' multiple separated paths are also accepted: "news contact node/1".',
+        'paths' => 'The Drupal path to be purged, e.g.: "news" or "<front>", multiple separated paths are also accepted: "news contact node/1".',
       ),
       'examples' => array('drush app "news"'),
     ),
@@ -130,7 +129,7 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
-
+ *
  * @param int $longest
  *   The longest test name, used to calculate formatting padding.
  */
@@ -299,7 +298,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
       'operations' => array(),
       'init_message' => t('Initializing'),
       'error_message' => t('An error occurred'));
-    for ($i=1; $i <= $steps; $i++) {
+    for ($i = 1; $i <= $steps; $i++) {
       $batch['operations'][] = array(__FUNCTION__, array());
     }
 

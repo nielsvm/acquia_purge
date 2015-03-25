@@ -24,6 +24,7 @@ interface ApStateStorageInterface {
    *   (optional) The default value to use if the entry doesn't yet exist.
    *
    * @return ApStateItemInterface
+   *   The item.
    */
   public function get($key, $default = NULL);
 
@@ -34,6 +35,7 @@ interface ApStateStorageInterface {
    *   The key with which the object is stored in state storage.
    *
    * @return ApStateCounterInterface
+   *   The counter.
    */
   public function getCounter($key);
 

@@ -20,9 +20,7 @@ function acquia_purge_rules_action_info() {
         'path' => array(
           'type' => 'text',
           'label' => t('Path'),
-          'description' => t('This rule gets removed in future versions as it'
-            . ' is obsolete, please use the new and better "Clear pages on'
-            . ' Acquia Cloud" rule action.'),
+          'description' => t('This rule gets removed in future versions as it is obsolete, please use the new and better "Clear pages on Acquia Cloud" rule action.'),
         ),
       ),
     ),
@@ -45,14 +43,7 @@ function acquia_purge_rules_action_info_alter(&$actions) {
   $actions[$action]['label'] = t('Clear pages on Acquia Cloud.');
   $actions[$action]['base'] = '_acquia_purge_action_flush_url';
   $actions[$action]['module'] = 'acquia_purge';
-  $actions[$action]['parameter']['urls']['description'] = t('A Drupal path or'
-      . ' full absolute URL that refers to a page on your website. Paths need'
-      . ' to be relative from the document root of your site, for instance'
-      . ' "node/1" or "news" but not "news/*" as wildcards are not supported.'
-      . ' When providing tokens that generate absolute URLs it is important to'
-      . ' understand that the domain names in URLs will be stripped out and'
-      . ' not respected as Acquia Purge will use its own list of domains,'
-      . ' which it uses to clear every path or URL it processes.');
+  $actions[$action]['parameter']['urls']['description'] = t('A Drupal path or full absolute URL that refers to a page on your website. Paths need to be relative from the document root of your site, for instance "node/1" or "news" but not "news/*" as wildcards are not supported. When providing tokens that generate absolute URLs it is important to understand that the domain names in URLs will be stripped out and not respected as Acquia Purge will use its own list of domains, which it uses to clear every path or URL it processes.');
 
   // Remove the original validation callback, which we will also take care of.
   unset($actions[$action]['callbacks']);
@@ -71,7 +62,6 @@ function acquia_purge_rules_action_info_alter(&$actions) {
  *   '<front>', 'user' or 'news'.
  *
  * @deprecated
- * @return null
  */
 function _acquia_purge_action_purge($path) {
 
@@ -99,8 +89,6 @@ function _acquia_purge_action_purge($path) {
  * @param array $urls_and_paths
  *   Non-associative array with absolute URL(s) or Drupal paths like
  *   '<front>', 'user' or 'news'.
- *
- * @return null
  */
 function _acquia_purge_action_flush_url($urls_and_paths) {
   $paths = array();

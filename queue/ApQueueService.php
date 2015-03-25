@@ -15,14 +15,14 @@ class ApQueueService {
    *
    * @var string
    */
-  protected $module_path;
+  protected $modulePath;
 
   /**
    * Deduplication lists.
    *
    * @var array[]
    */
-  protected $deduplicate_lists = array();
+  protected $deduplicateLists = array();
 
   /**
    * Purged URLs for UI visualization.
@@ -49,7 +49,7 @@ class ApQueueService {
    * Construct ApQueueService.
    */
   public function __construct() {
-    $this->module_path = drupal_get_path('module', 'acquia_purge');
+    $this->modulePath = drupal_get_path('module', 'acquia_purge');
   }
 
   /**
@@ -148,24 +148,24 @@ class ApQueueService {
     $memcached_backed_storage = _acquia_purge_are_we_using_memcached();
 
     // And then each $list gets its own subsection.
-    if (!isset($this->deduplicate_lists[$list])) {
-      $this->deduplicate_lists[$list] = array();
+    if (!isset($this->deduplicateLists[$list])) {
+      $this->deduplicateLists[$list] = array();
       if ($memcached_backed_storage) {
-        $this->deduplicate_lists[$list] = $this->state()
+        $this->deduplicateLists[$list] = $this->state()
           ->get($list, array())
           ->get();
       }
     }
 
     // Check if it exists before list rotation, then add missing items.
-    $exists = in_array($path, $this->deduplicate_lists[$list]);
-    if (count($this->deduplicate_lists[$list]) >= $l) {
-      $this->deduplicate_lists[$list] = array();
+    $exists = in_array($path, $this->deduplicateLists[$list]);
+    if (count($this->deduplicateLists[$list]) >= $l) {
+      $this->deduplicateLists[$list] = array();
     }
     if (!$exists) {
-      $this->deduplicate_lists[$list][] = $path;
+      $this->deduplicateLists[$list][] = $path;
       if ($memcached_backed_storage) {
-        $this->state()->get($list, array())->set($this->deduplicate_lists[$list]);
+        $this->state()->get($list, array())->set($this->deduplicateLists[$list]);
       }
     }
 
@@ -224,6 +224,7 @@ class ApQueueService {
    * Retrieve the 'locked' state item from state storage.
    *
    * @return ApStateItemInterface
+   *   The state item.
    */
   public function locked() {
     return $this->state()->get('locked', FALSE);
@@ -233,6 +234,7 @@ class ApQueueService {
    * Retrieve the 'logged_errors' state item from state storage.
    *
    * @return ApStateItemInterface
+   *   The state item.
    */
   public function loggedErrors() {
     return $this->state()->get('logged_errors', array());
@@ -254,7 +256,7 @@ class ApQueueService {
    *   Returns TRUE when it processed items, FALSE when the capacity limit has
    *   been reached or when the queue is empty and there's nothing left to do.
    */
-  function process($callback = '_acquia_purge_purge') {
+  public function process($callback = '_acquia_purge_purge') {
 
     // Do not even attempt to process when the total counter is zero.
     if ($this->queue()->total()->get() === 0) {
@@ -306,18 +308,19 @@ class ApQueueService {
    * Retrieve the loaded queue backend object.
    *
    * @return ApQueueInterface
+   *   The queue backend.
    */
   public function queue() {
     if (is_null($this->queue)) {
 
       // Assure that all dependent code is loaded, lets not rely on registry.
       $state = $this->state();
-      require_once($this->module_path . '/queue/ApQueueInterface.php');
-      require_once($this->module_path . '/queue/backend/ApEfficientQueue.php');
+      require_once $this->modulePath . '/queue/ApQueueInterface.php';
+      require_once $this->modulePath . '/queue/backend/ApEfficientQueue.php';
 
       // Load the configured smart or normal backend.
       if (_acquia_purge_variable('acquia_purge_smartqueue')) {
-        require_once($this->module_path . '/queue/backend/ApSmartQueue.php');
+        require_once $this->modulePath . '/queue/backend/ApSmartQueue.php';
         $this->queue = new ApSmartQueue($state);
       }
       else {
@@ -331,29 +334,28 @@ class ApQueueService {
    * Retrieve the state storage object.
    *
    * @return ApStateStorageInterface
+   *   The state storage backend.
    */
   public function state() {
 
     // Initialize the state storage backend.
     if (is_null($this->state)) {
-      require_once($this->module_path . '/state/ApStateStorageInterface.php');
-      require_once($this->module_path . '/state/ApStateStorageBase.php');
-      require_once($this->module_path . '/state/ApStateItemInterface.php');
-      require_once($this->module_path . '/state/ApStateItem.php');
-      require_once($this->module_path . '/state/ApStateCounterInterface.php');
-      require_once($this->module_path . '/state/ApStateCounter.php');
+      require_once $this->modulePath . '/state/ApStateStorageInterface.php';
+      require_once $this->modulePath . '/state/ApStateStorageBase.php';
+      require_once $this->modulePath . '/state/ApStateItemInterface.php';
+      require_once $this->modulePath . '/state/ApStateItem.php';
+      require_once $this->modulePath . '/state/ApStateCounterInterface.php';
+      require_once $this->modulePath . '/state/ApStateCounter.php';
 
       if (_acquia_purge_are_we_using_memcached()) {
-        require_once($this->module_path
-          . '/state/backend/ApMemcachedStateStorage.php');
+        require_once $this->modulePath . '/state/backend/ApMemcachedStateStorage.php';
         $this->state = new ApMemcachedStateStorage(
           ACQUIA_PURGE_STATE_MEMKEY,
           ACQUIA_PURGE_STATE_MEMBIN
         );
       }
       else {
-        require_once($this->module_path
-          . '/state/backend/ApDiskStateStorage.php');
+        require_once $this->modulePath . '/state/backend/ApDiskStateStorage.php';
         $this->state = new ApDiskStateStorage(ACQUIA_PURGE_STATE_FILE);
       }
     }
@@ -398,6 +400,7 @@ class ApQueueService {
    * Retrieve the 'uiusers' state item from state storage.
    *
    * @return ApStateItemInterface
+   *   The state item.
    */
   public function uiUsers() {
     return $this->state()->get('uiusers', array());

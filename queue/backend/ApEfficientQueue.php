@@ -74,9 +74,9 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
         ORDER BY created, item_id
         ASC', 0, 1, $conditions)->fetchObject();
       if ($item) {
-        $item->item_id = (int)$item->item_id;
-        $item->expire = (int)$item->expire;
-        $item->created = (int)$item->created;
+        $item->item_id = (int) $item->item_id;
+        $item->expire = (int) $item->expire;
+        $item->created = (int) $item->created;
 
         // Try to update the item. Only one thread can succeed in UPDATEing the
         // same row. We cannot rely on REQUEST_TIME because items might be
@@ -119,9 +119,9 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
     // Iterate all returned items and unpack them.
     while ($item = $items->fetchObject()) {
       $item_ids[] = $item->item_id;
-      $item->item_id = (int)$item->item_id;
-      $item->expire = (int)$item->expire;
-      $item->created = (int)$item->created;
+      $item->item_id = (int) $item->item_id;
+      $item->expire = (int) $item->expire;
+      $item->created = (int) $item->created;
       $item->data = unserialize($item->data);
       $returned_items[] = $item;
     }

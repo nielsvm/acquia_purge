@@ -243,7 +243,7 @@ function _acquia_purge_get_diagnosis_expire($t) {
 
   // Test the configured mode and raise any issues.
   $test['value'] = isset($modes[$mode]) ? $modes[$mode] : 'n/a';
-  if ((int)$mode === EXPIRE_STATUS_ENABLED_EXTERNAL) {
+  if ((int) $mode === EXPIRE_STATUS_ENABLED_EXTERNAL) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
   else {
@@ -257,7 +257,7 @@ function _acquia_purge_get_diagnosis_expire($t) {
       array(
         '@int' => $mode,
         '@mode' => $modes[$mode],
-        '!cmd' => $cmd
+        '!cmd' => $cmd,
       )
     );
     return $test;
@@ -568,7 +568,7 @@ function _acquia_purge_get_diagnosis_queue_backend($t) {
   $test = array(
     'title' => $t('Queue backend'),
     'value' => t('Database'),
-    'severity' => ACQUIA_PURGE_SEVLEVEL_OK
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
   if (_acquia_purge_variable('acquia_purge_smartqueue')) {
     $test['value'] = t('Smart queue (drops very old queue items)');

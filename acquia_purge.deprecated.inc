@@ -68,8 +68,8 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
     "Function %old() is deprecated, port your code to !new immediately!",
     array(
       '%old' => __FUNCTION__,
-      '!new' => '_acquia_purge_qs()->deduplicate()'
-      ), WATCHDOG_WARNING);
+      '!new' => '_acquia_purge_qs()->deduplicate()',
+    ), WATCHDOG_WARNING);
   return _acquia_purge_qs()->deduplicate($path, $list, $l);
 }
 

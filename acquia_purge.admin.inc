@@ -96,13 +96,11 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
     return array(
       'status' => array(
         '#type' => 'item',
-        '#title' => t("We're sorry, but due a critical error condition it is "
-          . "not possible to use this form. Please contact your administrator."),
+        '#title' => t("We're sorry, but due a critical error condition it is not possible to use this form. Please contact your administrator."),
         '#markup' => theme(
           'status_report',
           array(
-            'requirements'
-              => _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR)
+            'requirements' => _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR),
           )
         ),
       ),
@@ -259,8 +257,7 @@ function _acquia_purge_manualpurge_base(&$form, &$form_state) {
     '#type' => 'submit',
     '#prefix' => '<p>',
     '#suffix' => '</p>',
-    '#value' => _acquia_purge_variable('acquia_purge_cron')
-      ? t("Queue") : t("Refresh"),
+    '#value' => _acquia_purge_variable('acquia_purge_cron') ? t("Queue") : t("Refresh"),
   );
   $form['submits']['page'] = array(
     '#type' => 'submit',
@@ -271,6 +268,8 @@ function _acquia_purge_manualpurge_base(&$form, &$form_state) {
 }
 
 /**
+ * Manual base form: add.
+ *
  * @see _acquia_purge_manualpurge_base()
  */
 function __acquia_purge_manualpurge_add($form, &$form_state) {
@@ -279,6 +278,8 @@ function __acquia_purge_manualpurge_add($form, &$form_state) {
 }
 
 /**
+ * Manual base form: remove.
+ *
  * @see _acquia_purge_manualpurge_base()
  */
 function __acquia_purge_manualpurge_remove($form, &$form_state) {
@@ -289,6 +290,8 @@ function __acquia_purge_manualpurge_remove($form, &$form_state) {
 }
 
 /**
+ * Manual base form: paths.
+ *
  * @see _acquia_purge_manualpurge_base()
  */
 function __acquia_purge_manualpurge_paths($form, &$form_state) {
@@ -333,8 +336,7 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
 
   // Nothing visual will happen in cron-mode, unless we notify.
   if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
-    drupal_set_message(t('Your paths have been queued and will get processed '
-      . 'during the next cron iteration.'));
+    drupal_set_message(t('Your paths have been queued and will get processed during the next cron iteration.'));
   }
 
   // Only submit the paths if they really contain something.
@@ -410,8 +412,11 @@ function theme_acquia_purge_status_report($variables) {
   include_once DRUPAL_ROOT . '/includes/install.inc';
 
   foreach ($variables as $requirement) {
-    if (empty($requirement) || !is_array($requirement)) continue;
-    $severity = $severities[isset($requirement['severity']) ? (int) $requirement['severity'] : REQUIREMENT_OK];
+    if (empty($requirement) || !is_array($requirement)) {
+      continue;
+    }
+    $severity = isset($requirement['severity']) ? (int) $requirement['severity'] : REQUIREMENT_OK;
+    $severity = $severities[$severity];
 
     // Output table row(s)
     if (!empty($requirement['description'])) {

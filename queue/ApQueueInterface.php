@@ -25,6 +25,7 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
    * Retrieve the failed purges counter.
    *
    * @return ApStateCounterInterface
+   *   The counter.
    */
   public function bad();
 
@@ -32,6 +33,7 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
    * Retrieve the successful purges counter.
    *
    * @return ApStateCounterInterface
+   *   The counter.
    */
   public function good();
 
@@ -39,6 +41,7 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
    * Retrieve the total queue items counter.
    *
    * @return ApStateCounterInterface
+   *   The counter.
    */
   public function total();
 
@@ -90,7 +93,6 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
    * @param array $items
    *   Non-associative array with item objects as returned by
    *   claimItemMultiple() or DrupalQueueInterface::claimItem().
-   * @return void
    */
   public function deleteItemMultiple(array $items);
 

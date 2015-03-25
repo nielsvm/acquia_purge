@@ -26,6 +26,7 @@ interface ApStateItemInterface {
    * Get the item value.
    *
    * @return mixed
+   *   The value of the item.
    */
   public function get();
 
@@ -33,6 +34,7 @@ interface ApStateItemInterface {
    * Get the item key.
    *
    * @return string
+   *   The key of the item.
    */
   public function getKey();
 
