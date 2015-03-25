@@ -303,11 +303,11 @@ class ApQueueService {
   }
 
   /**
-   * Initialize the queue backend object.
+   * Retrieve the loaded queue backend object.
    *
    * @return ApQueueInterface
    */
-  protected function queueInitialize() {
+  public function queue() {
     if (is_null($this->queue)) {
       $state = $this->state();
 
@@ -326,16 +326,6 @@ class ApQueueService {
         $this->queue = new ApEfficientQueue($state);
       }
     }
-    return $this->queue;
-  }
-
-  /**
-   * Retrieve the loaded queue backend object.
-   *
-   * @return ApQueueInterface
-   */
-  public function queue() {
-    $this->queueInitialize();
     return $this->queue;
   }
 
