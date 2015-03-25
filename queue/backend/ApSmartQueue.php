@@ -56,7 +56,7 @@ class ApSmartQueue extends ApEfficientQueue implements ApQueueInterface {
         'acquia_purge',
         "Disregarded %n expired items from the queue (smart queue backend).",
         array('%n' => $deleted_items), WATCHDOG_INFO);
-      $this->counter('qtotal')->decrease($deleted_items);
+      $this->total()->decrease($deleted_items);
     }
   }
 

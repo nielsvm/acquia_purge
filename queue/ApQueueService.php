@@ -257,7 +257,7 @@ class ApQueueService {
   function process($callback = '_acquia_purge_purge') {
 
     // Do not even attempt to process when the total counter is zero.
-    if ($this->queue()->counter('qtotal')->get() === 0) {
+    if ($this->queue()->total()->get() === 0) {
       return FALSE;
     }
 
@@ -374,9 +374,9 @@ class ApQueueService {
     $info = array(
       'purgehistory' => $this->history(),
       'locked' => $this->locked()->get(),
-      'total' => $this->queue()->counter('qtotal')->get(),
-      'good' => $this->queue()->counter('qgood')->get(),
-      'bad' => $this->queue()->counter('qbad')->get(),
+      'total' => $this->queue()->total()->get(),
+      'good' => $this->queue()->good()->get(),
+      'bad' => $this->queue()->bad()->get(),
       'remaining' => 0,
       'percent' => 100,
       'running' => FALSE,

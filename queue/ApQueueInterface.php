@@ -22,14 +22,25 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
   public function __construct(ApStateStorageInterface $state);
 
   /**
-   * Retrieve the requested counter object.
-   *
-   * @param int $key
-   *   The key with which the counter is stored in state storage.
+   * Retrieve the failed purges counter.
    *
    * @return ApStateCounterInterface
    */
-  public function counter($key);
+  public function bad();
+
+  /**
+   * Retrieve the successful purges counter.
+   *
+   * @return ApStateCounterInterface
+   */
+  public function good();
+
+  /**
+   * Retrieve the total queue items counter.
+   *
+   * @return ApStateCounterInterface
+   */
+  public function total();
 
   /**
    * Add multiple items to the queue and store them efficiently.

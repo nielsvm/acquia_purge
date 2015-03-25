@@ -34,6 +34,27 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
 
   /**
    * {@inheritdoc}
+   */
+  public function bad() {
+    return $this->state->getCounter('qbad');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function good() {
+    return $this->state->getCounter('qgood');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function total() {
+    return $this->state->getCounter('qtotal');
+  }
+
+  /**
+   * {@inheritdoc}
    *
    * SystemQueue::claimItem() doesn't included expired items in its query
    * which means that it essentially breaks its own interface promise. Therefore
@@ -124,7 +145,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
    */
   public function createItem($data) {
     if (parent::createItem($data)) {
-      $this->counter('qtotal')->increase();
+      $this->total()->increase();
       return TRUE;
     }
     return FALSE;
@@ -154,19 +175,12 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
 
     // Execute the query and finish the call.
     if ($query->execute()) {
-      $this->counter('qtotal')->increase(count($records));
+      $this->total()->increase(count($records));
       return TRUE;
     }
     else {
       return FALSE;
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function counter($key) {
-    return new ApStateCounter($this->state->get($key, 0));
   }
 
   /**
@@ -183,7 +197,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
     db_delete('queue')
       ->condition('item_id', $item_ids, 'IN')
       ->execute();
-    $this->counter('qgood')->increase(count($item_ids));
+    $this->good()->increase(count($item_ids));
   }
 
   /**
@@ -191,9 +205,9 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
    */
   public function deleteQueue() {
     parent::deleteQueue();
-    $this->counter('qtotal')->set(0);
-    $this->counter('qbad')->set(0);
-    $this->counter('qgood')->set(0);
+    $this->total()->set(0);
+    $this->bad()->set(0);
+    $this->good()->set(0);
   }
 
   /**
@@ -219,7 +233,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
       ->condition('item_id', $item_ids, 'IN')
       ->execute();
     if ($update) {
-      $this->counter('qbad')->increase(count($item_ids));
+      $this->bad()->increase(count($item_ids));
       return array();
     }
     else {
