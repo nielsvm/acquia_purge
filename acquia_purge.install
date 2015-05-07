@@ -164,3 +164,10 @@ function acquia_purge_update_7104(&$sandbox) {
   variable_set('expire_debug', EXPIRE_DEBUG_DISABLED);
   variable_set('expire_include_base_url', FALSE);
 }
+
+/**
+ * Locks are stored in Acquia Purge's state API now, remove old left over locks.
+ */
+function acquia_purge_update_7105(&$sandbox) {
+  lock_release('_acquia_purge_queue_lock');
+}

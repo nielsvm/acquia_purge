@@ -241,9 +241,9 @@ Frequently asked questions
   you need to do direct processing yourself, you can use "drush ap-process",
   depend on cron or do it yourself with:
     $queue = _acquia_purge_qs();
-    if ($queue->lock()) {
+    if ($queue->lockAcquire()) {
       $queue->process();
-      $queue->lock(NULL);
+      $queue->lockRelease();
     }
 
   The ApQueueService::process() call will run as long as PHP has resources

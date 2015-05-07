@@ -107,7 +107,7 @@ function acquia_purge_cron() {
   }
 
   // Acquire a lock and ensure nobody else is purging something.
-  if (!_acquia_purge_qs()->lock()) {
+  if (!_acquia_purge_qs()->lockAcquire()) {
     return;
   }
 
@@ -126,7 +126,7 @@ function acquia_purge_cron() {
 
   // Process as much items as we can and release the lock when done.
   _acquia_purge_qs()->process();
-  _acquia_purge_qs()->lock(NULL);
+  _acquia_purge_qs()->lockRelease();
 }
 
 /**
@@ -549,7 +549,7 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
 
   // If nothing was found, attempt to acquire the lock and process some items.
   else {
-    if (_acquia_purge_qs()->lock()) {
+    if (_acquia_purge_qs()->lockAcquire()) {
 
       // This automatically pops an X amount of items for which we have enough
       // resource capacity and processes them straight away.
@@ -568,7 +568,7 @@ function _acquia_purge_ajaxprocessor_processorcallback() {
           do ask your technical administrator to check the logs.");
       }
 
-      _acquia_purge_qs()->lock(NULL);
+      _acquia_purge_qs()->lockRelease();
     }
     else {
       $stats['locked'] = TRUE;

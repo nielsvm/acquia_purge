@@ -96,9 +96,14 @@ function _acquia_purge_queue_lock($acquire = TRUE) {
   watchdog(
     'acquia_purge',
     "Function %old() is deprecated, port your code to !new immediately!",
-    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->lock()'),
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->lockAcquire()'),
     WATCHDOG_WARNING);
-  return _acquia_purge_qs()->lock($acquire);
+  if ($acquire === NULL) {
+    _acquia_purge_qs()->lockRelease();
+  }
+  else {
+    return _acquia_purge_qs()->lockAcquire();
+  }
 }
 
 /**

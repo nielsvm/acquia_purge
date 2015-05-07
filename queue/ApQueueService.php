@@ -108,9 +108,9 @@ class ApQueueService {
    * Empty the queue and reset all state data.
    */
   public function clear() {
-    $this->lock(NULL);
-    $this->queue()->deleteQueue();
+    $this->lockRelease();
     $this->state()->wipe();
+    $this->queue()->deleteQueue();
   }
 
   /**
@@ -189,45 +189,45 @@ class ApQueueService {
   }
 
   /**
-   * Acquire a lock and get permission to process the queue.
+   * Retrieve permission to process the queue.
    *
-   * @param bool $acquire
-   *   (optional) TRUE to acquire a lock, NULL to release it.
-   *
-   * @return bool|null
-   *   TRUE when the lock is acquired.
-   *   FALSE if it is still locked
-   *   NULL when $acquire isn't TRUE.
-   *
-   * @see lock_acquire()
+   * @return true|false
+   *   TRUE when the lock is acquired, FALSE when the queue is locked.
    */
-  public function lock($acquire = TRUE) {
-    if ($acquire === NULL) {
-      $this->locked()->set(FALSE);
-      $this->state()->commit();
-      lock_release('_acquia_purge_queue_lock');
-      return;
-    }
-    if (lock_acquire('_acquia_purge_queue_lock', 60)) {
-      $this->locked()->set(TRUE);
-      $this->state()->commit();
-      return TRUE;
-    }
-    else {
-      $this->locked()->set(FALSE);
-      $this->state()->commit();
+  public function lockAcquire() {
+    if ($this->lockActive()) {
       return FALSE;
     }
+    $this->state()->get('locked', FALSE)->set(time());
+    $this->state()->commit();
+    return TRUE;
   }
 
   /**
-   * Retrieve the 'locked' state item from state storage.
+   * Check if the queue is locked.
    *
-   * @return ApStateItemInterface
-   *   The state item.
+   * @return true|false
+   *   TRUE when locked, FALSE when it is not (or when a lock expired).
    */
-  public function locked() {
-    return $this->state()->get('locked', FALSE);
+  public function lockActive() {
+    $locked = $this->state()->get('locked', FALSE)->get();
+    if (is_int($locked)) {
+      if ((time() - $locked) <= 60) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Release a lock set on the queue.
+   */
+  public function lockRelease() {
+    $locked = $this->state()->get('locked', FALSE);
+    if ($locked->get() !== FALSE) {
+      $locked->set(FALSE);
+      $this->state()->commit();
+    }
   }
 
   /**
@@ -376,7 +376,7 @@ class ApQueueService {
   public function stats($key = NULL) {
     $info = array(
       'purgehistory' => $this->history(),
-      'locked' => $this->locked()->get(),
+      'locked' => $this->lockActive(),
       'total' => $this->queue()->total()->get(),
       'good' => $this->queue()->good()->get(),
       'bad' => $this->queue()->bad()->get(),

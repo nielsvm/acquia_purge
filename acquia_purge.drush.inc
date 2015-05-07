@@ -315,7 +315,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
   // SUB PROCESS.
   //
   else {
-    if (!_acquia_purge_qs()->lock()) {
+    if (!_acquia_purge_qs()->lockAcquire()) {
       return drush_set_error("Unable to acquire lock, ensure that all users "
         . "close their browser tabs as a different purge seems to be active!");
     }
@@ -339,6 +339,6 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
       $context['finished'] = 1;
       $context['message'] = dt("Queue processed successfully!");
     }
-    _acquia_purge_qs()->lock(NULL);
+    _acquia_purge_qs()->lockRelease();
   }
 }
