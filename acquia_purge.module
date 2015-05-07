@@ -1729,7 +1729,7 @@ function _acquia_purge_purge_requests($requests) {
  * Retrieve the global ApQueueService instance.
  *
  * To avoid exposing end-users to 'Class ApQueueService not found' registry
- * madness, this wrapper includes the PHP when the class isn't defined. Apart
+ * madness, this wrapper loads the file when the class isn't defined. Apart
  * from that, it serves as the single access point to the queue service.
  *
  * @return ApQueueService
