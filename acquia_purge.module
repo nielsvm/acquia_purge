@@ -382,6 +382,40 @@ function acquia_purge_theme($existing, $type, $theme, $path) {
 }
 
 /**
+ * Implements hook_exit().
+ */
+function acquia_purge_exit() {
+
+  // If lateruntime processing, isn't enabled, don't do anything.
+  if (_acquia_purge_variable('acquia_purge_lateruntime') !== TRUE) {
+    return;
+  }
+
+  // To not disturb heavy Drush scripts queuing lots of purges, only run on web.
+  if (php_sapi_name() === 'cli') {
+    return;
+  }
+
+  // Only attempt to process a chunk from the queue, when items were added.
+  if (!_acquia_purge_ajaxprocessor_is_triggered()) {
+    return;
+  }
+
+  // Don't process when diagnostics forbid us to do so.
+  if (!_acquia_purge_are_we_allowed_to_purge()) {
+    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
+    _acquia_purge_get_diagnosis_logged($err);
+    return;
+  }
+
+  // Acquire a lock and process as much as we can.
+  if (_acquia_purge_qs()->lockAcquire()) {
+    _acquia_purge_qs()->process();
+    _acquia_purge_qs()->lockRelease();
+  }
+}
+
+/**
  * AJAX Processor: check if the current request path is blacklisted.
  *
  * On-screen notifications and interactive on-screen purge processing is not
@@ -489,6 +523,11 @@ function _acquia_purge_ajaxprocessor_is_ui_visible() {
 
   // Always hide the UI on sites with cron-based processing enabled.
   if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
+    return FALSE;
+  }
+
+  // Always hide the UI on sites with lateruntime processing enabled.
+  if (_acquia_purge_variable('acquia_purge_lateruntime') === TRUE) {
     return FALSE;
   }
 
@@ -1772,6 +1811,7 @@ function _acquia_purge_variable($name) {
       'acquia_purge_sphpskippath' => TRUE,
       'acquia_purge_stripports'   => array(80, 443),
       'acquia_purge_cron'         => FALSE,
+      'acquia_purge_lateruntime'  => FALSE,
       'acquia_purge_http'         => TRUE,
       'acquia_purge_https'        => FALSE,
       'acquia_purge_base_path'    => base_path(),

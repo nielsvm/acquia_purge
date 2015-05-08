@@ -427,13 +427,16 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  */
 function _acquia_purge_get_diagnosis_processing_mode($t) {
   $test = array(
-    'title' => $t('Processing mode'),
+    'title' => $t('Processing mode(s)'),
     'value' => array($t('ajax')),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
 
-  // Test conditions when cron-based processing is enabled.
-  if ($cron = _acquia_purge_variable('acquia_purge_cron') === TRUE) {
+  // Add tests for lateruntime and cron processing modes, when enabled.
+  if (_acquia_purge_variable('acquia_purge_lateruntime') === TRUE) {
+    $test['value'][] = $t('lateruntime');
+  }
+  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
     $test['value'][] = $t('cron');
 
     // Raise a warning when it was too long ago since cron ran.

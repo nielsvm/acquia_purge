@@ -75,6 +75,15 @@ exist as of this version and documented below:
 ║                          ║       ║ which was the case in older versions.     ║
 ║                          ║       ║ $conf['acquia_purge_cron'] = TRUE;        ║
 ║                          ║       ║                                           ║
+║ acquia_purge_lateruntime ║ FALSE ║ When enabled, requests in which items are ║
+║                          ║       ║ added to the queue, will also immediately ║
+║                          ║       ║ process a chunk. Queues clear quicklier   ║
+║                          ║       ║ and the (hidden) client-side processor    ║
+║                          ║       ║ runs less. However, this mode is RISKIER  ║
+║                          ║       ║ as backend pages become slower and can    ║
+║                          ║       ║ even time-out/run out of memory!          ║
+║                          ║       ║ $conf['acquia_purge_lateruntime'] = TRUE; ║
+║                          ║       ║                                           ║
 ║ acquia_purge_http        ║ TRUE  ║ Purging of http:// schemes, which is      ║
 ║                          ║       ║ the default behavior. You can disable     ║
 ║                          ║       ║ it with FALSE, as long as you then do     ║
