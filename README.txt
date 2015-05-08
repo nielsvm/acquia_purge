@@ -61,12 +61,14 @@ exist as of this version and documented below:
 ║                          ║       ║ path. Disabling this, enables experimental║
 ║                          ║       ║ support for supporting all of sites.php.  ║
 ║                          ║       ║ $conf['acquia_purge_sphpskippath'] = FALSE║
+║                          ║       ║                                           ║
 ║ acquia_purge_stripports  ║ 80,443║ Ports stripped from records in sites.php  ║
 ║                          ║       ║ that start with a first octet that is     ║
 ║                          ║       ║ numeric, e.g.: '443.domain.com'. Ports    ║
 ║                          ║       ║ outside this setting are not stripped     ║
 ║                          ║       ║ from detected domains.                    ║
 ║                          ║       ║ $conf['acquia_purge_stripports'] = [80];  ║
+║                          ║       ║                                           ║
 ║ acquia_purge_cron        ║ FALSE ║ Once enabled, this will process queue     ║
 ║                          ║       ║ items during cron. The client-side AJAX   ║
 ║                          ║       ║ processor will be hidden but not disabled,║
@@ -79,7 +81,6 @@ exist as of this version and documented below:
 ║                          ║       ║ purge https://. Else the system will      ║
 ║                          ║       ║ shut itself down and report an error.     ║
 ║                          ║       ║ $conf['acquia_purge_http'] = FALSE;       ║
-║                          ║       ║                                           ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_https       ║ FALSE ║ EXPERIMENTAL https:// scheme support,     ║
 ║                          ║       ║ disabled by default. Once enabled the     ║
@@ -137,12 +138,14 @@ exist as of this version and documented below:
 ║                          ║       ║ can consider disabling it followed by     ║
 ║                          ║       ║ 'drush ap-forget' to see if that works.   ║
 ║                          ║       ║ $conf['acquia_purge_memcache'] = FALSE;   ║
+║                          ║       ║                                           ║
 ║ acquia_purge_passivemode ║ FALSE ║ When set to TRUE, this will cause the     ║
 ║                          ║       ║ hook_expire_cache() implementation to stop║
 ║                          ║       ║ working and effectively allows the module ║
 ║                          ║       ║ to remain enabled in local environments   ║
 ║                          ║       ║ without actually purging automatically.   ║
 ║                          ║       ║ $conf['acquia_purge_passivemode'] = TRUE; ║
+║                          ║       ║                                           ║
 ║ acquia_purge_allriskmode ║ FALSE ║ When set to TRUE, this disables full      ║
 ║                          ║       ║ blocking checks for too high queue volumes║
 ║                          ║       ║ and too many domain names. Using this mode║
@@ -150,6 +153,7 @@ exist as of this version and documented below:
 ║                          ║       ║ rules out support on these checks from the║
 ║                          ║       ║ Acquia Purge issue queue.                 ║
 ║                          ║       ║ $conf['acquia_purge_allriskmode'] = TRUE; ║
+║                          ║       ║                                           ║
 ║ acquia_purge_smartqueue  ║ FALSE ║ When set to TRUE, the ApSmartQueue backend║
 ║                          ║       ║ will be loaded instead. It automatically  ║
 ║                          ║       ║ disregards items that Varnish has already ║
