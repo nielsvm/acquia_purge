@@ -413,7 +413,7 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
 }
 
 /**
- * Report which way processing occurs.
+ * Report how processing of the queue occurs.
  *
  * @param string $t
  *   Name of the t() function to call.
@@ -426,40 +426,32 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_processing_mode($t) {
-  $cron = _acquia_purge_variable('acquia_purge_cron') === TRUE;
   $test = array(
     'title' => $t('Processing mode'),
-    'value' => $t('client-side (js)'),
+    'value' => array($t('ajax')),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
 
-  // Report just that if cron isn't running.
-  if (!$cron) {
-    return $test;
+  // Test conditions when cron-based processing is enabled.
+  if ($cron = _acquia_purge_variable('acquia_purge_cron') === TRUE) {
+    $test['value'][] = $t('cron');
+
+    // Raise a warning when it was too long ago since cron ran.
+    $cron_last = variable_get('cron_last');
+    if (!is_numeric($cron_last)) {
+      $cron_last = variable_get('install_time', 0);
+    }
+    if (REQUEST_TIME - $cron_last > 3600) {
+      $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+      $test['description'] = $t('It has been longer than one hour since cron ran'
+        . ' for the last time, which puts your site at risk. As Acquia Purge'
+        . ' has cron processing enabled, it assumes processing of its queue.'
+        . ' When this is not frequent enough, the queue can reach dangerous'
+        . ' levels and eventually even lead to a safety shutdown.');
+    }
   }
 
-  // Since we are operating in cron mode, change the value.
-  $test['value'] = $t('cron');
-
-  // Test if the last cron run was too long ago for Acquia Purge.
-  $warning_threshold = 3600;
-
-  // Determine when cron last ran.
-  $cron_last = variable_get('cron_last');
-  if (!is_numeric($cron_last)) {
-    $cron_last = variable_get('install_time', 0);
-  }
-
-  // Raise a warning when it was too long ago since cron ran.
-  if (REQUEST_TIME - $cron_last > $warning_threshold) {
-    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
-    $test['description'] = $t('It has been longer than one hour since cron ran'
-      . ' for the last time, which puts your site at risk. As Acquia Purge'
-      . ' operates in cron-mode, it assumes high frequency processing of its'
-      . ' queue. When this is not frequent enough, the queue can reach'
-      . ' dangerous levels and eventually even lead to a safety shutdown.');
-  }
-
+  $test['value'] = implode(', ', $test['value']);
   return $test;
 }
 

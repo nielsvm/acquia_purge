@@ -27,7 +27,7 @@ Frequently asked questions
   will DOUBLE the total amount of purging going on as http:// will also see its
   paths purged, so you will need to monitor your site extra careful as the queue
   can go up without getting purged fast enough. If the queue does go up quickly,
-  consider switching to cron mode (with 1-5 minute cron intervals) or disable
+  consider enabling cron processing (with 1-5 minute cron intervals) or disable
   http:// purging as well, see README.txt.
 
  My site redirects all http:// to https://, should Acquia Purge know about that?
@@ -54,21 +54,24 @@ Frequently asked questions
   the queue is and how many items are in it. Whenever it is "idle", it's safe to
   assume a empty queue. You can print the full queue using "drush ap-list"
 
- Does Acquia Purge purge from cron and/or should I set up cron for it?
+ Does Acquia Purge process its queue from cron? Should I?
 --------------------------------------------------------------------------------
-  Not by default as the client-side processing works well for most websites and
-  clogging site's cron runs even further isn't a good default setting. However,
-  it is possible as of Acquia Purge 7.x-1.0 to add this to your settings.php
-  file: "$conf['acquia_purge_cron'] = TRUE;", which will not only let the module
-  purge from cron, but also disable the on-screen client-side progressbar. It is
-  however very important - if you cron processing goes through Drush - that the
-  --uri parameter gets passed in to Drush, it should point to a URL your end
-  users will also visit, e.g. your frontpage.
+  By default it won't to not bog your cron runs, and normally it solely relies
+  on the client-side AJAX processing. By enabling cron processing, the queue is
+  checked frequently for items and processed, which helps secure quick cache
+  invalidation. Enable it by putting "$conf['acquia_purge_cron'] = TRUE;" into
+  settings.php, this will visually hide the AJAX processor but not disable it as
+  their forces combined make the experience better. It is however important - if
+  you run cron through Drush - that the --uri parameter gets passed in and that
+  it points to a URL that your end users use too, e.g. your frontpage.
 
  Can I disable the client-side progressbar based purging?
 --------------------------------------------------------------------------------
-  You can, but only by enabling cron-based purging as answered in the question
-  "Does Acquia Purge purge from cron and/or should I set up cron for it?".
+  No, this is no longer possible since version 7.x-1.2. The reason is that the
+  AJAX processor kicks in really quickly and helps clear the queue as quickly as
+  possible. Nonetheless, it is possible to hide it visually for editorial users
+  by revoking the 'purge on-screen' permission. Enabling cron processing will
+  also hide it visually.
 
  With previous versions, I had set up "drush ap-process" in cron, is this okay?
 --------------------------------------------------------------------------------
@@ -236,10 +239,10 @@ Frequently asked questions
     $queue->addPath('node/5?parameter');
     $queue->addPaths(array('news/section1', 'contact'));
 
-  If you run the code above as authenticated user and you aren't using cron, it
-  will trigger the UI processor for that user on the next page load. However, if
-  you need to do direct processing yourself, you can use "drush ap-process",
-  depend on cron or do it yourself with:
+  If you run the code above as authenticated user during a web request (e.g.
+  not via Drush), it will trigger the AJAX processor for that users next page
+  load. However, if you want to process directly yourself, you can work a chunk
+  from the queue with this:
     $queue = _acquia_purge_qs();
     if ($queue->lockAcquire()) {
       $queue->process();

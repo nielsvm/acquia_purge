@@ -67,12 +67,10 @@ exist as of this version and documented below:
 ║                          ║       ║ outside this setting are not stripped     ║
 ║                          ║       ║ from detected domains.                    ║
 ║                          ║       ║ $conf['acquia_purge_stripports'] = [80];  ║
-║ acquia_purge_cron        ║ FALSE ║ Once set to TRUE, this will switch the    ║
-║                          ║       ║ queue processing entirely to cron and     ║
-║                          ║       ║ disable the client-side progress-bar. Do  ║
-║                          ║       ║ keep an eye on 'drush ap-list' once       ║
-║                          ║       ║ enabled as the queue can grow too fast    ║
-║                          ║       ║ requiring a cron interval increase.       ║
+║ acquia_purge_cron        ║ FALSE ║ Once enabled, this will process queue     ║
+║                          ║       ║ items during cron. The client-side AJAX   ║
+║                          ║       ║ processor will be hidden but not disabled,║
+║                          ║       ║ which was the case in older versions.     ║
 ║                          ║       ║ $conf['acquia_purge_cron'] = TRUE;        ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_http        ║ TRUE  ║ Purging of http:// schemes, which is      ║

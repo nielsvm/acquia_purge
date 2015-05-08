@@ -454,13 +454,6 @@ function _acquia_purge_ajaxprocessor_is_triggered() {
     return FALSE;
   }
 
-  // If the site administrator has deliberately enabled cron-based processing,
-  // there's no reason to assume a user is purging. The latter might have
-  // initiated it, but is not the one who's going to process it as cron will.
-  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
-    return FALSE;
-  }
-
   // Retrieve the list of user names owning an ongoing purge process.
   $uiusers = _acquia_purge_qs()->uiUsers()->get();
 
@@ -484,6 +477,27 @@ function _acquia_purge_ajaxprocessor_is_triggered() {
 }
 
 /**
+ * AJAX Processor: determine if the interactive UI should be visible or not.
+ *
+ * When the interactive UI is not presented to the end-user, processing of the
+ * queue via AJAX still happens. It happens silently in the background for as
+ * long as the administrative user that triggered it, has tabs to Drupal open.
+ *
+ * @return true|false
+ */
+function _acquia_purge_ajaxprocessor_is_ui_visible() {
+
+  // Always hide the UI on sites with cron-based processing enabled.
+  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
+    return FALSE;
+  }
+
+  // Only users with the 'purge on-screen' permission will actually see the UI,
+  // since it could be confusing for some users.
+  return user_access('purge on-screen');
+}
+
+/**
  * AJAX Processor: load the JS/CSS assets and other UI elements.
  */
 function _acquia_purge_ajaxprocessor_loadassets() {
@@ -498,30 +512,24 @@ function _acquia_purge_ajaxprocessor_loadassets() {
     return;
   }
 
-  // Load the JQuery logic that will start hitting 'acquia_purge_ajax_processor'
-  // which in its turn will process the queue. Because the back-end uses locks
-  // we don't have to worry about how many times we're hitting it. When the user
-  // doesn't have on-screen reporting enabled the HTML DIV won't be present
-  // causing the script to simply purge silently without notifying the user.
+  // Load the AJAX processor behavior. As soon as the bahvior is loaded it
+  // starts hitting /acquia_purge_ajax_processor, which in turn will process a
+  // chunk from the queue. With queue locking in place, multiple requests will
+  // not do any harm.
   $module_path = drupal_get_path('module', 'acquia_purge');
   drupal_add_js($module_path . '/acquia_purge.js');
 
-  // If the user has the permission 'purge on-screen' it means on-screen
-  // reporting is enabled and we'll set a standard drupal_set_message() that
-  // announces the AJAX powered purging. Because we're abusing the API with a
-  // non-standard message type our JQuery logic is smartly able to replace the
-  // nodes with the interactive progressbar.
-  if (user_access('purge on-screen')) {
+  // Although the behavior always loads and works the queue, it doesn't mean its
+  // always presented to the user. Print the DSM message when needed.
+  if (_acquia_purge_ajaxprocessor_is_ui_visible()) {
     $message = t("There have been changes to content, and these need to be
       refreshed throughout the system. There may be a delay before the changes
       appear to all website visitors.");
-
-    // Set the message and don't repeat it if it is already set.
     drupal_set_message($message, 'acquia_purge_messages', FALSE);
 
-    // Add inline CSS to initially hide the message (see d.o. 2014461). A
-    // separate file that could be cached would be non-sense for this one line
-    // declaration as this statement only occurs for authenticated users.
+    // Add inline CSS to hide the DSM box, this covers cases where the script
+    // didn't yet or couldn't load. Since this only happens to authenticated
+    // backend users, we add this as inline CSS (see d.o. 2014461).
     drupal_add_css('.acquia_purge_messages {display:none;}',
       array('type' => 'inline'));
   }
@@ -592,16 +600,10 @@ function _acquia_purge_ajaxprocessor_trigger() {
     return;
   }
 
-  // Don't trigger anything when the module operates in cron-processing mode.
-  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
-    return;
-  }
-
   // Don't trigger anything when this call happens in CLI conditions.
   if (php_sapi_name() === 'cli') {
     return;
   }
-
 
   // Register the currently logged on user as one of the queue users. These
   // users are given the AJAX client side script until the queue is cleaned up.
