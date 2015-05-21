@@ -70,18 +70,19 @@ exist as of this version and documented below:
 ║                          ║       ║ $conf['acquia_purge_stripports'] = [80];  ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_cron        ║ FALSE ║ Once enabled, this will process queue     ║
-║                          ║       ║ items during cron. The client-side AJAX   ║
-║                          ║       ║ processor will be hidden but not disabled,║
-║                          ║       ║ which was the case in older versions.     ║
+║                          ║       ║ items during cron. The client side AJAX   ║
+║                          ║       ║ processor cannot be disabled, but it will ║
+║                          ║       ║ run less, especially combined with late   ║
+║                          ║       ║ runtime processing enabled.               ║
 ║                          ║       ║ $conf['acquia_purge_cron'] = TRUE;        ║
 ║                          ║       ║                                           ║
-║ acquia_purge_lateruntime ║ FALSE ║ When enabled, requests in which items are ║
-║                          ║       ║ added to the queue, will also immediately ║
-║                          ║       ║ process a chunk. Queues clear quicklier   ║
-║                          ║       ║ and the (hidden) client-side processor    ║
-║                          ║       ║ runs less. However, this mode is RISKIER  ║
-║                          ║       ║ as backend pages become slower and can    ║
-║                          ║       ║ even time-out/run out of memory!          ║
+║ acquia_purge_lateruntime ║ FALSE ║ When enabled, processing of the queue will║
+║                          ║       ║ start during the same request items got   ║
+║                          ║       ║ added to it. Queues clear quicker and the ║
+║                          ║       ║ role of the client-side AJAX processor    ║
+║                          ║       ║ reduces drastically. However, this does   ║
+║                          ║       ║ add RISK since pages can time/out or run  ║
+║                          ║       ║ out of memory! Test carefully!            ║
 ║                          ║       ║ $conf['acquia_purge_lateruntime'] = TRUE; ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_http        ║ TRUE  ║ Purging of http:// schemes, which is      ║
@@ -154,6 +155,13 @@ exist as of this version and documented below:
 ║                          ║       ║ to remain enabled in local environments   ║
 ║                          ║       ║ without actually purging automatically.   ║
 ║                          ║       ║ $conf['acquia_purge_passivemode'] = TRUE; ║
+║                          ║       ║                                           ║
+║ acquia_purge_silentmode  ║ FALSE ║ TRUE hides the client-side AJAX processor ║
+║                          ║       ║ regardless of what the "purge on-screen"  ║
+║                          ║       ║ permission is set to. It is not possible  ║
+║                          ║       ║ to disable the processor, but its role is ║
+║                          ║       ║ highly reduced in combination with cron   ║
+║                          ║       ║ mode and late runtime processing.         ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_allriskmode ║ FALSE ║ When set to TRUE, this disables full      ║
 ║                          ║       ║ blocking checks for too high queue volumes║

@@ -521,13 +521,8 @@ function _acquia_purge_ajaxprocessor_is_triggered() {
  */
 function _acquia_purge_ajaxprocessor_is_ui_visible() {
 
-  // Always hide the UI on sites with cron-based processing enabled.
-  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
-    return FALSE;
-  }
-
-  // Always hide the UI on sites with lateruntime processing enabled.
-  if (_acquia_purge_variable('acquia_purge_lateruntime') === TRUE) {
+  // Always hide the processor in case this is requested.
+  if (_acquia_purge_variable('acquia_purge_silentmode') === TRUE) {
     return FALSE;
   }
 
@@ -1820,6 +1815,7 @@ function _acquia_purge_variable($name) {
       'acquia_purge_variations'   => TRUE,
       'acquia_purge_memcache'     => TRUE,
       'acquia_purge_passivemode'  => FALSE,
+      'acquia_purge_silentmode'   => FALSE,
       'acquia_purge_allriskmode'  => FALSE,
       'acquia_purge_smartqueue'   => FALSE,
     );
