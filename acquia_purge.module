@@ -410,6 +410,15 @@ function acquia_purge_exit() {
 
   // Acquire a lock and process as much as we can.
   if (_acquia_purge_qs()->lockAcquire()) {
+    static $c;
+    if (is_null($c)) {
+      $c = 0;
+    }
+    else {
+      $c++;
+    }
+
+    drupal_set_message(__METHOD__ . ": $c");
     _acquia_purge_qs()->process();
     _acquia_purge_qs()->lockRelease();
   }

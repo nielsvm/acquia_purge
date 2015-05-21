@@ -53,7 +53,16 @@ class ApQueueService {
   }
 
   /**
-   * Queue a single path and trigger the UI processor (if not using cron).
+   * Queue a single path.
+   *
+   * Add a path to the queue, meant for later processing. When late runtime
+   * processing is enabled, processing of the queue likely happens during this
+   * same request, but is not a guarantee. With cron-processing enabled, the
+   * added item can get processed from there. When adding items as logged-in
+   * Drupal user, the client-side AJAX processor will show up for this user when
+   * rendering any (authenticated) page. See the FAQ on instructions on how to
+   * process the queue yourself, although this is not recommended with the
+   * already available means of processing.
    *
    * @param string $path
    *   The Drupal path (for example: '<front>', 'user/1' or a alias).
@@ -76,7 +85,16 @@ class ApQueueService {
   }
 
   /**
-   * Queue several paths and trigger the UI processor (if not using cron).
+   * Queue several paths.
+   *
+   * Add paths to the queue, meant for later processing. When late runtime
+   * processing is enabled, processing of the queue likely happens during this
+   * same request, but is not a guarantee. With cron-processing enabled, the
+   * added item can get processed from there. When adding items as logged-in
+   * Drupal user, the client-side AJAX processor will show up for this user when
+   * rendering any (authenticated) page. See the FAQ on instructions on how to
+   * process the queue yourself, although this is not recommended with the
+   * already available means of processing.
    *
    * @param string[] $paths
    *   Array with Drupal paths (for example: '<front>', 'user/1' or a alias).

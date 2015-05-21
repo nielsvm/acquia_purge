@@ -162,6 +162,7 @@ exist as of this version and documented below:
 ║                          ║       ║ to disable the processor, but its role is ║
 ║                          ║       ║ highly reduced in combination with cron   ║
 ║                          ║       ║ mode and late runtime processing.         ║
+║                          ║       ║ $conf['acquia_purge_silentmode'] = TRUE;  ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_allriskmode ║ FALSE ║ When set to TRUE, this disables full      ║
 ║                          ║       ║ blocking checks for too high queue volumes║

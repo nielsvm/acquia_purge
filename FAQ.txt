@@ -56,32 +56,31 @@ Frequently asked questions
 
  Does Acquia Purge process its queue from cron? Should I?
 --------------------------------------------------------------------------------
-  By default it won't to not bog your cron runs, and normally it solely relies
-  on the client-side AJAX processing. By enabling cron processing, the queue is
-  checked frequently for items and processed, which helps secure quick cache
-  invalidation. Enable it by putting "$conf['acquia_purge_cron'] = TRUE;" into
-  settings.php, this will visually hide the AJAX processor but not disable it as
-  their forces combined make the experience better. It is however important - if
-  you run cron through Drush - that the --uri parameter gets passed in and that
-  it points to a URL that your end users use too, e.g. your frontpage.
+  Not by default, as the client-side AJAX processor takes care of this. When you
+  are noticing big queue loads - for instance due heavy content processing from
+  within cron runs - it is possible to enable cron mode. You can enable it by
+  adding "$conf['acquia_purge_cron'] = TRUE;" to settings.php. Once enabled, it
+  will contribute to speedy queue processing but doesn't replace other means
+  of processing. It is important - if you run cron through Drush - that the
+  --uri parameter gets passed in and that it points to the right URL.
 
  Can I disable the client-side progressbar based purging?
 --------------------------------------------------------------------------------
-  No, this is no longer possible since version 7.x-1.2. The reason is that the
-  AJAX processor kicks in really quickly and helps clear the queue as quickly as
-  possible. Nonetheless, it is possible to hide it visually for editorial users
-  by revoking the 'purge on-screen' permission. Enabling cron processing will
-  also hide it visually.
+  No, this is not possible. It serves as last resort when nothing else processed
+  the queue and takes processing out of the main HTTP requests, which helps to
+  assure a fast Drupal backend experience. However, it can be visually hidden by
+  revoking the 'purge on-screen' permission, or for every user including the
+  administrator with: "$conf['acquia_purge_silentmode'] = TRUE;"
 
  With previous versions, I had set up "drush ap-process" in cron, is this okay?
 --------------------------------------------------------------------------------
-  Acquia Purge now has a cleaner way of enabling cron-based purging with the
-  setting "$conf['acquia_purge_cron'] = TRUE;", which is now the recommended
-  way of achieving this. The drawback that method is that there's no granular
-  control over when purging happens (as it follows the cron schedule) and that
-  it also disabled the client-side progressbar. So I recommend you to consider
-  using the new method but if any of its drawbacks prevent you from using the
-  new cron feature, you can continue using this directly.
+  It still works, though Acquia Purge now has a cleaner way by adding this to
+  your settings.php: setting "$conf['acquia_purge_cron'] = TRUE;". The only use
+  case not to use the built-in cron processing, is when you need more granular
+  control over when processing happens. Defining every-minute cron rules that
+  call "drush ap-process", is considered better than relying on the built-in
+  cron mode as that would mean that all other modules run too which might cause
+  cache clears and other types of unwanted harm.
 
  My logs are flooded by the Acquia Purge module, help!
 --------------------------------------------------------------------------------
@@ -136,11 +135,11 @@ Frequently asked questions
 
  Why does admin/uid 1 always see the progressbar since 7.x-1.0-beta2?
 --------------------------------------------------------------------------------
-  That is because we removed the 'Report cache purges'-setting that became
-  highly redundant since the 'Purge notification' permission was added. The fact
-  the progressbar now always shows for administrators is because we're now
-  solely depending on Drupal's permission system which allows everything for
-  administrators. Basically put, don't use admin to edit content.
+  By default, only the 'purge on-screen' permission is consulted. This depends
+  on Drupal's permission system which always grants administrators access. It is
+  not recommended to use UID 0 to edit content, but if you insist, the processor
+  can be visually hidden - not disabled - with putting this into settings.php:
+  $conf['acquia_purge_silentmode'] = TRUE;
 
  When I tested before it was slow and the queue exploded, should I reconsider?
 --------------------------------------------------------------------------------
