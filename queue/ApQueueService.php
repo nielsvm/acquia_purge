@@ -15,7 +15,7 @@ class ApQueueService {
    *
    * @var string
    */
-  protected $modulePath;
+  public $modulePath;
 
   /**
    * Deduplication lists.
@@ -30,6 +30,13 @@ class ApQueueService {
    * @var string[]
    */
   protected $history = array();
+
+  /**
+   * The loaded ApProcessorsService object.
+   *
+   * @var ApProcessorsService
+   */
+  protected $processors = NULL;
 
   /**
    * The loaded queue backend.
@@ -74,10 +81,10 @@ class ApQueueService {
   public function addPath($path) {
     $path = _acquia_purge_input_clean($path);
 
-    // Queue the item when it is unique and trigger UI purging.
+    // Queue the item when it is unique and trigger the processors.
     if (!$this->deduplicate($path)) {
       if ($this->queue()->createItem(array($path))) {
-        _acquia_purge_ajaxprocessor_trigger();
+        $this->processors()->emit('OnItemsQueued');
       }
     }
 
@@ -114,9 +121,9 @@ class ApQueueService {
       }
     }
 
-    // Queue the items and trigger the UI to start processing for this user.
+    // Queue the items and trigger the processors to start processing.
     if ($this->queue()->createItemMultiple($items)) {
-      _acquia_purge_ajaxprocessor_trigger();
+      $this->processors()->emit('OnItemsQueued');
     }
 
     return $this->stats();
@@ -323,6 +330,24 @@ class ApQueueService {
   }
 
   /**
+   * Retrieve the ApProcessorsService object.
+   *
+   * @return ApProcessorsService
+   */
+  public function processors() {
+    if (is_null($this->processors)) {
+      require_once $this->modulePath . '/processor/ApProcessorsService.php';
+      require_once $this->modulePath . '/processor/ApProcessorInterface.php';
+      require_once $this->modulePath . '/processor/ApProcessorBase.php';
+      require_once $this->modulePath . '/processor/backend/ApAjaxProcessor.php';
+      require_once $this->modulePath . '/processor/backend/ApCronProcessor.php';
+      require_once $this->modulePath . '/processor/backend/ApRuntimeProcessor.php';
+      $this->processors = new ApProcessorsService($this);
+    }
+    return $this->processors;
+  }
+
+  /**
    * Retrieve the loaded queue backend object.
    *
    * @return ApQueueInterface
@@ -412,16 +437,6 @@ class ApQueueService {
     }
 
     return is_null($key) ? $info : $info[$key];
-  }
-
-  /**
-   * Retrieve the 'uiusers' state item from state storage.
-   *
-   * @return ApStateItemInterface
-   *   The state item.
-   */
-  public function uiUsers() {
-    return $this->state()->get('uiusers', array());
   }
 
 }

@@ -3,6 +3,11 @@ description = "Top-notch Varnish purging on Acquia Cloud!"
 package = Acquia Network Connector
 core = 7.x
 dependencies[] = expire (>=2.0-rc2)
+files[] = processor/backend/ApAjaxProcessor.php
+files[] = processor/backend/ApCronProcessor.php
+files[] = processor/backend/ApRuntimeProcessor.php
+files[] = processor/ApProcessorBase.php
+files[] = processor/ApProcessorInterface.php
 files[] = state/ApStateItemInterface.php
 files[] = state/ApStateItem.php
 files[] = state/ApStateCounter.php

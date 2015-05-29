@@ -25,6 +25,43 @@ function _acquia_purge_get($name, $get_default = FALSE) {
 }
 
 /**
+ * DEPRECATED: Check if the current request path is blacklisted.
+ *
+ * @deprecated
+ */
+function _acquia_purge_ui_path_blacklisted() {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApAjaxProcessor::isPathBlacklisted()'),
+    WATCHDOG_WARNING);
+  return _acquia_purge_qs()
+    ->processors()
+    ->get('ApAjaxProcessor')
+    ->isPathBlacklisted();
+}
+
+/**
+ * DEPRECATED: Trigger client-side AJAX based purging during this request.
+ *
+ * @deprecated
+ */
+function _acquia_purge_ui_trigger_purge() {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApAjaxProcessor::initializeClientSideProcessor()'),
+    WATCHDOG_WARNING);
+
+  // Call onInit, which will call initializeClientSideProcessor when it should.
+  _acquia_purge_qs()->processors()->get('ApAjaxProcessor')->onInit();
+}
+
+/**
  * DEPRECATED: return the queue object in use for Acquia Purge.
  *
  * @deprecated
@@ -85,6 +122,26 @@ function _acquia_purge_queue_history($url = NULL) {
     array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->history()'),
     WATCHDOG_WARNING);
   return _acquia_purge_qs()->history($url);
+}
+
+/**
+ * DEPRECATED: Determines if the current user owns a running purge session.
+ *
+ * @deprecated
+ */
+function _acquia_purge_queue_is_user_purging() {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array(
+      '%old' => __FUNCTION__,
+      '!new' => 'ApAjaxProcessor::isUserOwningTheQueue()'),
+    WATCHDOG_WARNING);
+
+  // Since ::isUserOwningTheQueue is static, call it through a small loophole.
+  $qs = _acquia_purge_qs();
+  $ajaxprocessor = $qs->processors()->get('ApAjaxProcessor');
+  return $ajaxprocessor::isUserOwningTheQueue($qs);
 }
 
 /**

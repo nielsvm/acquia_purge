@@ -70,12 +70,11 @@ define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
 function acquia_purge_init() {
 
   // Load legacy helpers to prevent third-party code from breaking horribly. The
-  // helpers will go in the future and are terribly vocal about it in the logs.
+  // helpers will go away in the future and are very vocal about it in the logs.
   require_once(drupal_get_path('module', 'acquia_purge')
     . '/acquia_purge.deprecated.inc');
 
-  // Load the Ajax processor's assets - only happens when all its checks passed.
-  _acquia_purge_ajaxprocessor_loadassets();
+  _acquia_purge_qs()->processors()->emit('onInit');
 }
 
 /**
@@ -95,38 +94,7 @@ function acquia_purge_permission() {
  * Implements hook_cron().
  */
 function acquia_purge_cron() {
-
-  // If cron-based purging isn't specifically enabled, don't do anything.
-  if (_acquia_purge_variable('acquia_purge_cron') !== TRUE) {
-    return;
-  }
-
-  // Stop invocation if we are not detecting Acquia Cloud heuristics.
-  if (!_acquia_purge_are_we_on_acquiacloud()) {
-    return;
-  }
-
-  // Acquire a lock and ensure nobody else is purging something.
-  if (!_acquia_purge_qs()->lockAcquire()) {
-    return;
-  }
-
-  // Stop processing if any serious issues were found and log to watchdog.
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
-    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
-    _acquia_purge_get_diagnosis_logged($err);
-    return;
-  }
-
-  // Retrieve the statistics and determine if processing is needed at all.
-  $stats = _acquia_purge_qs()->stats();
-  if (!$stats['running']) {
-    return;
-  }
-
-  // Process as much items as we can and release the lock when done.
-  _acquia_purge_qs()->process();
-  _acquia_purge_qs()->lockRelease();
+  _acquia_purge_qs()->processors()->emit('onCron');
 }
 
 /**
@@ -134,14 +102,9 @@ function acquia_purge_cron() {
  */
 function acquia_purge_menu() {
   $items = array();
+  _acquia_purge_qs()->processors()->emit('onMenu', $items);
 
-  // Declare our AJAX callbacks for on-screen queue processing.
-  $items['acquia_purge_ajax_processor'] = array(
-    'title' => 'Acquia Purge AJAX processor',
-    'page callback' => '_acquia_purge_ajaxprocessor_processorcallback',
-    'access callback' => '_acquia_purge_ajaxprocessor_is_triggered',
-    'type' => MENU_CALLBACK,
-  );
+  // Define the autocomplete callback for the administration forms.
   $items['acquia_purge_ajax_autocomplete'] = array(
     'type'              => MENU_CALLBACK,
     'page callback'     => 'acquia_purge_autocomplete',
@@ -385,273 +348,7 @@ function acquia_purge_theme($existing, $type, $theme, $path) {
  * Implements hook_exit().
  */
 function acquia_purge_exit() {
-
-  // If lateruntime processing, isn't enabled, don't do anything.
-  if (_acquia_purge_variable('acquia_purge_lateruntime') !== TRUE) {
-    return;
-  }
-
-  // To not disturb heavy Drush scripts queuing lots of purges, only run on web.
-  if (php_sapi_name() === 'cli') {
-    return;
-  }
-
-  // Only attempt to process a chunk from the queue, when items were added.
-  if (!_acquia_purge_ajaxprocessor_is_triggered()) {
-    return;
-  }
-
-  // Don't process when diagnostics forbid us to do so.
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
-    $err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
-    _acquia_purge_get_diagnosis_logged($err);
-    return;
-  }
-
-  // Acquire a lock and process as much as we can.
-  if (_acquia_purge_qs()->lockAcquire()) {
-    _acquia_purge_qs()->process();
-    _acquia_purge_qs()->lockRelease();
-  }
-}
-
-/**
- * AJAX Processor: check if the current request path is blacklisted.
- *
- * On-screen notifications and interactive on-screen purge processing is not
- * always appreciated or can break the layout at places like popups or AJAX
- * callbacks. Therefore this helper attempts to prevent user annoyances
- * the best it can, but if error messages or the on-screen purge processor
- * are shown on a certain page, you know what to patch ;).
- *
- * @return true|false
- *   FALSE indicates pass, TRUE indicates that the path is blacklisted.
- */
-function _acquia_purge_ajaxprocessor_is_path_blacklisted() {
-  $blacklist = array(
-
-    // First register our own paths on which things shouldn't show.
-    'admin/config/development/performance/manualpurge/autocomplete',
-    'acquia_purge_ajax_processor',
-    'admin/config/system/expire',
-
-    // Then common Drupal paths where nothing should happen.
-    'admin/reports/status',
-    'admin/reports/dblog',
-    'admin/dashboard/customize',
-    'admin/dashboard',
-    'system/ajax',
-    'file/ajax',
-    'file/progress',
-    'toolbar/toggle',
-    'batch',
-
-    // Media module.
-    'media/browser',
-    'media/browser/testbed',
-    'media/browser/list',
-    'media/browser/library',
-  );
-
-  // If we're called too early, don't make any noise.
-  if (!isset($_GET['q'])) {
-    return FALSE;
-  }
-
-  // If this page is in our blacklist, return TRUE.
-  elseif (in_array($_GET['q'], $blacklist)) {
-    return TRUE;
-  }
-
-  // Avoid paths that contain any of these snippets.
-  $snippets = array('autocomplete', 'ajax');
-  foreach ($snippets as $snippet) {
-    if (stristr($_GET['q'], $snippet)) {
-      return TRUE;
-    }
-  }
-
-  return FALSE;
-}
-
-/**
- * AJAX Processor: verify if the processor is triggered to run for the this user.
- *
- * @return true|false
- */
-function _acquia_purge_ajaxprocessor_is_triggered() {
-  global $user;
-
-  // Anonymous users are never able to trigger purges by design, if this would
-  // ever become a necessity we'll introduce a permission to protect most sites.
-  if (!isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-    return FALSE;
-  }
-
-  // Retrieve the list of user names owning an ongoing purge process.
-  $uiusers = _acquia_purge_qs()->uiUsers()->get();
-
-  // If the uiusers list is empty, that means no active purges are ongoing.
-  if (!count($uiusers)) {
-    return FALSE;
-  }
-
-  // Is the current user one of the uiusers of the actively ongoing purge?
-  if (!in_array($user->name, $uiusers)) {
-    return FALSE;
-  }
-
-  // Are we running on a Acquia Cloud environment?
-  if (!_acquia_purge_are_we_on_acquiacloud()) {
-    return FALSE;
-  }
-
-  // All tests passed, this user can process the queue.
-  return TRUE;
-}
-
-/**
- * AJAX Processor: determine if the interactive UI should be visible or not.
- *
- * When the interactive UI is not presented to the end-user, processing of the
- * queue via AJAX still happens. It happens silently in the background for as
- * long as the administrative user that triggered it, has tabs to Drupal open.
- *
- * @return true|false
- */
-function _acquia_purge_ajaxprocessor_is_ui_visible() {
-
-  // Always hide the processor in case this is requested.
-  if (_acquia_purge_variable('acquia_purge_silentmode') === TRUE) {
-    return FALSE;
-  }
-
-  // Only users with the 'purge on-screen' permission will actually see the UI,
-  // since it could be confusing for some users.
-  return user_access('purge on-screen');
-}
-
-/**
- * AJAX Processor: load the JS/CSS assets and other UI elements.
- */
-function _acquia_purge_ajaxprocessor_loadassets() {
-
-  // Do not trigger the on-screen purger if this path is blacklisted.
-  if (_acquia_purge_ajaxprocessor_is_path_blacklisted()) {
-    return;
-  }
-
-  // Prevent API misuse and don't trigger when this user doesn't own the queue.
-  if (!_acquia_purge_ajaxprocessor_is_triggered()) {
-    return;
-  }
-
-  // Load the AJAX processor behavior. As soon as the bahvior is loaded it
-  // starts hitting /acquia_purge_ajax_processor, which in turn will process a
-  // chunk from the queue. With queue locking in place, multiple requests will
-  // not do any harm.
-  $module_path = drupal_get_path('module', 'acquia_purge');
-  drupal_add_js($module_path . '/acquia_purge.js');
-
-  // Although the behavior always loads and works the queue, it doesn't mean its
-  // always presented to the user. Print the DSM message when needed.
-  if (_acquia_purge_ajaxprocessor_is_ui_visible()) {
-    $message = t("There have been changes to content, and these need to be
-      refreshed throughout the system. There may be a delay before the changes
-      appear to all website visitors.");
-    drupal_set_message($message, 'acquia_purge_messages', FALSE);
-
-    // Add inline CSS to hide the DSM box, this covers cases where the script
-    // didn't yet or couldn't load. Since this only happens to authenticated
-    // backend users, we add this as inline CSS (see d.o. 2014461).
-    drupal_add_css('.acquia_purge_messages {display:none;}',
-      array('type' => 'inline'));
-  }
-}
-
-/**
- * AJAX Processor: process a chunk of items form the queue and respond in JSON.
- *
- * @return string
- *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
- */
-function _acquia_purge_ajaxprocessor_processorcallback() {
-  $stats = _acquia_purge_qs()->stats();
-  $stats['widget'] = '&nbsp;';
-  $stats['locked'] = FALSE;
-  $stats['error'] = FALSE;
-
-  // Ask our diagnostics system if there are any blocking issues that should
-  // stop us from processing the queue and notify the user about it.
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
-    $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
-    _acquia_purge_get_diagnosis_logged($err);
-    $stats['error'] = $err['description'];
-  }
-
-  // If nothing was found, attempt to acquire the lock and process some items.
-  else {
-    if (_acquia_purge_qs()->lockAcquire()) {
-
-      // This automatically pops an X amount of items for which we have enough
-      // resource capacity and processes them straight away.
-      _acquia_purge_qs()->process();
-
-      // Processing finished, so update $stats to reflect the new values.
-      foreach (_acquia_purge_qs()->stats() as $key => $value) {
-        $stats[$key] = $value;
-      }
-
-      // If errors did occur meanwhile, one indication of this could be that
-      // the history list remained empty, raise an error if it is empty.
-      if (empty($stats['purgehistory'])) {
-        $stats['error'] = t("The system seems to be having difficulties
-          refreshing recent content changes. Your work won't be lost, but please
-          do ask your technical administrator to check the logs.");
-      }
-
-      _acquia_purge_qs()->lockRelease();
-    }
-    else {
-      $stats['locked'] = TRUE;
-    }
-  }
-
-  // Render the status widget and add it to the statistics array.
-  if (!$stats['error']) {
-    $stats['widget'] = theme('acquia_purge_status_bar_widget', $stats);
-  }
-
-  return drupal_json_output($stats);
-}
-
-/**
- * AJAX Processor: trigger the currently authenticated user for AJAX processing.
- */
-function _acquia_purge_ajaxprocessor_trigger() {
-  static $triggered;
-  if (!is_null($triggered)) {
-    return;
-  }
-
-  // Don't trigger anything when this call happens in CLI conditions.
-  if (php_sapi_name() === 'cli') {
-    return;
-  }
-
-  // Register the currently logged on user as one of the queue users. These
-  // users are given the AJAX client side script until the queue is cleaned up.
-  global $user;
-
-  // Only register authenticated users, anonymous users will only queue.
-  if (isset($user->roles[DRUPAL_AUTHENTICATED_RID])) {
-    $uiusers = _acquia_purge_qs()->uiUsers()->get();
-    if (!in_array($user->name, $uiusers)) {
-      $uiusers[] = $user->name;
-      _acquia_purge_qs()->uiUsers()->set($uiusers);
-    }
-    $triggered = TRUE;
-  }
+  _acquia_purge_qs()->processors()->emit('onExit');
 }
 
 /**

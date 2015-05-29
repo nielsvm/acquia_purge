@@ -1,6 +1,6 @@
 /**
  * @file
- * Acquia Purge AJAX client.
+ * Acquia Purge - AJAX client side queue processor.
  *
  * This behavior will call to Acquia Purge's AJAX path until its purging queue
  * is empty and everything is processed. Also works without on-screen reporting.
