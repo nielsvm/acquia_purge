@@ -1378,7 +1378,7 @@ function _acquia_purge_purge($path) {
         case CURLE_COULDNT_RESOLVE_HOST:
           $msg = "Cannot resolve host %bal, '%path' goes back to queue!";
           break;
-        case CURLE_OPERATION_TIMEDOUT:
+        case CURLE_OPERATION_TIMEOUTED:
           $msg = "Connecting to %bal exceeded %timeout seconds, '%path'"
             . ' goes back to queue!';
           break;
