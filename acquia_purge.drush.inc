@@ -216,7 +216,7 @@ function drush_acquia_purge_ap_purge($paths = NULL) {
   $paths = explode(' ', $paths);
   foreach ($paths as $path) {
     if ($msg = _acquia_purge_input_validate($path)) {
-      drush_set_error($path);
+      drush_print($path);
       return drush_set_error($msg);
     }
   }
@@ -288,7 +288,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
     // Retrieve the statistics and determine if processing is needed.
     $stats = _acquia_purge_qs()->stats();
     if (!$stats['running']) {
-      return drush_set_error("The purge queue is empty, done!");
+      return drush_print("The purge queue is empty, done!");
     }
 
     // Define the batch operation we're going to conduct.
@@ -316,7 +316,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
   //
   else {
     if (!_acquia_purge_qs()->lockAcquire()) {
-      return drush_set_error("Unable to acquire lock, ensure that all users "
+      return drush_print("Unable to acquire lock, ensure that all users "
         . "close their browser tabs as a different purge seems to be active!");
     }
 
