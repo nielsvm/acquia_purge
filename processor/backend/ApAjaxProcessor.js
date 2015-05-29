@@ -121,13 +121,13 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
         }
 
         // Then just make it visible.
-        throbber.fadeIn(1000);
+        throbber.fadeIn(100);
       }
 
       // Disable the throbber on the widget container.
       function uiThrobberOff() {
         var throbber = apbox.find('#apthrobr');
-        throbber.fadeOut(1000);
+        throbber.fadeOut(100);
       }
 
       // Add new items to the purge log history widget.
@@ -161,7 +161,7 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
             else {
               list_items.append("<li style='display:none;'>" + url + '</li>');
               list_items.find('li').last().css('list-style', 'none');
-              list_items.find('li').last().slideDown(1000);
+              list_items.find('li').last().slideDown(500);
             }
           }
         });
@@ -169,7 +169,7 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
 
       // Build off the log history viewer and hide its items.
       function uiLogHistoryHide() {
-        apbox_log.fadeTo(2000, 0).slideUp(2000);
+        apbox_log.fadeTo(1000, 0).slideUp(1000);
       }
 
       // Tear the user interface down and hide it for the user.
@@ -178,9 +178,8 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
         uiLogHistoryHide();
         uiError();
 
-        // Hide ourselves after 4 seconds.
-        setTimeout(function() {apbox.slideUp(1000);}, 4000);
-
+        // Hide ourselves with a quick animation.
+        setTimeout(function() {apbox.slideUp(500);}, 600);
       }
 
       // Make a request back home and trigger a couple of purges each run.
@@ -223,14 +222,14 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
               uiError();
             }
 
-            // Follow up a next request with a 2 seconds pause.
+            // Follow up a next request with a small pause.
             if (data['running']) {
               if (!errorHandlerCallsForHalt) {
                 if (data['locked'] || data['error']) {
-                  setTimeout(function() {eventLoopRun();}, 10000);
+                  setTimeout(function() {eventLoopRun();}, 5000);
                 }
                 else {
-                  setTimeout(function() {eventLoopRun();}, 1000);
+                  setTimeout(function() {eventLoopRun();}, 500);
                 }
               }
               else {
@@ -242,8 +241,8 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
             else {
               if (uiActivated()) {
                 uiTearDown();
-                quit();
               }
+              quit();
             }
           },
           error: function(request) {

@@ -334,9 +334,9 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
       $form_state['values']['paths']['path']);
   }
 
-  // Nothing visual will happen in cron-mode, unless we notify.
-  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
-    drupal_set_message(t('Your paths have been queued and will get processed during the next cron iteration.'));
+  // Notify when there is no other visual feedback to be expected.
+  if (_acquia_purge_variable('acquia_purge_silentmode')) {
+    drupal_set_message(t('The requested content will be invalidated quickly.'));
   }
 
   // Only submit the paths if they really contain something.
