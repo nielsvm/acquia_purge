@@ -200,10 +200,11 @@ function acquia_purge_manualpurge_form_page($form, &$form_state) {
 
   // Rewrite the paths array to just contain this page, variations might be
   // added later on if _acquia_purge_input_path_variations() gets called.
+  $request_uri = str_replace('##' . base_path(), '', '##' . request_uri());
   $form['paths'] = array();
   $form['paths']['path'][] = array(
     '#type' => 'hidden',
-    '#default_value' => str_replace(base_path(), '', request_uri()),
+    '#default_value' => $request_uri,
   );
 
   return $form;
