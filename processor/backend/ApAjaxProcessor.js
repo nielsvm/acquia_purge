@@ -256,13 +256,12 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
               eventLoopRun();
             }
 
-            // 403 responses indicate that the user does not have access to the
-            // AJAX back-end anymore, this happens when someone else initiated
-            // a purge sequence or when multiple progress bars fight each-other.
+            // 403 responses indicate the backend logged out, quit.
             else if (Number(request['status']) == 403) {
               if (uiActivated()) {
                 uiTearDown();
               }
+              quit();
             }
 
             // Else, report the error occurred and tear the UI partly down.

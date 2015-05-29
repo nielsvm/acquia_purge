@@ -221,12 +221,13 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
   static public function pathCallback() {
     $qs = _acquia_purge_qs();
     $stats = $qs->stats();
-    $stats['locked'] = $stats['error'] = FALSE;
+    $stats['error'] = FALSE;
     $stats['widget'] = '&nbsp;';
 
     // Deny access when the current user didn't initiate queue processing.
     if (!self::isUserOwningTheQueue($qs)) {
-      return MENU_ACCESS_DENIED;
+      $stats['running'] = FALSE;
+      return drupal_json_output($stats);
     }
 
     // Test for blocking diagnostic issues and report any if found.
