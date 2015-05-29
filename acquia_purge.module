@@ -802,13 +802,13 @@ function _acquia_purge_get_domains_add_acloud(&$domains) {
   // automatically so risks of changes are small.
   if (file_exists('/etc/apache2/conf.d')) {
     $site_name = _acquia_purge_get_site_name();
-    $server_name = shell_exec("grep -r 'ServerName' /etc/apache2/conf.d/$site_name*.conf");
+    $server_name = shell_exec("grep -r 'ServerName' /etc/apache2/conf.d/$site_name-*.conf");
     foreach (explode('ServerName', $server_name) as $testable) {
       foreach (explode(' ', trim($testable)) as $domain) {
         $detected_domains[] = $domain;
       }
     }
-    $server_alias = shell_exec("grep -r 'ServerAlias' /etc/apache2/conf.d/$site_name*.conf");
+    $server_alias = shell_exec("grep -r 'ServerAlias' /etc/apache2/conf.d/$site_name-*.conf");
     foreach (explode('ServerAlias', $server_alias) as $testable) {
       foreach (explode(' ', trim($testable)) as $domain) {
         $detected_domains[] = $domain;
