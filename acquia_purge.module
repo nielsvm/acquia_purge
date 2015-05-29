@@ -362,7 +362,7 @@ function _acquia_purge_are_we_on_acquiacloud() {
   // Build our assertions logic and cache it statically.
   if (is_null($connected)) {
     $assertions = array(
-      is_array(variable_get('acquia_hosting_site_info', FALSE)),
+      (bool) isset($_ENV['AH_SITE_ENVIRONMENT']),
       (bool) count(_acquia_purge_get_balancers()),
       (bool) _acquia_purge_get_site_name(),
       (bool) _acquia_purge_get_site_group(),

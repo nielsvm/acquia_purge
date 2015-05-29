@@ -130,7 +130,7 @@ Frequently asked questions
 
   // Trick Acquia Purge into thinking we are on Acquia Cloud.
   $_ENV['AH_SITE_NAME'] = $_ENV['AH_SITE_GROUP'] = 'fake';
-  $conf['acquia_hosting_site_info'] = array('fake');
+  $_ENV['AH_SITE_ENVIRONMENT'] = 'fake';
   $conf['reverse_proxies'] = array('127.0.0.1');
 
  Why does admin/uid 1 always see the progressbar since 7.x-1.0-beta2?
