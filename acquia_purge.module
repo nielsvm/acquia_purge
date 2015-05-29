@@ -71,8 +71,7 @@ function acquia_purge_init() {
 
   // Load legacy helpers to prevent third-party code from breaking horribly. The
   // helpers will go away in the future and are very vocal about it in the logs.
-  require_once(drupal_get_path('module', 'acquia_purge')
-    . '/acquia_purge.deprecated.inc');
+  _acquia_purge_load('acquia_purge.deprecated.inc');
 
   _acquia_purge_qs()->processors()->emit('onInit');
 }
@@ -1167,6 +1166,77 @@ function _acquia_purge_input_validate_msgs($msg) {
 }
 
 /**
+ * Load PHP files in the order specified in acquia_purge.info.
+ *
+ * Although Drupal takes care of code loading with its registry, we aren't able
+ * to rely on it. Since we introduced a OOP core later on, upgrading users can
+ * not be exposed to a situation where their just-upgraded module calls the new
+ * stack from _acquia_purge_qs() - resulting in 'class not found' errors.
+ *
+ * This helper effectively parses (and caches) our info file and loads the files
+ * specified in it. The order of files is preserved and files get loaded in that
+ * order so that no code composition issues can arise.
+ *
+ * This conflicts in no way with registry itself, nothing loads twice.
+ *
+ * @param string $path
+ *   The path to load ('queue/ApQueueService.php') or a globbed path ('queue/').
+
+ * @see acquia_purge.info
+ */
+function _acquia_purge_load($path) {
+
+  // Initialize our module path just once, to avoid doing this many times.
+  static $module_path;
+  if (is_null($module_path)) {
+    $module_path = drupal_get_path('module', 'acquia_purge');
+  }
+
+  // Parse the files[] section from acquia_purge.info.
+  static $files;
+  if (is_null($files)) {
+    if ($cache = cache_get(__FUNCTION__)) {
+      $files = $cache->data;
+    }
+    else {
+      $info_path = $module_path . '/acquia_purge.info';
+      $files = drupal_parse_info_file($info_path)['files'];
+      cache_set(__FUNCTION__, $files);
+    }
+  }
+
+  // Maintain the indexea of already loaded files.
+  static $loaded;
+  if (is_null($loaded)) {
+    $loaded = array();
+  }
+
+  // Identify up to which index, we need to load files.
+  $load_up_to_index = FALSE;
+  foreach ($files as $index => $file) {
+    if (strpos($file, $path) === 0) {
+      $load_up_to_index = $index;
+    }
+  }
+
+  // Load all files up to the index or directly attempt to load it.
+  if ($load_up_to_index === FALSE) {
+    require_once($module_path . '/' . $path);
+  }
+  else {
+    foreach ($files as $index => $file) {
+      if (in_array($index, $loaded)) {
+        continue;
+      }
+      if ($index <= $load_up_to_index) {
+        require_once($module_path . '/' . $file);
+        $loaded[] = $index;
+      }
+    }
+  }
+}
+
+/**
  * Manual purge form: require inclusion wrapper.
  *
  * @see __acquia_purge_manualpurge_add()
@@ -1470,10 +1540,7 @@ function _acquia_purge_purge_requests($requests) {
 function _acquia_purge_qs() {
   static $queue_service;
   if (is_null($queue_service)) {
-    if (!class_exists('ApQueueService')) {
-      require_once(drupal_get_path('module', 'acquia_purge')
-        . '/queue/ApQueueService.php');
-    }
+    _acquia_purge_load('queue/ApQueueService.php');
     $queue_service = new ApQueueService();
   }
   return $queue_service;

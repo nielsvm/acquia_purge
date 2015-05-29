@@ -336,12 +336,7 @@ class ApQueueService {
    */
   public function processors() {
     if (is_null($this->processors)) {
-      require_once $this->modulePath . '/processor/ApProcessorsService.php';
-      require_once $this->modulePath . '/processor/ApProcessorInterface.php';
-      require_once $this->modulePath . '/processor/ApProcessorBase.php';
-      require_once $this->modulePath . '/processor/backend/ApAjaxProcessor.php';
-      require_once $this->modulePath . '/processor/backend/ApCronProcessor.php';
-      require_once $this->modulePath . '/processor/backend/ApRuntimeProcessor.php';
+      _acquia_purge_load('processor/');
       $this->processors = new ApProcessorsService($this);
     }
     return $this->processors;
@@ -358,15 +353,14 @@ class ApQueueService {
 
       // Assure that all dependent code is loaded, lets not rely on registry.
       $state = $this->state();
-      require_once $this->modulePath . '/queue/ApQueueInterface.php';
-      require_once $this->modulePath . '/queue/backend/ApEfficientQueue.php';
 
       // Load the configured smart or normal backend.
       if (_acquia_purge_variable('acquia_purge_smartqueue')) {
-        require_once $this->modulePath . '/queue/backend/ApSmartQueue.php';
+        _acquia_purge_load('queue/backend/ApSmartQueue.php');
         $this->queue = new ApSmartQueue($state);
       }
       else {
+        _acquia_purge_load('queue/backend/ApEfficientQueue.php');
         $this->queue = new ApEfficientQueue($state);
       }
     }
@@ -383,22 +377,15 @@ class ApQueueService {
 
     // Initialize the state storage backend.
     if (is_null($this->state)) {
-      require_once $this->modulePath . '/state/ApStateStorageInterface.php';
-      require_once $this->modulePath . '/state/ApStateStorageBase.php';
-      require_once $this->modulePath . '/state/ApStateItemInterface.php';
-      require_once $this->modulePath . '/state/ApStateItem.php';
-      require_once $this->modulePath . '/state/ApStateCounterInterface.php';
-      require_once $this->modulePath . '/state/ApStateCounter.php';
-
       if (_acquia_purge_are_we_using_memcached()) {
-        require_once $this->modulePath . '/state/backend/ApMemcachedStateStorage.php';
+        _acquia_purge_load('state/backend/ApMemcachedStateStorage.php');
         $this->state = new ApMemcachedStateStorage(
           ACQUIA_PURGE_STATE_MEMKEY,
           ACQUIA_PURGE_STATE_MEMBIN
         );
       }
       else {
-        require_once $this->modulePath . '/state/backend/ApDiskStateStorage.php';
+        _acquia_purge_load('state/backend/ApDiskStateStorage.php');
         $this->state = new ApDiskStateStorage(ACQUIA_PURGE_STATE_FILE);
       }
     }

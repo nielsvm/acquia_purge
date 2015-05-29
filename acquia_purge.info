@@ -3,20 +3,25 @@ description = "Top-notch Varnish purging on Acquia Cloud!"
 package = Acquia Network Connector
 core = 7.x
 dependencies[] = expire (>=2.0-rc2)
+
+; The order of the files specified here is of absolute importance, since each
+; file is ordered according to code composition. See _acquia_purge_load().
+files[] = acquia_purge.deprecated.inc
+files[] = queue/ApQueueService.php
+files[] = processor/ApProcessorsService.php
+files[] = processor/ApProcessorInterface.php
+files[] = processor/ApProcessorBase.php
 files[] = processor/backend/ApAjaxProcessor.php
 files[] = processor/backend/ApCronProcessor.php
 files[] = processor/backend/ApRuntimeProcessor.php
-files[] = processor/ApProcessorBase.php
-files[] = processor/ApProcessorInterface.php
 files[] = state/ApStateItemInterface.php
-files[] = state/ApStateItem.php
-files[] = state/ApStateCounter.php
-files[] = state/ApStateCounterInterface.php
 files[] = state/ApStateStorageInterface.php
+files[] = state/ApStateItem.php
+files[] = state/ApStateCounterInterface.php
+files[] = state/ApStateCounter.php
 files[] = state/ApStateStorageBase.php
 files[] = state/backend/ApDiskStateStorage.php
 files[] = state/backend/ApMemcachedStateStorage.php
-files[] = queue/backend/ApSmartQueue.php
-files[] = queue/backend/ApEfficientQueue.php
 files[] = queue/ApQueueInterface.php
-files[] = queue/ApQueueService.php
+files[] = queue/backend/ApEfficientQueue.php
+files[] = queue/backend/ApSmartQueue.php
