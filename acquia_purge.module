@@ -1200,7 +1200,8 @@ function _acquia_purge_load($path) {
     }
     else {
       $info_path = $module_path . '/acquia_purge.info';
-      $files = drupal_parse_info_file($info_path)['files'];
+      $info = drupal_parse_info_file($info_path);
+      $files = $info['files'];
       cache_set(__FUNCTION__, $files);
     }
   }
