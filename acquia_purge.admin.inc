@@ -203,8 +203,9 @@ function acquia_purge_manualpurge_form_page($form, &$form_state) {
   $form['paths'] = array();
   $form['paths']['path'][] = array(
     '#type' => 'hidden',
-    '#default_value' => $_GET['q'],
+    '#default_value' => str_replace(base_path(), '', request_uri()),
   );
+
   return $form;
 }
 
