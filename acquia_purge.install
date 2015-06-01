@@ -117,38 +117,43 @@ function acquia_purge_update_7102(&$sandbox) {
  * but is now also used for permission to the manual purge form blocks.
  */
 function acquia_purge_update_7103(&$sandbox) {
-  $admin_rid = variable_get('user_admin_role', 0);
   $old = 'purge notification';
   $new = 'purge on-screen';
 
   // Query the old 'purge notification' permission to rename it to the new one.
-  if ($admin_rid) {
-    $old_permissions = db_select('role_permission', 'r')
-      ->fields('r')
-      ->condition('permission', $old)
-      ->condition('rid', $admin_rid, '!=')
-      ->execute();
-  }
-  else {
-    $old_permissions = db_select('role_permission', 'r')
+  $old_permissions = db_select('role_permission', 'r')
     ->fields('r')
     ->condition('permission', $old)
     ->execute();
-  }
   foreach ($old_permissions as $old_permission) {
-    db_update('role_permission')
-      ->fields(array('permission' => $new))
-      ->condition('permission', $old_permission->permission)
+
+    // Prevent duplicate entries by prequering if the new permission exists.
+    $already_exists = db_select('role_permission', 'r')
+      ->fields('r')
+      ->condition('permission', $new)
       ->condition('module', $old_permission->module)
       ->condition('rid', $old_permission->rid)
-      ->execute();
+      ->execute()
+      ->fetchAssoc();
+    if ($already_exists) {
+      db_delete('role_permission')
+        ->condition('permission', $old_permission->permission)
+        ->condition('module', $old_permission->module)
+        ->condition('rid', $old_permission->rid)
+        ->execute();
+    }
+    else {
+      db_update('role_permission')
+        ->fields(array('permission' => $new))
+        ->condition('permission', $old_permission->permission)
+        ->condition('module', $old_permission->module)
+        ->condition('rid', $old_permission->rid)
+        ->execute();
+    }
   }
 
-  // Assign the new role to the site administrator.
+  // Asure the role permissions are reset.
   drupal_static_reset('user_role_permissions');
-  if ($admin_rid && module_exists('acquia_purge')) {
-    user_role_grant_permissions($admin_rid, array('purge on-screen'));
-  }
 }
 
 /**
