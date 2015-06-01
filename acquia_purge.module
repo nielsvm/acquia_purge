@@ -1290,9 +1290,12 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  * Purge a single path on all domains and load balancers.
  *
  * @warning
- *   Calling this function directly disregards all safety nets such as capacity
- *   handling, statistic counters and more. Instead you want to use the queue
- *   service, e.g.:
+ *   This is the core HTTP purge implementation for a single path item, and is
+ *   NOT TO BE CALLED DIRECTLY! Instead the "queue service" has to be utilized
+ *   which takes care of queuing, statistics, capacity calculation and several
+ *   other safety checks and balances.
+ *
+ *   This is a example of how to do this:
  *   @code
  *   $queue = _acquia_purge_qs();
  *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
