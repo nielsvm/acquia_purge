@@ -100,6 +100,13 @@ exist as of this version and documented below:
 ║                          ║       ║ is fully https:// based (redirecting).    ║
 ║                          ║       ║ $conf['acquia_purge_https'] = TRUE;       ║
 ║                          ║       ║                                           ║
+║ acquia_purge_token       ║ FALSE ║ If set, this allows you to set a custom   ║
+║                          ║       ║ X-Acquia-Purge header value. This helps   ║
+║                          ║       ║ offset DDOS style attacks but requires    ║
+║                          ║       ║ balancer level configuration chances for  ║
+║                          ║       ║ you need to contact Acquia Support.       ║
+║                          ║       ║ $conf['acquia_purge_token'] = 'secret';   ║
+║                          ║       ║                                           ║
 ║ acquia_purge_base_path   ║(auto) ║ In some cases Drupal isn't served on the  ║
 ║                          ║       ║ same URL as where it's edited, which will ║
 ║                          ║       ║ cause different paths to be purged than   ║

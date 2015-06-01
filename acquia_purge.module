@@ -1321,7 +1321,6 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
  */
 function _acquia_purge_purge($path) {
-  $base_path = _acquia_purge_variable('acquia_purge_base_path');
 
   // Ask our built-in diagnostics system to preliminary find issues that are so
   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
@@ -1330,6 +1329,23 @@ function _acquia_purge_purge($path) {
   if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
     _acquia_purge_get_diagnosis_logged($err);
     return FALSE;
+  }
+
+  // Fetch and statically store the base path.
+  static $base_path;
+  if (is_null($base_path)) {
+    $base_path = _acquia_purge_variable('acquia_purge_base_path');
+  }
+
+  // Determine the request token, this makes up the X-Acquia-Purge header.
+  static $request_token;
+  if (is_null($request_token)) {
+    if (_acquia_purge_get('acquia_purge_token')) {
+      $request_token = (string) _acquia_purge_get('acquia_purge_token');
+    }
+    else {
+      $request_token = _acquia_purge_get_site_name();
+    }
   }
 
   // Because a single path can exist on http://, https://, on various domain
@@ -1350,7 +1366,7 @@ function _acquia_purge_purge($path) {
         $rqst->headers = array(
           'Host: ' . $rqst->domain,
           'Accept-Encoding: gzip',
-          'X-Acquia-Purge: ' . _acquia_purge_get_site_name(),
+          'X-Acquia-Purge: ' . $request_token,
         );
         $requests[] = $rqst;
       }
@@ -1588,6 +1604,7 @@ function _acquia_purge_variable($name) {
       'acquia_purge_lateruntime'  => FALSE,
       'acquia_purge_http'         => TRUE,
       'acquia_purge_https'        => FALSE,
+      'acquia_purge_token'        => FALSE,
       'acquia_purge_base_path'    => base_path(),
       'acquia_purge_errorlimit'   => TRUE,
       'acquia_purge_log_success'  => TRUE,
