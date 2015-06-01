@@ -93,6 +93,11 @@ function acquia_purge_permission() {
       'description' => t('Process purges visually using a progress bar and '
         . 'grant access to the editorial manual purge blocks.'),
     ),
+    'use manual purge blocks' => array(
+      'title' => t('Use manual purge blocks'),
+      'description' => t('Allows editors to utilize the "Manual purge form '
+        . '(current page)" and "Manual purge form (paths)" blocks.'),
+    ),
   );
 }
 
@@ -294,7 +299,7 @@ function acquia_purge_block_view($delta = '') {
 
   // Render one of the manual purge blocks.
   if (in_array($delta, array('page', 'paths'))) {
-    if (!user_access('purge on-screen')) {
+    if (!user_access('use manual purge blocks')) {
       return array();
     }
     if ($_GET['q'] == 'admin/config/development/performance/manualpurge') {

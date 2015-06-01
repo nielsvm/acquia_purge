@@ -171,3 +171,32 @@ function acquia_purge_update_7104(&$sandbox) {
 function acquia_purge_update_7105(&$sandbox) {
   lock_release('_acquia_purge_queue_lock');
 }
+
+/**
+ * Assign the new permission 'use manual purge blocks' to all roles already
+ * holding the 'purge on-screen' permission. The blocks used the latter first,
+ * but got its own permission as of version 7.x-1.2.
+ */
+function acquia_purge_update_7106(&$sandbox) {
+
+  // See if there are roles that already have the new permission, unlikely.
+  $rids_to_avoid = array();
+  $roles_manualpurgeblocks = db_select('role_permission', 'r')
+    ->fields('r')
+    ->condition('permission', 'use manual purge blocks')
+    ->execute();
+  foreach ($roles_manualpurgeblocks as $role) {
+    $rids_to_avoid[] = $role->rid;
+  }
+
+  // Get the roles that have 'purge on-screen' and assign them the new one.
+  $roles_onscreen = db_select('role_permission', 'r')
+    ->fields('r')
+    ->condition('permission', 'purge on-screen')
+    ->execute();
+  foreach ($roles_onscreen as $role) {
+    if (!in_array($role->rid, $rids_to_avoid)) {
+      user_role_grant_permissions($role->rid, array('use manual purge blocks'));
+    }
+  }
+}
