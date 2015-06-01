@@ -105,11 +105,6 @@ class ApProcessorsService {
   /**
    * Retrieve a loaded processor object.
    *
-   * @warning
-   *   There is no real-world use case why one would directly interact with any
-   *   of the processor objects, except for backward compatibility. See the
-   *   helpers in acquia_purge.deprecated.inc.
-   *
    * @param string $class
    *   The name of the processor class you need.
    *

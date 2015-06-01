@@ -65,14 +65,21 @@ define('ACQUIA_PURGE_SEVLEVEL_WARNING', 1);
 define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
 
 /**
+ * For the time being, early-load code symbols that got deprecated in 7.x-1.2.
+ *
+ * It is costly to carry barely used function definitions, yet at the other hand
+ * it prevents users upgrading their sites from just breaking. It has been
+ * considered to load the deprecated wrappers from hook_init or even hook_boot,
+ * but the code was defined in this file before and could still mean too late.
+ *
+ * This will go away in the future, so make sure to port your code.
+ */
+require_once dirname(__FILE__) . '/acquia_purge.deprecated.inc';
+
+/**
  * Implements hook_init().
  */
 function acquia_purge_init() {
-
-  // Load legacy helpers to prevent third-party code from breaking horribly. The
-  // helpers will go away in the future and are very vocal about it in the logs.
-  _acquia_purge_load('acquia_purge.deprecated.inc');
-
   _acquia_purge_qs()->processors()->emit('onInit');
 }
 

@@ -2,7 +2,14 @@
 
 /**
  * @file
- * API functions and helper code past their expiration date.
+ * Deprecated functions.
+ *
+ * Version 7.x-1.2 deprecated many functions and reorganized everything in a
+ * object oriented core. To prevent third-party code from just breaking, the old
+ * symbols are kept in this file and wrap around the new objects.
+ *
+ * Nonetheless, this file is likely to go away in future versions, so the
+ * recommendation is to port your immediately!
  */
 
 /**

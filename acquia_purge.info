@@ -6,7 +6,6 @@ dependencies[] = expire (>=2.0-rc2)
 
 ; The order of the files specified here is of absolute importance, since each
 ; file is ordered according to code composition. See _acquia_purge_load().
-files[] = acquia_purge.deprecated.inc
 files[] = queue/ApQueueService.php
 files[] = processor/ApProcessorsService.php
 files[] = processor/ApProcessorInterface.php
