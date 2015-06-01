@@ -43,6 +43,46 @@ function hook_acquia_purge_domains_alter(&$domains) {
 }
 
 /**
+ * React after paths failed purging and have been released back to the queue.
+ *
+ * @warning
+ *   Called implementations run within the lock that Acquia Purge processors
+ *   claimed. It is important that your code is swift and does not break
+ *   execution flow (e.g. die() or exit()) since that would keep the lock
+ *   claimed until it expires.
+ *
+ * @param string[] $paths
+ *   Non-associative array of string values representing the failed paths.
+ *
+ * @see ApQueueService::process()
+ */
+function hook_acquia_purge_purge_failure($paths) {
+  foreach ($paths as $path) {
+    drupal_set_message("'$path'", 'error');
+  }
+}
+
+/**
+ * React after paths paths purged successfully and got deleted from the queue.
+ *
+ * @warning
+ *   Called implementations run within the lock that Acquia Purge processors
+ *   claimed. It is important that your code is swift and does not break
+ *   execution flow (e.g. die() or exit()) since that would keep the lock
+ *   claimed until it expires.
+ *
+ * @param string[] $paths
+ *   Non-associative array of string values representing the purged paths.
+ *
+ * @see ApQueueService::process()
+ */
+function hook_acquia_purge_purge_success($paths) {
+  foreach ($paths as $path) {
+    drupal_set_message("'$path'");
+  }
+}
+
+/**
  * Edit/extend the list of variations for $path.
  *
  * When the site has variations enabled, administrators will automatically

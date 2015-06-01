@@ -303,12 +303,12 @@ class ApQueueService {
     // Process the claims and let the queue delete/release them.
     $deletes = $releases = array();
     foreach ($claims as $claim) {
-      if ($this->deduplicate($claim->data[0], 'purged')) {
+      if ($this->deduplicate($this->queueItemPath($claim), 'purged')) {
         $deletes[] = $claim;
         continue;
       }
       if (call_user_func_array($callback, $claim->data)) {
-        $this->deduplicate($claim->data[0], 'purged');
+        $this->deduplicate($this->queueItemPath($claim), 'purged');
         $deletes[] = $claim;
       }
       else {
@@ -324,6 +324,16 @@ class ApQueueService {
     // When the bottom of the queue has been reached, reset all state data.
     if ($this->queue()->numberOfItems() === 0) {
       $this->state()->wipe();
+    }
+
+    // Invoke hook_acquia_purge_purge_failure()/success() implementations.
+    if (module_implements('acquia_purge_purge_failure') && count($releases)) {
+      $paths = $this->queueItemPaths($releases);
+      module_invoke_all('acquia_purge_purge_failure', $paths);
+    }
+    if (module_implements('acquia_purge_purge_success') && count($deletes)) {
+      $paths = $this->queueItemPaths($deletes);
+      module_invoke_all('acquia_purge_purge_success', $paths);
     }
 
     return TRUE;
@@ -365,6 +375,44 @@ class ApQueueService {
       }
     }
     return $this->queue;
+  }
+
+  /**
+   * Filter out the HTTP path from the given queue item object.
+   *
+   * @param array $item
+   *  Queue item object as defined in ApQueueInterface::claimItemMultiple(),
+   *  with at least the following properties:
+   *   - data: the same as what what passed into createItem().
+   *   - item_id: the unique ID returned from createItem().
+   *   - created: timestamp when the item was put into the queue.
+   *
+   * @return string
+   *   The HTTP path that has to be purged.
+   */
+  protected function queueItemPath($item) {
+    return $item->data[0];
+  }
+
+  /**
+   * Filter out the HTTP path from a list of queue item objects.
+   *
+   * @param array $items
+   *   Non-associative array with item objects, each object has at least the
+   *   following properties (see ApQueueInterface::claimItemMultiple()):
+   *   - data: the same as what what passed into createItem().
+   *   - item_id: the unique ID returned from createItem().
+   *   - created: timestamp when the item was put into the queue.
+   *
+   * @return string[]
+   *   Non-associative array with the HTTP paths to be purged.
+   */
+  protected function queueItemPaths($items) {
+    $paths = array();
+    foreach ($items as $item) {
+      $paths[] = $this->queueItemPath($item);
+    }
+    return $paths;
   }
 
   /**
