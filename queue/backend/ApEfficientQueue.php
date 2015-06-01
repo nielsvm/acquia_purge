@@ -160,11 +160,11 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
     // Build a array with all exactly records as they should turn into rows.
     $time = time();
     foreach ($items as $data) {
-      $records[] = [
+      $records[] = array(
         'name' => $this->name,
         'data' => serialize($data),
         'created' => $time,
-      ];
+      );
     }
 
     // Insert all of them using just one multi-row query.
