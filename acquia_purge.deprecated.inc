@@ -76,6 +76,20 @@ function _acquia_purge_queue() {
 }
 
 /**
+ * DEPRECATED: add a single purge to the queue.
+ *
+ * @deprecated
+ */
+function _acquia_purge_queue_add($path) {
+  watchdog(
+    'acquia_purge',
+    "Function %old() is deprecated, port your code to !new immediately!",
+    array('%old' => __FUNCTION__, '!new' => '_acquia_purge_qs()->addPath()'),
+    WATCHDOG_WARNING);
+  return _acquia_purge_qs()->addPath($path);
+}
+
+/**
  * DEPRECATED: clear the queue and invalidate all running processes.
  *
  * @deprecated
