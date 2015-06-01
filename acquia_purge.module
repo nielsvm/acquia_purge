@@ -177,30 +177,29 @@ function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
 
   // Check for errors once, but refuse operation during the entire request.
   static $error;
-  if ($error) {
-    return;
-  }
   if (is_null($error)) {
     if (($error = !_acquia_purge_are_we_allowed_to_purge())) {
       $errors = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
       _acquia_purge_get_diagnosis_logged($errors);
 
-      // Render all critical error conditions to screen, if we should at least.
-      if (_acquia_purge_ajaxprocessor_is_path_blacklisted() || (php_sapi_name() === 'cli')
-        || (!user_access('purge on-screen'))) {
-        return;
+      // Only visualize errors when the user has permission and isn't silenced.
+      $notsilent = !_acquia_purge_variable('acquia_purge_silentmode');
+      $notcli = php_sapi_name() !== 'cli';
+      if ($notsilent && $notcli && user_access('purge on-screen')) {
+        foreach ($errors as $i => $error) {
+          $errors[$i] = '<p>' . $error['description'] . '</p>';
+        }
+        drupal_set_message(
+          t("<p>The system cannot publicly refresh the changes you just made,
+            because of the following error conditions:</p>!items<p>Please
+            contact your system administrator or development partner!</p>",
+            array('!items' => theme('item_list', array('items' => $errors)))),
+          'error');
       }
-      foreach ($errors as $i => $error) {
-        $errors[$i] = '<p>' . $error['description'] . '</p>';
-      }
-      drupal_set_message(
-        t("<p>The system cannot publicly refresh the changes you just made,
-          because of the following error conditions:</p>!items<p>Please
-          contact your system administrator or development partner!</p>",
-          array('!items' => theme('item_list', array('items' => $errors)))),
-        'error');
-      return;
     }
+  }
+  if ($error) {
+    return;
   }
 
   // Add '<front>' to the list as empty strings don't pass validation.
