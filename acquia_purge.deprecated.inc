@@ -20,7 +20,8 @@
  */
 function _acquia_purge_deprecated($new) {
   $msg = "!old() is deprecated, port your code to !new immediately!";
-  $caller = debug_backtrace()[1]['function'];
+  $backtrace = debug_backtrace();
+  $caller = $backtrace[1]['function'];
   $replacements = array('!old' => $caller, '!new' => $new);
   watchdog('acquia_purge', $msg, $replacements, WATCHDOG_WARNING);
 }
