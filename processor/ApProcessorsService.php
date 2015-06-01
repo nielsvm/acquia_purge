@@ -92,7 +92,7 @@ class ApProcessorsService {
         if (is_null($a1)) {
           $processor->$event();
         }
-        elseif(is_null($a2)) {
+        elseif (is_null($a2)) {
           $processor->$event($a1);
         }
         else {

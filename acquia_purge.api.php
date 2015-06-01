@@ -58,7 +58,7 @@ function hook_acquia_purge_domains_alter(&$domains) {
  */
 function hook_acquia_purge_purge_failure($paths) {
   foreach ($paths as $path) {
-    drupal_set_message("'$path'", 'error');
+    drupal_set_message(t('"@path"', array('@path' => $path)), 'error');
   }
 }
 
@@ -78,7 +78,7 @@ function hook_acquia_purge_purge_failure($paths) {
  */
 function hook_acquia_purge_purge_success($paths) {
   foreach ($paths as $path) {
-    drupal_set_message("'$path'");
+    drupal_set_message(t('"@path"', array('@path' => $path)));
   }
 }
 
