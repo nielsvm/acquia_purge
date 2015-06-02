@@ -84,7 +84,7 @@ require_once dirname(__FILE__) . '/acquia_purge.deprecated.inc';
  * Implements hook_init().
  */
 function acquia_purge_init() {
-  _acquia_purge_qs()->processors()->emit('onInit');
+  _acquia_purge_service()->processors()->emit('onInit');
 }
 
 /**
@@ -107,7 +107,7 @@ function acquia_purge_permission() {
  * Implements hook_cron().
  */
 function acquia_purge_cron() {
-  _acquia_purge_qs()->processors()->emit('onCron');
+  _acquia_purge_service()->processors()->emit('onCron');
 }
 
 /**
@@ -115,7 +115,7 @@ function acquia_purge_cron() {
  */
 function acquia_purge_menu() {
   $items = array();
-  _acquia_purge_qs()->processors()->emit('onMenu', $items);
+  _acquia_purge_service()->processors()->emit('onMenu', $items);
 
   // Define the autocomplete callback for the administration forms.
   $items['acquia_purge_ajax_autocomplete'] = array(
@@ -234,7 +234,7 @@ function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
   }
 
   // Queue all paths that we received from Expire.
-  _acquia_purge_qs()->addPaths($urls);
+  _acquia_purge_service()->addPaths($urls);
 }
 
 /**
@@ -360,7 +360,7 @@ function acquia_purge_theme($existing, $type, $theme, $path) {
  * Implements hook_exit().
  */
 function acquia_purge_exit() {
-  _acquia_purge_qs()->processors()->emit('onExit');
+  _acquia_purge_service()->processors()->emit('onExit');
 }
 
 /**
@@ -505,8 +505,8 @@ function _acquia_purge_get_balancers() {
  *
  * @param int $subtract
  *   (optional) Integer to subtract from the initially calculated capacity. The
- *   queue service uses this in ApQueueService::process() when it processed
- *   a number of items.
+ *   queue calls this from AcquiaPurgeService::process() when it processed a
+ *   number of items.
  *
  * @return int
  *   Integer indicating how many items may be popped from the queue.
@@ -701,7 +701,7 @@ function _acquia_purge_get_diagnosis_logged(array $items, $deduplicate = TRUE) {
 
     // Run a duplicate check by hashing and checking state data.
     else {
-      $logged_errors = _acquia_purge_qs()->loggedErrors()->get();
+      $logged_errors = _acquia_purge_service()->loggedErrors()->get();
       $hash = sha1($description);
       if (in_array($hash, $logged_errors)) {
         return;
@@ -710,7 +710,7 @@ function _acquia_purge_get_diagnosis_logged(array $items, $deduplicate = TRUE) {
       // Log the message and add the hash to the deduplication list.
       watchdog('acquia_purge', $description, array(), $map[$item['severity']]);
       $logged_errors[] = $hash;
-      _acquia_purge_qs()->loggedErrors()->set($logged_errors);
+      _acquia_purge_service()->loggedErrors()->set($logged_errors);
     }
   }
 }
@@ -1180,7 +1180,7 @@ function _acquia_purge_input_validate_msgs($msg) {
  * Although Drupal takes care of code loading with its registry, we aren't able
  * to rely on it. Since we introduced a OOP core later on, upgrading users can
  * not be exposed to a situation where their just-upgraded module calls the new
- * stack from _acquia_purge_qs() - resulting in 'class not found' errors.
+ * stack from _acquia_purge_service() - resulting in 'class not found' errors.
  *
  * This helper effectively parses (and caches) our info file and loads the files
  * specified in it. The order of files is preserved and files get loaded in that
@@ -1189,7 +1189,7 @@ function _acquia_purge_input_validate_msgs($msg) {
  * This conflicts in no way with registry itself, nothing loads twice.
  *
  * @param string $path
- *   The path to load ('queue/ApQueueService.php') or a globbed path ('queue/').
+ *   The path to load ('queue/AcquiaPurgeService.php') or a globbed path ('queue/').
  *
  * @see acquia_purge.info
  */
@@ -1204,14 +1204,15 @@ function _acquia_purge_load($path) {
   // Parse the files[] section from acquia_purge.info.
   static $files;
   if (is_null($files)) {
-    if ($cache = cache_get(__FUNCTION__)) {
+    $cache_key = __FUNCTION__ . '_v1';
+    if ($cache = cache_get($cache_key)) {
       $files = $cache->data;
     }
     else {
       $info_path = $module_path . '/acquia_purge.info';
       $info = drupal_parse_info_file($info_path);
       $files = $info['files'];
-      cache_set(__FUNCTION__, $files);
+      cache_set($cache_key, $files);
     }
   }
 
@@ -1304,10 +1305,10 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  *
  * @warning
  *   This is the core HTTP purge implementation for a single path item, and is
- *   NOT TO BE CALLED DIRECTLY! Instead the "queue service" has to be utilized
+ *   NOT TO BE CALLED DIRECTLY! Instead AcquiaPurgeService has to be utilized
  *   which takes care of queuing, statistics, capacity calculation and several
  *   other safety checks and balances. This is a example of how to do this:
- *   $queue = _acquia_purge_qs();
+ *   $queue = _acquia_purge_service();
  *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
  *   $queue->process();
  *
@@ -1388,7 +1389,7 @@ function _acquia_purge_purge($path) {
           array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
           WATCHDOG_INFO);
       }
-      _acquia_purge_qs()->history($rqst->uri);
+      _acquia_purge_service()->history($rqst->uri);
     }
     else {
       if ($overall_success) {
@@ -1562,22 +1563,18 @@ function _acquia_purge_purge_requests($requests) {
 }
 
 /**
- * Retrieve the global ApQueueService instance.
+ * Retrieve the global AcquiaPurgeService instance.
  *
- * To avoid exposing end-users to 'Class ApQueueService not found' registry
- * madness, this wrapper loads the file when the class isn't defined. Apart
- * from that, it serves as the single access point to the queue service.
- *
- * @return ApQueueService
- *   The queue service object.
+ * @return AcquiaPurgeService
+ *   The Acquia Purge service object.
  */
-function _acquia_purge_qs() {
-  static $queue_service;
-  if (is_null($queue_service)) {
-    _acquia_purge_load('queue/ApQueueService.php');
-    $queue_service = new ApQueueService();
+function _acquia_purge_service() {
+  static $service;
+  if (is_null($service)) {
+    _acquia_purge_load('AcquiaPurgeService.php');
+    $service = new AcquiaPurgeService();
   }
-  return $queue_service;
+  return $service;
 }
 
 /**

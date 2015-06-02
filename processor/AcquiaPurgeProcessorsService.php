@@ -2,59 +2,59 @@
 
 /**
  * @file
- * Contains ApProcessorsService.
+ * Contains AcquiaPurgeProcessorsService.
  */
 
 /**
  * Service that loads and bundles queue processor backends.
  */
-class ApProcessorsService {
+class AcquiaPurgeProcessorsService {
 
   /**
-   * Available ApProcessorInterface backends, queried for their availability.
+   * Available AcquiaPurgeProcessorInterface backends, queried for their availability.
    *
    * @var string[]
    */
   protected $backends = array(
-    'ApAjaxProcessor',
-    'ApCronProcessor',
-    'ApRuntimeProcessor',
+    'AcquiaPurgeAjaxProcessor',
+    'AcquiaPurgeCronProcessor',
+    'AcquiaPurgeRuntimeProcessor',
   );
 
   /**
    * The loaded backends.
    *
-   * @var ApProcessorInterface
+   * @var AcquiaPurgeProcessorInterface
    */
   protected $processors = array();
 
   /**
    * Event-processor mapping.
    *
-   * @var ApProcessorInterface[]
+   * @var AcquiaPurgeProcessorInterface[]
    */
   protected $events = array();
 
   /**
-   * The queue service object.
+   * The Acquia Purge service object.
    *
-   * @var ApQueueService
+   * @var AcquiaPurgeService
    */
-  protected $qs;
+  protected $service;
 
   /**
-   * Construct a new ApProcessorsService instance.
+   * Construct a new AcquiaPurgeProcessorsService instance.
    *
-   * @param ApQueueService $qs
-   *   The queue service object.
+   * @param AcquiaPurgeService $service
+   *   The Acquia Purge service object.
    */
-  public function __construct(ApQueueService $qs) {
-    $this->qs = $qs;
+  public function __construct(AcquiaPurgeService $service) {
+    $this->service = $service;
 
     // Initialize the processors that advertize themselves as enabled.
     foreach ($this->backends as $class) {
       if ($class::isEnabled()) {
-        $this->processors[$class] = new $class($this->qs);
+        $this->processors[$class] = new $class($this->service);
       }
     }
 
@@ -109,7 +109,7 @@ class ApProcessorsService {
    * @param string $class
    *   The name of the processor class you need.
    *
-   * @return ApProcessorInterface|false
+   * @return AcquiaPurgeProcessorInterface|false
    *   Returns the processor, or FALSE when it doesn't exist.
    */
   public function get($class) {

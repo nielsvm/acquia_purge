@@ -179,7 +179,7 @@ exist as of this version and documented below:
 ║                          ║       ║ Acquia Purge issue queue.                 ║
 ║                          ║       ║ $conf['acquia_purge_allriskmode'] = TRUE; ║
 ║                          ║       ║                                           ║
-║ acquia_purge_smartqueue  ║ FALSE ║ When set to TRUE, the ApSmartQueue backend║
+║ acquia_purge_smartqueue  ║ FALSE ║ When set to TRUE, the smart queue backend ║
 ║                          ║       ║ will be loaded instead. It automatically  ║
 ║                          ║       ║ disregards items that Varnish has already ║
 ║                          ║       ║ dropped and this backend can be a big     ║

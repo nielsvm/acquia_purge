@@ -67,7 +67,7 @@ function _acquia_purge_action_purge($urls_and_paths) {
   // Rule actions can run very often, and if we would write out a log warning
   // about the deprecation of this rule action every time, we can congest the
   // site. Instead, only put a warning in when the queue's absolutely empty.
-  if (_acquia_purge_qs()->stats('total') === 0) {
+  if (_acquia_purge_service()->stats('total') === 0) {
     watchdog(
       'acquia_purge',
       'Please switch to using the rule action "Clear pages on Acquia Cloud."'
@@ -106,7 +106,7 @@ function _acquia_purge_action_flush_url($urls_and_paths) {
     }
 
     // Validate the path after it was cleaned. Duplicates and empty paths will
-    // still be added as ApQueueService::addPaths() deduplicates for us and
+    // still be added as AcquiaPurgeService::addPaths() deduplicates for us and
     // because empty paths usually represent frontpage wipes.
     $path = _acquia_purge_input_clean($path);
     if ($msg = _acquia_purge_input_validate($path)) {
@@ -132,5 +132,5 @@ function _acquia_purge_action_flush_url($urls_and_paths) {
     }
   }
 
-  _acquia_purge_qs()->addPaths($paths);
+  _acquia_purge_service()->addPaths($paths);
 }

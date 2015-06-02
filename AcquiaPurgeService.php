@@ -2,13 +2,17 @@
 
 /**
  * @file
- * Contains ApQueueService.
+ * Contains AcquiaPurgeService.
  */
 
 /**
- * The Acquia Purge queue service.
+ * The Acquia Purge service.
+ *
+ * The object from this class is accessed through _acquia_purge_service() and
+ * provides access to the underlying queue backend, the modules state API and
+ * the loaded processors.
  */
-class ApQueueService {
+class AcquiaPurgeService {
 
   /**
    * The module path.
@@ -32,28 +36,28 @@ class ApQueueService {
   protected $history = array();
 
   /**
-   * The loaded ApProcessorsService object.
+   * The loaded AcquiaPurgeProcessorsService object.
    *
-   * @var ApProcessorsService
+   * @var AcquiaPurgeProcessorsService
    */
   protected $processors = NULL;
 
   /**
    * The loaded queue backend.
    *
-   * @var ApQueueInterface
+   * @var AcquiaPurgeQueueInterface
    */
   protected $queue = NULL;
 
   /**
    * The loaded state storage backend.
    *
-   * @var ApStateStorageInterface
+   * @var AcquiaPurgeStateStorageInterface
    */
   protected $state = NULL;
 
   /**
-   * Construct ApQueueService.
+   * Construct AcquiaPurgeService.
    */
   public function __construct() {
     $this->modulePath = drupal_get_path('module', 'acquia_purge');
@@ -258,7 +262,7 @@ class ApQueueService {
   /**
    * Retrieve the 'logged_errors' state item from state storage.
    *
-   * @return ApStateItemInterface
+   * @return AcquiaPurgeStateItemInterface
    *   The state item.
    */
   public function loggedErrors() {
@@ -340,15 +344,15 @@ class ApQueueService {
   }
 
   /**
-   * Retrieve the ApProcessorsService object.
+   * Retrieve the AcquiaPurgeProcessorsService object.
    *
-   * @return ApProcessorsService
+   * @return AcquiaPurgeProcessorsService
    *   The processors service.
    */
   public function processors() {
     if (is_null($this->processors)) {
       _acquia_purge_load('processor/');
-      $this->processors = new ApProcessorsService($this);
+      $this->processors = new AcquiaPurgeProcessorsService($this);
     }
     return $this->processors;
   }
@@ -356,7 +360,7 @@ class ApQueueService {
   /**
    * Retrieve the loaded queue backend object.
    *
-   * @return ApQueueInterface
+   * @return AcquiaPurgeQueueInterface
    *   The queue backend.
    */
   public function queue() {
@@ -367,12 +371,12 @@ class ApQueueService {
 
       // Load the configured smart or normal backend.
       if (_acquia_purge_variable('acquia_purge_smartqueue')) {
-        _acquia_purge_load('queue/backend/ApSmartQueue.php');
-        $this->queue = new ApSmartQueue($state);
+        _acquia_purge_load('queue/backend/AcquiaPurgeSmartQueue.php');
+        $this->queue = new AcquiaPurgeSmartQueue($state);
       }
       else {
-        _acquia_purge_load('queue/backend/ApEfficientQueue.php');
-        $this->queue = new ApEfficientQueue($state);
+        _acquia_purge_load('queue/backend/AcquiaPurgeEfficientQueue.php');
+        $this->queue = new AcquiaPurgeEfficientQueue($state);
       }
     }
     return $this->queue;
@@ -382,7 +386,7 @@ class ApQueueService {
    * Filter out the HTTP path from the given queue item object.
    *
    * @param object $item
-   *   Queue item object as defined in ApQueueInterface::claimItemMultiple(),
+   *   Queue item object as defined in AcquiaPurgeQueueInterface::claimItemMultiple(),
    *   with at least the following properties:
    *   - data: the same as what what passed into createItem().
    *   - item_id: the unique ID returned from createItem().
@@ -400,7 +404,7 @@ class ApQueueService {
    *
    * @param array $items
    *   Non-associative array with item objects, each object has at least the
-   *   following properties (see ApQueueInterface::claimItemMultiple()):
+   *   following properties (see AcquiaPurgeQueueInterface::claimItemMultiple()):
    *   - data: the same as what what passed into createItem().
    *   - item_id: the unique ID returned from createItem().
    *   - created: timestamp when the item was put into the queue.
@@ -419,7 +423,7 @@ class ApQueueService {
   /**
    * Retrieve the state storage object.
    *
-   * @return ApStateStorageInterface
+   * @return AcquiaPurgeStateStorageInterface
    *   The state storage backend.
    */
   public function state() {
@@ -427,15 +431,15 @@ class ApQueueService {
     // Initialize the state storage backend.
     if (is_null($this->state)) {
       if (_acquia_purge_are_we_using_memcached()) {
-        _acquia_purge_load('state/backend/ApMemcachedStateStorage.php');
-        $this->state = new ApMemcachedStateStorage(
+        _acquia_purge_load('state/backend/AcquiaPurgeMemcachedStateStorage.php');
+        $this->state = new AcquiaPurgeMemcachedStateStorage(
           ACQUIA_PURGE_STATE_MEMKEY,
           ACQUIA_PURGE_STATE_MEMBIN
         );
       }
       else {
-        _acquia_purge_load('state/backend/ApDiskStateStorage.php');
-        $this->state = new ApDiskStateStorage(ACQUIA_PURGE_STATE_FILE);
+        _acquia_purge_load('state/backend/AcquiaPurgeDiskStateStorage.php');
+        $this->state = new AcquiaPurgeDiskStateStorage(ACQUIA_PURGE_STATE_FILE);
       }
     }
 

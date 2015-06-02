@@ -234,7 +234,7 @@ Frequently asked questions
   it receives paths and wraps those to its own publicly facing API functions.
 
   You can queue items for purging like this:
-    $queue = _acquia_purge_qs();
+    $queue = _acquia_purge_service();
     $queue->addPath('node/5?parameter');
     $queue->addPaths(array('news/section1', 'contact'));
 
@@ -242,19 +242,19 @@ Frequently asked questions
   not via Drush), it will trigger the AJAX processor for that users next page
   load. However, if you want to process directly yourself, you can work a chunk
   from the queue with this:
-    $queue = _acquia_purge_qs();
+    $queue = _acquia_purge_service();
     if ($queue->lockAcquire()) {
       $queue->process();
       $queue->lockRelease();
     }
 
-  The ApQueueService::process() call will run as long as PHP has resources
+  The AcquiaPurgeService::process() call will run as long as PHP has resources
   for and depends on Acquia Purge's internal capacity calculation. When it runs
   from the CLI, it has a higher max_execution_time and will therefore process
   much more at once, then it will when triggered through a web server.
 
   You can always check upon the queue state by querying:
-  var_dump(_acquia_purge_qs()->stats());
+  var_dump(_acquia_purge_service()->stats());
 
  Should I disable Drupal's page cache because of my special module or feature?
 --------------------------------------------------------------------------------

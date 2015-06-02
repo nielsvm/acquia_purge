@@ -6,21 +6,21 @@ dependencies[] = expire (>=2.0-rc2)
 
 ; The order of the files specified here is of absolute importance, since each
 ; file is ordered according to code composition. See _acquia_purge_load().
-files[] = queue/ApQueueService.php
-files[] = processor/ApProcessorsService.php
-files[] = processor/ApProcessorInterface.php
-files[] = processor/ApProcessorBase.php
-files[] = processor/backend/ApAjaxProcessor.php
-files[] = processor/backend/ApCronProcessor.php
-files[] = processor/backend/ApRuntimeProcessor.php
-files[] = state/ApStateItemInterface.php
-files[] = state/ApStateStorageInterface.php
-files[] = state/ApStateItem.php
-files[] = state/ApStateCounterInterface.php
-files[] = state/ApStateCounter.php
-files[] = state/ApStateStorageBase.php
-files[] = state/backend/ApDiskStateStorage.php
-files[] = state/backend/ApMemcachedStateStorage.php
-files[] = queue/ApQueueInterface.php
-files[] = queue/backend/ApEfficientQueue.php
-files[] = queue/backend/ApSmartQueue.php
+files[] = AcquiaPurgeService.php
+files[] = processor/AcquiaPurgeProcessorsService.php
+files[] = processor/AcquiaPurgeProcessorInterface.php
+files[] = processor/AcquiaPurgeProcessorBase.php
+files[] = processor/backend/AcquiaPurgeAjaxProcessor.php
+files[] = processor/backend/AcquiaPurgeCronProcessor.php
+files[] = processor/backend/AcquiaPurgeRuntimeProcessor.php
+files[] = state/AcquiaPurgeStateItemInterface.php
+files[] = state/AcquiaPurgeStateStorageInterface.php
+files[] = state/AcquiaPurgeStateItem.php
+files[] = state/AcquiaPurgeStateCounterInterface.php
+files[] = state/AcquiaPurgeStateCounter.php
+files[] = state/AcquiaPurgeStateStorageBase.php
+files[] = state/backend/AcquiaPurgeDiskStateStorage.php
+files[] = state/backend/AcquiaPurgeMemcachedStateStorage.php
+files[] = queue/AcquiaPurgeQueueInterface.php
+files[] = queue/backend/AcquiaPurgeEfficientQueue.php
+files[] = queue/backend/AcquiaPurgeSmartQueue.php

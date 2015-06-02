@@ -2,18 +2,18 @@
 
 /**
  * @file
- * Contains ApStateCounter.
+ * Contains AcquiaPurgeStateCounter.
  */
 
 /**
  * Provides a single counter kept in state storage.
  */
-class ApStateCounter extends ApStateItem implements ApStateCounterInterface {
+class AcquiaPurgeStateCounter extends AcquiaPurgeStateItem implements AcquiaPurgeStateCounterInterface {
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(ApStateStorageInterface $storage, $key, $value) {
+  public function __construct(AcquiaPurgeStateStorageInterface $storage, $key, $value) {
     parent::__construct($storage, $key, $value);
     if (!is_int($this->value)) {
       $this->value = (int) $this->value;

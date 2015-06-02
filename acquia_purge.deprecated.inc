@@ -37,7 +37,7 @@ function _acquia_purge_get($name, $get_default = FALSE) {
     return _acquia_purge_variable($name);
   }
   catch (Exception $e) {
-    return _acquia_purge_qs()->state()->get($name)->get();
+    return _acquia_purge_service()->state()->get($name)->get();
   }
 }
 
@@ -47,10 +47,10 @@ function _acquia_purge_get($name, $get_default = FALSE) {
  * @deprecated
  */
 function _acquia_purge_ui_path_blacklisted() {
-  _acquia_purge_deprecated('ApAjaxProcessor::isPathBlacklisted()');
-  return _acquia_purge_qs()
+  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::isPathBlacklisted()');
+  return _acquia_purge_service()
     ->processors()
-    ->get('ApAjaxProcessor')
+    ->get('AcquiaPurgeAjaxProcessor')
     ->isPathBlacklisted();
 }
 
@@ -60,9 +60,9 @@ function _acquia_purge_ui_path_blacklisted() {
  * @deprecated
  */
 function _acquia_purge_ui_trigger_purge() {
-  _acquia_purge_deprecated('ApAjaxProcessor::initializeClientSideProcessor()');
+  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::initializeClientSideProcessor()');
   // Call onInit, which will call initializeClientSideProcessor when it should.
-  _acquia_purge_qs()->processors()->get('ApAjaxProcessor')->onInit();
+  _acquia_purge_service()->processors()->get('AcquiaPurgeAjaxProcessor')->onInit();
 }
 
 /**
@@ -71,8 +71,8 @@ function _acquia_purge_ui_trigger_purge() {
  * @deprecated
  */
 function _acquia_purge_queue() {
-  _acquia_purge_deprecated('_acquia_purge_qs()->queue()');
-  return _acquia_purge_qs()->queue();
+  _acquia_purge_deprecated('_acquia_purge_service()->queue()');
+  return _acquia_purge_service()->queue();
 }
 
 /**
@@ -81,8 +81,8 @@ function _acquia_purge_queue() {
  * @deprecated
  */
 function _acquia_purge_queue_add($path) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->addPath()');
-  return _acquia_purge_qs()->addPath($path);
+  _acquia_purge_deprecated('_acquia_purge_service()->addPath()');
+  return _acquia_purge_service()->addPath($path);
 }
 
 /**
@@ -91,12 +91,12 @@ function _acquia_purge_queue_add($path) {
  * @deprecated
  */
 function _acquia_purge_queue_clear($state_only = FALSE) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->clear()');
+  _acquia_purge_deprecated('_acquia_purge_service()->clear()');
   if ($state_only) {
-    _acquia_purge_qs()->state()->wipe();
+    _acquia_purge_service()->state()->wipe();
   }
   else {
-    _acquia_purge_qs()->clear();
+    _acquia_purge_service()->clear();
   }
 }
 
@@ -106,8 +106,8 @@ function _acquia_purge_queue_clear($state_only = FALSE) {
  * @deprecated
  */
 function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->deduplicate()');
-  return _acquia_purge_qs()->deduplicate($path, $list, $l);
+  _acquia_purge_deprecated('_acquia_purge_service()->deduplicate()');
+  return _acquia_purge_service()->deduplicate($path, $list, $l);
 }
 
 /**
@@ -116,8 +116,8 @@ function _acquia_purge_queue_deduplicate($path, $list = 'queued', $l = 500) {
  * @deprecated
  */
 function _acquia_purge_queue_history($url = NULL) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->history()');
-  return _acquia_purge_qs()->history($url);
+  _acquia_purge_deprecated('_acquia_purge_service()->history()');
+  return _acquia_purge_service()->history($url);
 }
 
 /**
@@ -126,11 +126,11 @@ function _acquia_purge_queue_history($url = NULL) {
  * @deprecated
  */
 function _acquia_purge_queue_is_user_purging() {
-  _acquia_purge_deprecated('ApAjaxProcessor::isUserOwningTheQueue()');
+  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::isUserOwningTheQueue()');
   // Since ::isUserOwningTheQueue is static, call it through a small loophole.
-  $qs = _acquia_purge_qs();
-  $ajaxprocessor = $qs->processors()->get('ApAjaxProcessor');
-  return $ajaxprocessor::isUserOwningTheQueue($qs);
+  $service = _acquia_purge_service();
+  $ajaxprocessor = $service->processors()->get('AcquiaPurgeAjaxProcessor');
+  return $ajaxprocessor::isUserOwningTheQueue($service);
 }
 
 /**
@@ -139,12 +139,12 @@ function _acquia_purge_queue_is_user_purging() {
  * @deprecated
  */
 function _acquia_purge_queue_lock($acquire = TRUE) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->lockAcquire()');
+  _acquia_purge_deprecated('_acquia_purge_service()->lockAcquire()');
   if ($acquire === NULL) {
-    _acquia_purge_qs()->lockRelease();
+    _acquia_purge_service()->lockRelease();
   }
   else {
-    return _acquia_purge_qs()->lockAcquire();
+    return _acquia_purge_service()->lockAcquire();
   }
 }
 
@@ -154,11 +154,11 @@ function _acquia_purge_queue_lock($acquire = TRUE) {
  * @deprecated
  */
 function _acquia_purge_queue_pop($processor = NULL) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->process()');
+  _acquia_purge_deprecated('_acquia_purge_service()->process()');
   if (is_null($processor)) {
     $processor = '_acquia_purge_purge';
   }
-  return _acquia_purge_qs()->process($processor);
+  return _acquia_purge_service()->process($processor);
 }
 
 /**
@@ -187,8 +187,8 @@ function _acquia_purge_queue_processpurge_requests($requests) {
  * @deprecated
  */
 function _acquia_purge_queue_stats($key = NULL) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->stats()');
-  return _acquia_purge_qs()->stats($key);
+  _acquia_purge_deprecated('_acquia_purge_service()->stats()');
+  return _acquia_purge_service()->stats($key);
 }
 
 /**
@@ -197,8 +197,8 @@ function _acquia_purge_queue_stats($key = NULL) {
  * @deprecated
  */
 function _acquia_purge_state_initialize() {
-  _acquia_purge_deprecated('_acquia_purge_qs()->state()');
-  _acquia_purge_qs()->state();
+  _acquia_purge_deprecated('_acquia_purge_service()->state()');
+  _acquia_purge_service()->state();
 }
 
 /**
@@ -207,8 +207,8 @@ function _acquia_purge_state_initialize() {
  * @deprecated
  */
 function _acquia_purge_state_commit() {
-  _acquia_purge_deprecated('_acquia_purge_qs()->state()->commit()');
-  _acquia_purge_qs()->state()->commit();
+  _acquia_purge_deprecated('_acquia_purge_service()->state()->commit()');
+  _acquia_purge_service()->state()->commit();
 }
 
 /**
@@ -217,8 +217,8 @@ function _acquia_purge_state_commit() {
  * @deprecated
  */
 function _acquia_purge_state_get($name, $default = NULL) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->state()->get($name)->get()');
-  return _acquia_purge_qs()->state()->get($name, $default)->get();
+  _acquia_purge_deprecated('_acquia_purge_service()->state()->get($name)->get()');
+  return _acquia_purge_service()->state()->get($name, $default)->get();
 }
 
 /**
@@ -227,8 +227,8 @@ function _acquia_purge_state_get($name, $default = NULL) {
  * @deprecated
  */
 function _acquia_purge_state_set($name, $value) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->state()->get($name)->set($value)');
-  _acquia_purge_qs()->state()->get($name)->set($value);
+  _acquia_purge_deprecated('_acquia_purge_service()->state()->get($name)->set($value)');
+  _acquia_purge_service()->state()->get($name)->set($value);
 }
 
 /**
@@ -237,8 +237,8 @@ function _acquia_purge_state_set($name, $value) {
  * @deprecated
  */
 function _acquia_purge_state_wipe() {
-  _acquia_purge_deprecated('_acquia_purge_qs()->state()->wipe()');
-  _acquia_purge_qs()->state()->wipe();
+  _acquia_purge_deprecated('_acquia_purge_service()->state()->wipe()');
+  _acquia_purge_service()->state()->wipe();
 }
 
 /**
@@ -247,8 +247,8 @@ function _acquia_purge_state_wipe() {
  * @deprecated
  */
 function acquia_purge_purge_path($path) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->addPath()');
-  return _acquia_purge_qs()->addPath($path);
+  _acquia_purge_deprecated('_acquia_purge_service()->addPath()');
+  return _acquia_purge_service()->addPath($path);
 }
 
 /**
@@ -257,8 +257,8 @@ function acquia_purge_purge_path($path) {
  * @deprecated
  */
 function acquia_purge_purge_paths(array $paths) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->addPaths()');
-  return _acquia_purge_qs()->addPaths($paths);
+  _acquia_purge_deprecated('_acquia_purge_service()->addPaths()');
+  return _acquia_purge_service()->addPaths($paths);
 }
 
 /**

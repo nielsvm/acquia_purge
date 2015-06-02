@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApMemcachedStateStorage.
+ * Contains AcquiaPurgeMemcachedStateStorage.
  */
 
 /**
  * Memcached backed state storage.
  */
-class ApMemcachedStateStorage extends ApStateStorageBase {
+class AcquiaPurgeMemcachedStateStorage extends AcquiaPurgeStateStorageBase {
 
   /**
    * Memcached key used to store our state data in.
@@ -25,7 +25,7 @@ class ApMemcachedStateStorage extends ApStateStorageBase {
   protected $bin;
 
   /**
-   * Construct ApMemcachedStateStorage.
+   * Construct AcquiaPurgeMemcachedStateStorage.
    *
    * @param string $key
    *   Memcached key used to store our state data in.

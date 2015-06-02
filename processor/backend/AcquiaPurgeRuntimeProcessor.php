@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApRuntimeProcessor.
+ * Contains AcquiaPurgeRuntimeProcessor.
  */
 
 /**
  * Processes the queue at the end of EVERY request.
  */
-class ApRuntimeProcessor extends ApProcessorBase implements ApProcessorInterface {
+class AcquiaPurgeRuntimeProcessor extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
 
   /**
    * Path to the script client.
@@ -27,8 +27,8 @@ class ApRuntimeProcessor extends ApProcessorBase implements ApProcessorInterface
   /**
    * {@inheritdoc}
    */
-  public function __construct($qs) {
-    parent::__construct($qs);
+  public function __construct($service) {
+    parent::__construct($service);
     drupal_register_shutdown_function(array($this, 'onShutdown'));
   }
 
@@ -76,7 +76,7 @@ class ApRuntimeProcessor extends ApProcessorBase implements ApProcessorInterface
   }
 
   /**
-   * Destruct a ApRuntimeProcessor instance.
+   * Destruct a AcquiaPurgeRuntimeProcessor instance.
    */
   public function __destruct() {
     $this->processQueueChunk();

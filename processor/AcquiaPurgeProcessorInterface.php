@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApProcessorInterface.
+ * Contains AcquiaPurgeProcessorInterface.
  */
 
 /**
  * Describes a processor that processes items from the queue.
  */
-interface ApProcessorInterface {
+interface AcquiaPurgeProcessorInterface {
 
   /**
    * Determine if the processor considers itself enabled.

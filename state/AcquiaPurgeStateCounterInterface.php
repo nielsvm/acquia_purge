@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApStateCounterInterface.
+ * Contains AcquiaPurgeStateCounterInterface.
  */
 
 /**
  * Describes a single counter kept in state storage.
  */
-interface ApStateCounterInterface extends ApStateItemInterface {
+interface AcquiaPurgeStateCounterInterface extends AcquiaPurgeStateItemInterface {
 
   /**
    * Decrease the counter.

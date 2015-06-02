@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApDiskStateStorage.
+ * Contains AcquiaPurgeDiskStateStorage.
  */
 
 /**
  * File backed state storage.
  */
-class ApDiskStateStorage extends ApStateStorageBase {
+class AcquiaPurgeDiskStateStorage extends AcquiaPurgeStateStorageBase {
 
   /**
    * The raw payload to compare changes against.
@@ -25,7 +25,7 @@ class ApDiskStateStorage extends ApStateStorageBase {
   protected $uri;
 
   /**
-   * Construct ApDiskStateStorage.
+   * Construct AcquiaPurgeDiskStateStorage.
    *
    * @param string $uri
    *   The URI identifier to the file (on disk) to store state data in.

@@ -2,18 +2,18 @@
 
 /**
  * @file
- * Contains ApStateItem.
+ * Contains AcquiaPurgeStateItem.
  */
 
 /**
  * Provides a single state item kept in state storage.
  */
-class ApStateItem implements ApStateItemInterface {
+class AcquiaPurgeStateItem implements AcquiaPurgeStateItemInterface {
 
   /**
    * The state storage in which the item has been stored.
    *
-   * @var ApStateStorageInterface
+   * @var AcquiaPurgeStateStorageInterface
    */
   protected $storage;
 
@@ -34,7 +34,7 @@ class ApStateItem implements ApStateItemInterface {
   /**
    * {@inheritdoc}
    */
-  public function __construct(ApStateStorageInterface $storage, $key, $value) {
+  public function __construct(AcquiaPurgeStateStorageInterface $storage, $key, $value) {
     $this->storage = $storage;
     $this->value = $value;
     $this->key = $key;

@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApStateStorageInterface.
+ * Contains AcquiaPurgeStateStorageInterface.
  */
 
 /**
- * Describes a state storage object that maintains ApStateItem objects.
+ * Describes a state storage object that maintains AcquiaPurgeStateItem objects.
  */
-interface ApStateStorageInterface {
+interface AcquiaPurgeStateStorageInterface {
 
   /**
    * Commit the state data to its persistent storage location.
@@ -23,7 +23,7 @@ interface ApStateStorageInterface {
    * @param mixed|null $default
    *   (optional) The default value to use if the entry doesn't yet exist.
    *
-   * @return ApStateItemInterface
+   * @return AcquiaPurgeStateItemInterface
    *   The item.
    */
   public function get($key, $default = NULL);
@@ -34,7 +34,7 @@ interface ApStateStorageInterface {
    * @param int $key
    *   The key with which the object is stored in state storage.
    *
-   * @return ApStateCounterInterface
+   * @return AcquiaPurgeStateCounterInterface
    *   The counter.
    */
   public function getCounter($key);
@@ -42,10 +42,10 @@ interface ApStateStorageInterface {
   /**
    * Store the state item in state item storage.
    *
-   * @param ApStateItemInterface $item
-   *   The ApStateItemInterface object to store.
+   * @param AcquiaPurgeStateItemInterface $item
+   *   The AcquiaPurgeStateItemInterface object to store.
    */
-  public function set(ApStateItemInterface $item);
+  public function set(AcquiaPurgeStateItemInterface $item);
 
   /**
    * Wipe all state data.

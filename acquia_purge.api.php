@@ -54,7 +54,7 @@ function hook_acquia_purge_domains_alter(array &$domains) {
  *   execution flow (e.g. die() or exit()) since that would keep the lock
  *   claimed until it expires.
  *
- * @see ApQueueService::process()
+ * @see AcquiaPurgeService::process()
  */
 function hook_acquia_purge_purge_failure(array $paths) {
   foreach ($paths as $path) {
@@ -74,7 +74,7 @@ function hook_acquia_purge_purge_failure(array $paths) {
  *   execution flow (e.g. die() or exit()) since that would keep the lock
  *   claimed until it expires.
  *
- * @see ApQueueService::process()
+ * @see AcquiaPurgeService::process()
  */
 function hook_acquia_purge_purge_success(array $paths) {
   foreach ($paths as $path) {

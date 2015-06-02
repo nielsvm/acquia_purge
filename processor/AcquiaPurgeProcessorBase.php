@@ -2,29 +2,29 @@
 
 /**
  * @file
- * Contains ApProcessorBase.
+ * Contains AcquiaPurgeProcessorBase.
  */
 
 /**
  * Base class for processors that process items from the queue.
  */
-abstract class ApProcessorBase implements ApProcessorInterface {
+abstract class AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
 
   /**
-   * The queue service object.
+   * The Acquia Purge service object.
    *
-   * @var ApQueueService
+   * @var AcquiaPurgeService
    */
-  protected $qs;
+  protected $service;
 
   /**
-   * Construct a new ApProcessorBase instance.
+   * Construct a new AcquiaPurgeProcessorBase instance.
    *
-   * @param ApQueueService $qs
-   *   The queue service object.
+   * @param AcquiaPurgeService $service
+   *   The Acquia Purge service object.
    */
-  public function __construct(ApQueueService $qs) {
-    $this->qs = $qs;
+  public function __construct(AcquiaPurgeService $service) {
+    $this->service = $service;
   }
 
   /**
@@ -45,9 +45,9 @@ abstract class ApProcessorBase implements ApProcessorInterface {
     }
 
     // Acquire a lock and process a chunk from the queue.
-    if ($this->qs->lockAcquire()) {
-      $this->qs->process();
-      $this->qs->lockRelease();
+    if ($this->service->lockAcquire()) {
+      $this->service->process();
+      $this->service->lockRelease();
     }
   }
 

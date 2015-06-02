@@ -2,22 +2,22 @@
 
 /**
  * @file
- * Contains ApCronProcessor.
+ * Contains AcquiaPurgeCronProcessor.
  */
 
 /**
  * Processes the queue during hook_cron().
  */
-class ApCronProcessor extends ApProcessorBase implements ApProcessorInterface {
+class AcquiaPurgeCronProcessor extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
 
   /**
    * {@inheritdoc}
    */
   public static function isEnabled() {
 
-    // Don't load ApCronProcessor when ApRuntimeProcessor is enabled as well,
+    // Don't load AcquiaPurgeCronProcessor when AcquiaPurgeRuntimeProcessor is enabled as well,
     // since this can lead to double processing during cron. Although running
-    // ApQueueService::process twice during the same request won't harm because
+    // AcquiaPurgeService::process twice during the same request won't harm because
     // of the built-in capacity calculation, it would mean that the second run
     // won't purge anything as the former already did #2292773.
     if (_acquia_purge_variable('acquia_purge_lateruntime')) {

@@ -2,25 +2,25 @@
 
 /**
  * @file
- * Contains ApStateItemInterface.
+ * Contains AcquiaPurgeStateItemInterface.
  */
 
 /**
  * Describes a single state item kept in state storage.
  */
-interface ApStateItemInterface {
+interface AcquiaPurgeStateItemInterface {
 
   /**
    * Construct a state item object.
    *
-   * @param ApStateStorageInterface $storage
+   * @param AcquiaPurgeStateStorageInterface $storage
    *   The state storage in which the item has been stored.
    * @param int $key
    *   The key with which the object is stored in state storage.
    * @param mixed $value
    *   The value of the state item.
    */
-  public function __construct(ApStateStorageInterface $storage, $key, $value);
+  public function __construct(AcquiaPurgeStateStorageInterface $storage, $key, $value);
 
   /**
    * Get the item value.

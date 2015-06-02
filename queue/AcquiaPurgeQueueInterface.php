@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains ApQueueInterface.
+ * Contains AcquiaPurgeQueueInterface.
  */
 
 /**
@@ -11,20 +11,20 @@
  * @see DrupalReliableQueueInterface()
  * @see http://github.com/nielsvm/purge/blob/8.x-3.x/src/Queue/PluginInterface.php
  */
-interface ApQueueInterface extends DrupalReliableQueueInterface {
+interface AcquiaPurgeQueueInterface extends DrupalReliableQueueInterface {
 
   /**
    * Construct a queue object.
    *
-   * @param ApStateStorageInterface $state
+   * @param AcquiaPurgeStateStorageInterface $state
    *   The state storage required for the queue counters.
    */
-  public function __construct(ApStateStorageInterface $state);
+  public function __construct(AcquiaPurgeStateStorageInterface $state);
 
   /**
    * Retrieve the failed purges counter.
    *
-   * @return ApStateCounterInterface
+   * @return AcquiaPurgeStateCounterInterface
    *   The counter.
    */
   public function bad();
@@ -32,7 +32,7 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
   /**
    * Retrieve the successful purges counter.
    *
-   * @return ApStateCounterInterface
+   * @return AcquiaPurgeStateCounterInterface
    *   The counter.
    */
   public function good();
@@ -40,7 +40,7 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
   /**
    * Retrieve the total queue items counter.
    *
-   * @return ApStateCounterInterface
+   * @return AcquiaPurgeStateCounterInterface
    *   The counter.
    */
   public function total();

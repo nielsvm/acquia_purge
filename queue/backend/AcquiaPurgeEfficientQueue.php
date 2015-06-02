@@ -8,26 +8,26 @@
 /**
  * Efficient query bundling database queue.
  *
- * Enriches SystemQueue with methods defined in ApQueueInterface which
+ * Enriches SystemQueue with methods defined in AcquiaPurgeQueueInterface which
  * attempt to reduce database communication as much as possible. By bundling
  * items into single queries, total queries and roundtrips reduce drastically!
  */
-class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
+class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueInterface {
 
   /**
    * The state storage which holds the counter state items.
    *
-   * @var ApStateStorageInterface
+   * @var AcquiaPurgeStateStorageInterface
    */
   protected $state;
 
   /**
-   * Construct a ApEfficientQueue instance.
+   * Construct a AcquiaPurgeEfficientQueue instance.
    *
-   * @param ApStateStorageInterface $state
+   * @param AcquiaPurgeStateStorageInterface $state
    *   The state storage required for the queue counters.
    */
-  public function __construct(ApStateStorageInterface $state) {
+  public function __construct(AcquiaPurgeStateStorageInterface $state) {
     $this->state = $state;
     parent::__construct('acquia_purge');
   }

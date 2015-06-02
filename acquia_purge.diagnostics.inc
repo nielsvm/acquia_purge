@@ -590,7 +590,7 @@ function _acquia_purge_get_diagnosis_queue_backend($t) {
  */
 function _acquia_purge_get_diagnosis_queue_volume($t) {
   $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
-  $stats = _acquia_purge_qs()->stats();
+  $stats = _acquia_purge_service()->stats();
   $test = array('title' => $t('Queue volume'));
 
   // Define our warning and shutdown thresholds.
@@ -692,7 +692,7 @@ function _acquia_purge_get_diagnosis_statedata($t) {
 function _acquia_purge_get_diagnosis_status($t) {
   $passivemode = _acquia_purge_variable('acquia_purge_passivemode');
   $errorlimit = _acquia_purge_variable('acquia_purge_errorlimit');
-  $stats = _acquia_purge_qs()->stats();
+  $stats = _acquia_purge_service()->stats();
   $test = array(
     'title' => $t('Status'),
     'value' => $passivemode ? $t('idle (passive mode)') : t('idle'),

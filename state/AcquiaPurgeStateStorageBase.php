@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApStateStorageBase.
+ * Contains AcquiaPurgeStateStorageBase.
  */
 
 /**
  * Base layer for state storage backends.
  */
-abstract class ApStateStorageBase implements ApStateStorageInterface {
+abstract class AcquiaPurgeStateStorageBase implements AcquiaPurgeStateStorageInterface {
 
   /**
    * Indicates if ::commit() has been registered to be called at shutdown.
@@ -20,7 +20,7 @@ abstract class ApStateStorageBase implements ApStateStorageInterface {
   /**
    * Item instances.
    *
-   * @var ApStateItemInterface[]
+   * @var AcquiaPurgeStateItemInterface[]
    */
   protected $items = array();
 
@@ -32,7 +32,7 @@ abstract class ApStateStorageBase implements ApStateStorageInterface {
   protected $buffer = array();
 
   /**
-   * Propagate ApStateItem objects from the given buffer data.
+   * Propagate AcquiaPurgeStateItem objects from the given buffer data.
    *
    * @param mixed $buffer
    *   Raw buffer payload to initialize state data from.
@@ -48,7 +48,7 @@ abstract class ApStateStorageBase implements ApStateStorageInterface {
           continue;
         }
         $this->buffer[$key] = $value;
-        $this->items[$key] = new ApStateItem($this, $key, $value);
+        $this->items[$key] = new AcquiaPurgeStateItem($this, $key, $value);
         $loaded_items++;
       }
     }
@@ -58,7 +58,7 @@ abstract class ApStateStorageBase implements ApStateStorageInterface {
   /**
    * {@inheritdoc}
    */
-  public function set(ApStateItemInterface $item) {
+  public function set(AcquiaPurgeStateItemInterface $item) {
     if (!$this->commit) {
       $this->commit = TRUE;
       drupal_register_shutdown_function(array($this, 'commit'));
@@ -72,7 +72,7 @@ abstract class ApStateStorageBase implements ApStateStorageInterface {
    */
   public function get($key, $default = NULL) {
     if (!isset($this->items[$key])) {
-      $this->items[$key] = new ApStateItem($this, $key, $default);
+      $this->items[$key] = new AcquiaPurgeStateItem($this, $key, $default);
     }
     return $this->items[$key];
   }
@@ -82,8 +82,8 @@ abstract class ApStateStorageBase implements ApStateStorageInterface {
    */
   public function getCounter($key) {
     if (isset($this->items[$key])) {
-      if (!($this->items[$key] instanceof ApStateCounterInterface)) {
-        $this->items[$key] = new ApStateCounter(
+      if (!($this->items[$key] instanceof AcquiaPurgeStateCounterInterface)) {
+        $this->items[$key] = new AcquiaPurgeStateCounter(
           $this,
           $key,
           $this->items[$key]->get()
@@ -91,7 +91,7 @@ abstract class ApStateStorageBase implements ApStateStorageInterface {
       }
     }
     else {
-      $this->items[$key] = new ApStateCounter($this, $key, 0);
+      $this->items[$key] = new AcquiaPurgeStateCounter($this, $key, 0);
     }
     return $this->items[$key];
   }

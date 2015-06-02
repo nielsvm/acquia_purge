@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains ApAjaxProcessor.
+ * Contains AcquiaPurgeAjaxProcessor.
  */
 
 /**
  * Process the queue using a AJAX client-side UI.
  */
-class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
+class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
 
   /**
    * Path blacklist from where the processor UI should stay away.
@@ -50,7 +50,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    *
    * @var string
    */
-  protected $scriptClient = '/processor/backend/ApAjaxProcessor.js';
+  protected $scriptClient = '/processor/backend/AcquiaPurgeAjaxProcessor.js';
 
   /**
    * {@inheritdoc}
@@ -62,9 +62,9 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
   /**
    * {@inheritdoc}
    */
-  public function __construct($qs) {
-    parent::__construct($qs);
-    $this->scriptClient = $this->qs->modulePath . $this->scriptClient;
+  public function __construct($service) {
+    parent::__construct($service);
+    $this->scriptClient = $this->service->modulePath . $this->scriptClient;
   }
 
   /**
@@ -85,7 +85,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
     if (!$this->isPathBlacklisted()) {
 
       // Check if this user needs the client-side processor loaded.
-      if (self::isUserOwningTheQueue($this->qs)) {
+      if (self::isUserOwningTheQueue($this->service)) {
 
         // Load the static assets that will kick in the processor.
         $this->initializeClientSideProcessor();
@@ -96,8 +96,8 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
   /**
    * Implements event onItemsQueued.
    *
-   * @see ApQueueService::addPath()
-   * @see ApQueueService::addPaths()
+   * @see AcquiaPurgeService::addPath()
+   * @see AcquiaPurgeService::addPaths()
    */
   public function onItemsQueued() {
     $this->registerUserAsQueueOwner();
@@ -111,9 +111,9 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
   public function onMenu(&$items) {
     $items['acquia_purge_ajax_processor'] = array(
       'title' => 'Acquia Purge AJAX processor',
-      'page callback' => 'ApAjaxProcessor::pathCallback',
+      'page callback' => 'AcquiaPurgeAjaxProcessor::pathCallback',
       'access callback' => 'user_is_logged_in',
-      'file' => 'processor/backend/ApAjaxProcessor.php',
+      'file' => 'processor/backend/AcquiaPurgeAjaxProcessor.php',
       'type' => MENU_CALLBACK,
     );
   }
@@ -156,13 +156,13 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
   /**
    * Determine if the processor should run.
    *
-   * @param ApQueueService $qs
-   *   The queue service object.
+   * @param AcquiaPurgeService $service
+   *   The Acquia Purge service object.
    *
    * @return bool
    *   Either TRUE or FALSE.
    */
-  public static function isUserOwningTheQueue(ApQueueService $qs) {
+  public static function isUserOwningTheQueue(AcquiaPurgeService $service) {
 
     // Anonymous users can never process the queue.
     if (!user_is_logged_in()) {
@@ -170,7 +170,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
     }
 
     // Retrieve the list of user names owning an ongoing purge process.
-    $uiusers = $qs->state()->get('uiusers', array())->get();
+    $uiusers = $service->state()->get('uiusers', array())->get();
 
     // If the uiusers list is empty, that means no active purges are ongoing.
     if (!count($uiusers)) {
@@ -221,13 +221,13 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    *   Statistics array encoded as JSON, including a 'widget' HTML snippet.
    */
   static public function pathCallback() {
-    $qs = _acquia_purge_qs();
-    $stats = $qs->stats();
+    $service = _acquia_purge_service();
+    $stats = $service->stats();
     $stats['error'] = FALSE;
     $stats['widget'] = '&nbsp;';
 
     // Deny access when the current user didn't initiate queue processing.
-    if (!self::isUserOwningTheQueue($qs)) {
+    if (!self::isUserOwningTheQueue($service)) {
       $stats['running'] = FALSE;
       return drupal_json_output($stats);
     }
@@ -241,9 +241,9 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
     }
 
     // Attempt to process a chunk from the queue.
-    if ($qs->lockAcquire()) {
-      $qs->process();
-      foreach ($qs->stats() as $key => $value) {
+    if ($service->lockAcquire()) {
+      $service->process();
+      foreach ($service->stats() as $key => $value) {
         $stats[$key] = $value;
       }
 
@@ -255,7 +255,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
           do ask your technical administrator to check the logs.");
       }
 
-      $qs->lockRelease();
+      $service->lockRelease();
     }
     else {
       $stats['locked'] = TRUE;
@@ -279,13 +279,13 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
     }
 
     // Fetch the list of queue owners as stored in state data.
-    $uiusers = $this->qs->state()->get('uiusers', array())->get();
+    $uiusers = $this->service->state()->get('uiusers', array())->get();
 
     // Register the current user when its not yet registered.
     global $user;
     if (!in_array($user->name, $uiusers)) {
       $uiusers[] = $user->name;
-      $this->qs->state()->get('uiusers', array())->set($uiusers);
+      $this->service->state()->get('uiusers', array())->set($uiusers);
     }
   }
 
