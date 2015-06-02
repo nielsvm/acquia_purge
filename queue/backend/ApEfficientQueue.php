@@ -128,7 +128,7 @@ class ApEfficientQueue extends SystemQueue implements ApQueueInterface {
 
     // Update the items (marking them claimed) in one query.
     if (count($returned_items)) {
-      $update = db_update('queue')
+      db_update('queue')
         ->fields(array(
           'expire' => time() + $lease_time,
         ))

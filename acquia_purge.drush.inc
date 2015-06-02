@@ -311,10 +311,9 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
     drush_backend_batch_process();
   }
 
-  //
   // SUB PROCESS.
-  //
   else {
+
     if (!_acquia_purge_qs()->lockAcquire()) {
       return drush_print("Unable to acquire lock, ensure that all users "
         . "close their browser tabs as a different purge seems to be active!");
@@ -323,13 +322,11 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
     // Process the maximum amount of paths we can process during runtime.
     printf("\n# %d items left...\n", _acquia_purge_qs()->stats('remaining'));
     if (_acquia_purge_qs()->process()) {
+      $printed_urls = array();
       foreach (_acquia_purge_qs()->history() as $url) {
-        if (!isset($log)) {
-          $log = array();
-        }
-        if (!(in_array($url, $log))) {
+        if (!(in_array($url, $printed_urls))) {
           drush_log(dt("Purged: @url", array('@url' => $url)), 'ok');
-          $log[] = $url;
+          $printed_urls[] = $url;
         }
       }
     }

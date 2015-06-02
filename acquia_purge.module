@@ -1120,7 +1120,6 @@ function _acquia_purge_input_validate($path) {
 
   // Start all the validation checks.
   if (empty($path)) {
-    $front = (php_sapi_name() === 'cli') ? '<front>' : '&lt;front&gt;';
     return _acquia_purge_input_validate_msgs('empty');
   }
   if (!is_string($path)) {
@@ -1480,7 +1479,10 @@ function _acquia_purge_purge_requests($requests) {
         curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
         curl_setopt($rqst->curl, CURLOPT_RETURNTRANSFER, TRUE);
 
-        // For SSL, we need host and peer verification disabled in some cases.
+        // For SSL purging, we disable SSL host and peer verification. Although
+        // this triggers red flags to the security concerned user, this avoids
+        // purges to fail on sites with self-signed certificates. All we request
+        // the remote balancer is to wipe items from its cache after all.
         if ($rqst->scheme === 'https') {
           curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYHOST, FALSE);
           curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYPEER, FALSE);
