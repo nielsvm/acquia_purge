@@ -227,8 +227,7 @@ function _acquia_purge_state_get($name, $default = NULL) {
  * @deprecated
  */
 function _acquia_purge_state_set($name, $value) {
-  _acquia_purge_deprecated('_acquia_purge_qs()->state()'
-    . '->get($name)->set($value)');
+  _acquia_purge_deprecated('_acquia_purge_qs()->state()->get($name)->set($value)');
   _acquia_purge_qs()->state()->get($name)->set($value);
 }
 
@@ -266,6 +265,7 @@ function acquia_purge_purge_paths(array $paths) {
  * DEPRECATED: Purge the paths from a node from Varnish.
  *
  * @deprecated
+ *
  * @see expire_node_insert()
  * @see expire_node_update()
  * @see expire_node_delete()
