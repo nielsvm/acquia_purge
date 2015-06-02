@@ -1307,11 +1307,9 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  *   NOT TO BE CALLED DIRECTLY! Instead the "queue service" has to be utilized
  *   which takes care of queuing, statistics, capacity calculation and several
  *   other safety checks and balances. This is a example of how to do this:
- *   @code
  *   $queue = _acquia_purge_qs();
  *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
  *   $queue->process();
- *   @endcode
  *
  * @return true|false
  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
