@@ -53,7 +53,7 @@ interface ApQueueInterface extends DrupalReliableQueueInterface {
    *   associated with the new tasks in the queue.
    *
    * @return true|false
-   *   TRUE if all items got created succesfully, or FALSE if just one of them
+   *   TRUE if all items got created successfully, or FALSE if just one of them
    *   failed being created.
    */
   public function createItemMultiple(array $items);

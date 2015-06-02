@@ -42,7 +42,7 @@ class ApRuntimeProcessor extends ApProcessorBase implements ApProcessorInterface
   /**
    * Attempt to process a chunk from the queue.
    *
-   * When processing already occured earlier during this request, it can occur
+   * When processing already occurred earlier during this request, it can occur
    * that this call will not process anything anymore. To prevent resource
    * shortage, _acquia_purge_get_capacity() maintains global status of how much
    * items can still be processed, and can return 0 at some point.

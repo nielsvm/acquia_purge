@@ -20,7 +20,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
     'acquia_purge_ajax_processor',
     'admin/config/system/expire',
 
-    // Common Drupal paths where the UI is undesireable.
+    // Common Drupal paths where the UI is undesirable.
     'admin/reports/status',
     'admin/reports/dblog',
     'admin/dashboard/customize',
@@ -246,7 +246,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
       }
 
       // When processing stalled, the history breadcrumb often stays empty and
-      // this is a clear indication that errors occured.
+      // this is a clear indication that errors occurred.
       if (empty($stats['purgehistory'])) {
         $stats['error'] = t("The system seems to be having difficulties
           refreshing recent content changes. Your work won't be lost, but please
