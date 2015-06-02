@@ -11,7 +11,7 @@
 class AcquiaPurgeProcessorsService {
 
   /**
-   * Available AcquiaPurgeProcessorInterface backends, queried for their availability.
+   * All processors, ::isEnabled() is called to see if they should load.
    *
    * @var string[]
    */

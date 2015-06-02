@@ -1189,7 +1189,7 @@ function _acquia_purge_input_validate_msgs($msg) {
  * This conflicts in no way with registry itself, nothing loads twice.
  *
  * @param string $path
- *   The path to load ('queue/AcquiaPurgeService.php') or a globbed path ('queue/').
+ *   The path to load ('AcquiaPurgeService.php') or a globbed path ('queue/').
  *
  * @see acquia_purge.info
  */

@@ -386,7 +386,7 @@ class AcquiaPurgeService {
    * Filter out the HTTP path from the given queue item object.
    *
    * @param object $item
-   *   Queue item object as defined in AcquiaPurgeQueueInterface::claimItemMultiple(),
+   *   Queue item object as defined in AcquiaPurgeQueueInterface::claimItem(),
    *   with at least the following properties:
    *   - data: the same as what what passed into createItem().
    *   - item_id: the unique ID returned from createItem().
@@ -404,7 +404,7 @@ class AcquiaPurgeService {
    *
    * @param array $items
    *   Non-associative array with item objects, each object has at least the
-   *   following properties (see AcquiaPurgeQueueInterface::claimItemMultiple()):
+   *   following properties (see AcquiaPurgeQueueInterface::claimItem()):
    *   - data: the same as what what passed into createItem().
    *   - item_id: the unique ID returned from createItem().
    *   - created: timestamp when the item was put into the queue.
