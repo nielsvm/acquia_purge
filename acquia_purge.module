@@ -1340,8 +1340,8 @@ function _acquia_purge_purge($path) {
   // Determine the request token, this makes up the X-Acquia-Purge header.
   static $request_token;
   if (is_null($request_token)) {
-    if (_acquia_purge_get('acquia_purge_token')) {
-      $request_token = (string) _acquia_purge_get('acquia_purge_token');
+    if ($token_configured = _acquia_purge_variable('acquia_purge_token')) {
+      $request_token = (string) $token_configured;
     }
     else {
       $request_token = _acquia_purge_get_site_name();
