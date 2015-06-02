@@ -128,12 +128,11 @@ function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
  *   - title: The name of the requirement.
  *   - value: The current value (e.g., version, time, level, etc).
  *   - description: The description of the requirement/status.
- *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
- *
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR.
  * @param int $longest
  *   The longest test name, used to calculate formatting padding.
  */
-function _drush_acquia_purge_ap_diagnosis_log($test, $longest) {
+function _drush_acquia_purge_ap_diagnosis_log(array $test, $longest) {
 
   // When running in backend mode, log messages aren't printed and forwarded.
   if (drush_get_context('DRUSH_BACKEND')) {
@@ -148,7 +147,8 @@ function _drush_acquia_purge_ap_diagnosis_log($test, $longest) {
     'info' => '%s',
     'error'  => '%s',
     'warning' => '%s',
-    'ok' => '%s');
+    'ok' => '%s'
+  );
 
   // In color mode, setup ASCII color codes borrowed from _drush_print_log().
   if (!drush_get_context('DRUSH_NOCOLOR')) {
@@ -297,7 +297,8 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
       'title' => dt('Purging'),
       'operations' => array(),
       'init_message' => t('Initializing'),
-      'error_message' => t('An error occurred'));
+      'error_message' => t('An error occurred')
+    );
     for ($i = 1; $i <= $steps; $i++) {
       $batch['operations'][] = array(__FUNCTION__, array());
     }

@@ -9,8 +9,6 @@
  * Menu callback to fulfill autocompletes on manual purging forms.
  *
  * @see _acquia_purge_manualpurge_base()
- * @return array
- *   A standard Form API form-array.
  */
 function acquia_purge_autocomplete($string) {
   $query_limit = 10;
@@ -125,8 +123,14 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
   );
 
   // Define a list of example paths so users know what they can/should purge.
-  $examples = array('&lt;front&gt;', '&lt;front&gt;?page=0', '&lt;front&gt;/',
-    'node/1', 'node/1/', 'news?page=0');
+  $examples = array(
+    '&lt;front&gt;',
+    '&lt;front&gt;?page=0',
+    '&lt;front&gt;/',
+    'node/1',
+    'node/1/',
+    'news?page=0'
+  );
   if (_acquia_purge_variable('acquia_purge_variations')) {
     $examples = array('&lt;front&gt;', 'node/1', 'news');
   }
@@ -377,7 +381,10 @@ function theme_acquia_purge_status_bar_widget($variables) {
   }
 
   return theme('progress_bar', array(
-    'percent' => $variables['percent'], 'message' => $message));
+    'percent' => $variables['percent'],
+    'message' => $message
+    )
+  );
 }
 
 /**
@@ -387,9 +394,10 @@ function theme_acquia_purge_status_bar_widget($variables) {
  *   Requirements array as returned by _acquia_purge_get_diagnosis().
  *
  * @see theme_status_report()
+ *
  * @ingroup themeable
  */
-function theme_acquia_purge_status_report($variables) {
+function theme_acquia_purge_status_report(array $variables) {
   $output = '<table class="system-status-report">';
   $severities = array(
     ACQUIA_PURGE_SEVLEVEL_INFO => array(
@@ -449,7 +457,7 @@ function theme_acquia_purge_status_report($variables) {
  *
  * @ingroup themeable
  */
-function theme_acquia_purge_status_widget($variables) {
+function theme_acquia_purge_status_widget(array $variables) {
   if ($variables['running']) {
     return theme('acquia_purge_status_bar_widget', $variables);
   }

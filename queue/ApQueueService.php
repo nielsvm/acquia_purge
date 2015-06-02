@@ -153,10 +153,6 @@ class ApQueueService {
    * state storage, this would result in massive IO activity so less accurate
    * deduplication is acceptable.
    *
-   * @warning
-   *   Duplicated paths can still end up in the queue, especially when not using
-   *   the 'acquia_purge_memcache' setting.
-   *
    * @param string $path
    *   The Drupal path (for example: '<front>', 'user/1' or a alias).
    * @param string $list
@@ -165,6 +161,10 @@ class ApQueueService {
    * @param int $l
    *   (optional) The $l parameter stands for 'limit' and represents the
    *   amount of items in a list to be crossed before it gets emptied.
+   *
+   * @warning
+   *   Duplicated paths can still end up in the queue, especially when not using
+   *   the 'acquia_purge_memcache' setting.
    *
    * @return true|false
    *   TRUE when the path is in the given list, FALSE when not.
@@ -342,7 +342,8 @@ class ApQueueService {
   /**
    * Retrieve the ApProcessorsService object.
    *
-   * @return ApProcessorsService
+   * @return
+   *   ApProcessorsService
    */
   public function processors() {
     if (is_null($this->processors)) {
@@ -380,9 +381,9 @@ class ApQueueService {
   /**
    * Filter out the HTTP path from the given queue item object.
    *
-   * @param array $item
-   *  Queue item object as defined in ApQueueInterface::claimItemMultiple(),
-   *  with at least the following properties:
+   * @param object $item
+   *   Queue item object as defined in ApQueueInterface::claimItemMultiple(),
+   *   with at least the following properties:
    *   - data: the same as what what passed into createItem().
    *   - item_id: the unique ID returned from createItem().
    *   - created: timestamp when the item was put into the queue.
@@ -407,7 +408,7 @@ class ApQueueService {
    * @return string[]
    *   Non-associative array with the HTTP paths to be purged.
    */
-  protected function queueItemPaths($items) {
+  protected function queueItemPaths(array $items) {
     $paths = array();
     foreach ($items as $item) {
       $paths[] = $this->queueItemPath($item);

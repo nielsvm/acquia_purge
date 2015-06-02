@@ -239,7 +239,8 @@ function _acquia_purge_get_diagnosis_expire($t) {
   $modes = array(
     EXPIRE_STATUS_DISABLED => t('disabled'),
     EXPIRE_STATUS_ENABLED_INTERNAL => t('internal'),
-    EXPIRE_STATUS_ENABLED_EXTERNAL => t('delegated'));
+    EXPIRE_STATUS_ENABLED_EXTERNAL => t('delegated')
+  );
 
   // Test the configured mode and raise any issues.
   $test['value'] = isset($modes[$mode]) ? $modes[$mode] : 'n/a';
@@ -301,7 +302,8 @@ function _acquia_purge_get_diagnosis_logging($t) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('successes and failures'),
-    'title' => $t('Logging verbosity'));
+    'title' => $t('Logging verbosity')
+  );
   if (_acquia_purge_variable('acquia_purge_log_success') !== TRUE) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_INFO;
     $test['value'] = $t('failures only');
@@ -327,7 +329,8 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $cache ? $t('Enabled') : $t('Disabled'),
-    'title' => $t('Anonymous page cache'));
+    'title' => $t('Anonymous page cache')
+  );
 
   // See https://www.drupal.org/node/2330805
   if ((!$cache) && module_exists('authcache')) {
@@ -501,7 +504,8 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
   $domains = _acquia_purge_get_domains();
   $test = array(
     'title' => $t('Purged schemes'),
-    'value' => implode(', ', $schemes));
+    'value' => implode(', ', $schemes)
+  );
 
   // Test if no protocol schemes are to be purged.
   if (in_array('ERROR', $schemes)) {
