@@ -8,7 +8,7 @@
 
 (function ($) {
   Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
-  attach: function (context) {
+    attach: function (context) {
     $(document).ready(function() {
 
       // Declare the trigger path the script will call back home to.

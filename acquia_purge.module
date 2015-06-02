@@ -1167,7 +1167,7 @@ function _acquia_purge_input_validate_msgs($msg) {
     $messages['url'] = t('You provided a URL which is not compatible with the way Acquia Purge works, as it constructs full URLs for its configured domains.');
     $messages['empty'] = t('The path cannot be empty, if you intended to purge the frontpage of your site, use "/" or "!front".',
       array(
-        '!front' => (php_sapi_name() === 'cli') ? '<front>' : '&lt;front&gt;'
+        '!front' => (php_sapi_name() === 'cli') ? '<front>' : '&lt;front&gt;',
       )
     );
   }
@@ -1231,7 +1231,7 @@ function _acquia_purge_load($path) {
 
   // Load all files up to the index or directly attempt to load it.
   if ($load_up_to_index === FALSE) {
-    require_once($module_path . '/' . $path);
+    require_once $module_path . '/' . $path;
   }
   else {
     foreach ($files as $index => $file) {
@@ -1306,9 +1306,7 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
  *   This is the core HTTP purge implementation for a single path item, and is
  *   NOT TO BE CALLED DIRECTLY! Instead the "queue service" has to be utilized
  *   which takes care of queuing, statistics, capacity calculation and several
- *   other safety checks and balances.
- *
- *   This is a example of how to do this:
+ *   other safety checks and balances. This is a example of how to do this:
  *   @code
  *   $queue = _acquia_purge_qs();
  *   $queue->addPaths(array('path/1', 'path/2', 'path3'));

@@ -127,7 +127,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    * the best it can, but if error messages or the on-screen purge processor
    * are shown on a certain page, you know what to patch ;).
    *
-   * @return true|false
+   * @return bool
    *   FALSE indicates pass, TRUE indicates that the path is blacklisted.
    */
   public function isPathBlacklisted() {
@@ -159,7 +159,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    * @param ApQueueService $qs
    *   The queue service object.
    *
-   * @return boolean
+   * @return bool
    *   Either TRUE or FALSE.
    */
   public static function isUserOwningTheQueue(ApQueueService $qs) {
@@ -199,7 +199,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    * queue via AJAX still happens. It happens silently in the background for as
    * long as the administrative user that triggered it, has tabs to Drupal open.
    *
-   * @return boolean
+   * @return bool
    *   Either TRUE or FALSE.
    */
   protected function isUiVisible() {
