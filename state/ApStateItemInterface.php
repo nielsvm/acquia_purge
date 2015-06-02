@@ -20,7 +20,7 @@ interface ApStateItemInterface {
    * @param mixed $value
    *   The value of the state item.
    */
-  public function __construct($storage, $key, $value);
+  public function __construct(ApStateStorageInterface $storage, $key, $value);
 
   /**
    * Get the item value.

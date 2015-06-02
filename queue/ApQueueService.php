@@ -342,8 +342,8 @@ class ApQueueService {
   /**
    * Retrieve the ApProcessorsService object.
    *
-   * @return
-   *   ApProcessorsService
+   * @return ApProcessorsService
+   *   The processors service.
    */
   public function processors() {
     if (is_null($this->processors)) {

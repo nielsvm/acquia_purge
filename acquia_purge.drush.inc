@@ -147,7 +147,7 @@ function _drush_acquia_purge_ap_diagnosis_log(array $test, $longest) {
     'info' => '%s',
     'error'  => '%s',
     'warning' => '%s',
-    'ok' => '%s'
+    'ok' => '%s',
   );
 
   // In color mode, setup ASCII color codes borrowed from _drush_print_log().
@@ -297,7 +297,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
       'title' => dt('Purging'),
       'operations' => array(),
       'init_message' => t('Initializing'),
-      'error_message' => t('An error occurred')
+      'error_message' => t('An error occurred'),
     );
     for ($i = 1; $i <= $steps; $i++) {
       $batch['operations'][] = array(__FUNCTION__, array());

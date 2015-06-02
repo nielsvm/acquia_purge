@@ -129,7 +129,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
     '&lt;front&gt;/',
     'node/1',
     'node/1/',
-    'news?page=0'
+    'news?page=0',
   );
   if (_acquia_purge_variable('acquia_purge_variations')) {
     $examples = array('&lt;front&gt;', 'node/1', 'news');
@@ -366,7 +366,7 @@ function __acquia_purge_manualpurge_submit($form, &$form_state) {
  *
  * @ingroup themeable
  */
-function theme_acquia_purge_status_bar_widget($variables) {
+function theme_acquia_purge_status_bar_widget(array $variables) {
 
   // Determine status messages based on what the statistics tells us.
   if ($variables['locked']) {
@@ -382,7 +382,7 @@ function theme_acquia_purge_status_bar_widget($variables) {
 
   return theme('progress_bar', array(
     'percent' => $variables['percent'],
-    'message' => $message
+    'message' => $message,
     )
   );
 }

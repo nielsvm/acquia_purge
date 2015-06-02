@@ -34,7 +34,7 @@ class ApStateItem implements ApStateItemInterface {
   /**
    * {@inheritdoc}
    */
-  public function __construct($storage, $key, $value) {
+  public function __construct(ApStateStorageInterface $storage, $key, $value) {
     $this->storage = $storage;
     $this->value = $value;
     $this->key = $key;

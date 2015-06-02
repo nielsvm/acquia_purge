@@ -13,7 +13,7 @@ class ApStateCounter extends ApStateItem implements ApStateCounterInterface {
   /**
    * {@inheritdoc}
    */
-  public function __construct($storage, $key, $value) {
+  public function __construct(ApStateStorageInterface $storage, $key, $value) {
     parent::__construct($storage, $key, $value);
     if (!is_int($this->value)) {
       $this->value = (int) $this->value;
