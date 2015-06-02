@@ -18,7 +18,8 @@ class ApProcessorsService {
   protected $backends = array(
     'ApAjaxProcessor',
     'ApCronProcessor',
-    'ApRuntimeProcessor');
+    'ApRuntimeProcessor',
+  );
 
   /**
    * The loaded backends.
@@ -47,7 +48,7 @@ class ApProcessorsService {
    * @param ApQueueService $qs
    *   The queue service object.
    */
-  public function __construct($qs) {
+  public function __construct(ApQueueService $qs) {
     $this->qs = $qs;
 
     // Initialize the processors that advertize themselves as enabled.
@@ -71,12 +72,12 @@ class ApProcessorsService {
   /**
    * Emit a particular event.
    *
-   * @param $event
+   * @param string $event
    *   Name of the event, often derived from hook implementations found directly
-   *   in acquia_purge.module, but could also be 'OnItemsQueued'.
-   * @param $a1
+   *   in acquia_purge.module, but could also be 'onItemsQueued'.
+   * @param mixed $a1
    *   First optional parameter to pass by reference.
-   * @param $a2
+   * @param mixed $a2
    *   Second optional parameter to pass by reference.
    */
   public function emit($event, &$a1 = NULL, &$a2 = NULL) {

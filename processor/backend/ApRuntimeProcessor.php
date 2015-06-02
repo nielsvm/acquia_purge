@@ -29,14 +29,14 @@ class ApRuntimeProcessor extends ApProcessorBase implements ApProcessorInterface
    */
   public function __construct($qs) {
     parent::__construct($qs);
-    drupal_register_shutdown_function(array($this, 'OnShutdown'));
+    drupal_register_shutdown_function(array($this, 'onShutdown'));
   }
 
   /**
    * {@inheritdoc}
    */
   public function getSubscribedEvents() {
-    return array('OnExit');
+    return array('onExit');
   }
 
   /**
@@ -62,7 +62,7 @@ class ApRuntimeProcessor extends ApProcessorBase implements ApProcessorInterface
    *
    * @see acquia_purge_exit()
    */
-  public function OnExit() {
+  public function onExit() {
     $this->processQueueChunk();
   }
 
@@ -71,14 +71,14 @@ class ApRuntimeProcessor extends ApProcessorBase implements ApProcessorInterface
    *
    * @see acquia_purge_exit()
    */
-  public function OnShutdown() {
+  public function onShutdown() {
     $this->processQueueChunk();
   }
 
   /**
    * Destruct a ApRuntimeProcessor instance.
    */
-  function __destruct() {
+  public function __destruct() {
     $this->processQueueChunk();
   }
 

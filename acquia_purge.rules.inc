@@ -57,13 +57,12 @@ function acquia_purge_rules_action_info_alter(&$actions) {
  * behavior to the new 'Clear pages on Acquia Cloud.' rule action, but we are
  * actively warning people not to use it.
  *
- * @param array $path
- *   Non-associative array with absolute URL(s) or Drupal paths like
- *   '<front>', 'user' or 'news'.
+ * @param string $urls_and_paths
+ *   User input string with absolute URL(s) or Drupal paths.
  *
  * @deprecated
  */
-function _acquia_purge_action_purge($path) {
+function _acquia_purge_action_purge($urls_and_paths) {
 
   // Rule actions can run very often, and if we would write out a log warning
   // about the deprecation of this rule action every time, we can congest the
@@ -80,15 +79,14 @@ function _acquia_purge_action_purge($path) {
 
   // Relay execution to the new rule action, old rules will certainly still
   // work, if not run better with the added URLs support.
-  _acquia_purge_action_flush_url($path);
+  _acquia_purge_action_flush_url($urls_and_paths);
 }
 
 /**
  * Purge URL(s) and Path(s), directly using Acquia Purge's APIs.
  *
- * @param array $urls_and_paths
- *   Non-associative array with absolute URL(s) or Drupal paths like
- *   '<front>', 'user' or 'news'.
+ * @param string $urls_and_paths
+ *   User input string with absolute URL(s) or Drupal paths.
  */
 function _acquia_purge_action_flush_url($urls_and_paths) {
   $paths = array();

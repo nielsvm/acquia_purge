@@ -23,7 +23,7 @@ abstract class ApProcessorBase implements ApProcessorInterface {
    * @param ApQueueService $qs
    *   The queue service object.
    */
-  public function __construct($qs) {
+  public function __construct(ApQueueService $qs) {
     $this->qs = $qs;
   }
 

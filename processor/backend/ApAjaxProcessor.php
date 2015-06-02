@@ -71,7 +71,7 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    * {@inheritdoc}
    */
   public function getSubscribedEvents() {
-    return array('onInit', 'onMenu', 'OnItemsQueued');
+    return array('onInit', 'onMenu', 'onItemsQueued');
   }
 
   /**
@@ -94,12 +94,12 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
   }
 
   /**
-   * Implements event OnItemsQueued.
+   * Implements event onItemsQueued.
    *
    * @see ApQueueService::addPath()
    * @see ApQueueService::addPaths()
    */
-  public function OnItemsQueued() {
+  public function onItemsQueued() {
     $this->registerUserAsQueueOwner();
   }
 
@@ -159,9 +159,10 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    * @param ApQueueService $qs
    *   The queue service object.
    *
-   * @return true|false
+   * @return boolean
+   *   Either TRUE or FALSE.
    */
-  public static function isUserOwningTheQueue($qs) {
+  public static function isUserOwningTheQueue(ApQueueService $qs) {
 
     // Anonymous users can never process the queue.
     if (!user_is_logged_in()) {
@@ -198,7 +199,8 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
    * queue via AJAX still happens. It happens silently in the background for as
    * long as the administrative user that triggered it, has tabs to Drupal open.
    *
-   * @return true|false
+   * @return boolean
+   *   Either TRUE or FALSE.
    */
   protected function isUiVisible() {
 
@@ -207,8 +209,8 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
       return FALSE;
     }
 
-    // Only users with the 'purge on-screen' permission will actually see the UI,
-    // since it could be confusing for some users.
+    // Only users with the 'purge on-screen' permission will actually see the
+    // UI, since it could be confusing for some users.
     return user_access('purge on-screen');
   }
 
@@ -295,22 +297,21 @@ class ApAjaxProcessor extends ApProcessorBase implements ApProcessorInterface {
     if (!$this->initialized) {
 
       // Load the AJAX processor behavior. As soon as the bahvior is loaded it
-      // starts hitting /acquia_purge_ajax_processor, which in turn will process a
-      // chunk from the queue. With queue locking in place, multiple requests will
-      // not do any harm.
+      // starts hitting /acquia_purge_ajax_processor, which in turn will process
+      // a chunk from the queue. With queue locking in place, multiple requests
+      // will not do any harm.
       drupal_add_js($this->scriptClient);
 
-      // Although the behavior always loads and works the queue, it doesn't mean its
-      // always presented to the user. Print the DSM message when needed.
+      // Although the behavior always loads and works the queue, it doesn't mean
+      // its always presented to the user. Print the DSM message when needed.
       if ($this->isUiVisible()) {
         $message = t("There have been changes to content, and these need to be
           refreshed throughout the system. There may be a delay before the changes
           appear to all website visitors.");
         drupal_set_message($message, 'acquia_purge_messages', FALSE);
 
-        // Add inline CSS to hide the DSM box, this covers cases where the script
-        // didn't yet or couldn't load. Since this only happens to authenticated
-        // backend users, we add this as inline CSS (see d.o. 2014461).
+        // Add inline CSS to hide the DSM box, this covers cases where the
+        // script didn not yet or could not load (see d.o. 2014461).
         drupal_add_css('.acquia_purge_messages {display:none;}',
           array('type' => 'inline'));
       }

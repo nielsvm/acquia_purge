@@ -5,8 +5,9 @@
  * This behavior will call to Acquia Purge's AJAX path until its purging queue
  * is empty and everything is processed. Also works without on-screen reporting.
  */
+
 (function ($) {
-Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
+  Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
   attach: function (context) {
     $(document).ready(function() {
 
@@ -146,7 +147,9 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
           // Check the existing list and add the item if its new to us.
           var alreadyInList = false;
           list_items.find('li').each(function(index) {
-            if ($(this).text() == url) {alreadyInList = true;}
+            if ($(this).text() == url) {
+              alreadyInList = true;
+            }
           });
 
           // Addition logic when the item is indeed unique.
@@ -294,6 +297,6 @@ Drupal.behaviors.AcquiaPurgeAjaxProcessor = {
       eventLoopRun();
     });
   }
-};
+  };
 
 })(jQuery);

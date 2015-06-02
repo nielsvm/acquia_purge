@@ -84,7 +84,7 @@ class ApQueueService {
     // Queue the item when it is unique and trigger the processors.
     if (!$this->deduplicate($path)) {
       if ($this->queue()->createItem(array($path))) {
-        $this->processors()->emit('OnItemsQueued');
+        $this->processors()->emit('onItemsQueued');
       }
     }
 
@@ -123,7 +123,7 @@ class ApQueueService {
 
     // Queue the items and trigger the processors to start processing.
     if ($this->queue()->createItemMultiple($items)) {
-      $this->processors()->emit('OnItemsQueued');
+      $this->processors()->emit('onItemsQueued');
     }
 
     return $this->stats();
