@@ -234,18 +234,18 @@ Frequently asked questions
   it receives paths and wraps those to its own publicly facing API functions.
 
   You can queue items for purging like this:
-    $queue = _acquia_purge_service();
-    $queue->addPath('node/5?parameter');
-    $queue->addPaths(array('news/section1', 'contact'));
+    $service = _acquia_purge_service();
+    $service->addPath('node/5?parameter');
+    $service->addPaths(array('news/section1', 'contact'));
 
   If you run the code above as authenticated user during a web request (e.g.
   not via Drush), it will trigger the AJAX processor for that users next page
   load. However, if you want to process directly yourself, you can work a chunk
   from the queue with this:
-    $queue = _acquia_purge_service();
-    if ($queue->lockAcquire()) {
-      $queue->process();
-      $queue->lockRelease();
+    $service = _acquia_purge_service();
+    if ($service->lockAcquire()) {
+      $service->process();
+      $service->lockRelease();
     }
 
   The AcquiaPurgeService::process() call will run as long as PHP has resources
