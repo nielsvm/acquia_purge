@@ -638,7 +638,7 @@ function _acquia_purge_get_diagnosis_queue_volume($t) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Your queue contains @total items and crossed'
       . ' the safety limit of @shutdown items, Acquia Purge has shut itself'
-      . ' down to prevent your system from trashing. What this means is that'
+      . ' down to prevent your system from thrashing. What this means is that'
       . ' you are either purging too broadly (domains, http:// and https://)'
       . ' or that your installation is not able to keep up. If you are not'
       . ' using cron for processing, set this up now and if you already are,'
