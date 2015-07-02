@@ -160,6 +160,16 @@ function _acquia_purge_get_diagnosis_domains($t) {
       . ' 4 domains or when it is incorrect.', array('!link' => $domains_link)),
   );
 
+  // Asterisks in domain names doesn't work given the way purging is configured
+  // on Acquia Cloud. To prevent people from silent failure, test for this.
+  $wildcard_domains_found = FALSE;
+  foreach ($domains as $domain) {
+    if (strpos($domain, '*') !== FALSE) {
+      $wildcard_domains_found = $domain;
+      break;
+    }
+  }
+
   // Evaluate domain names configuration and kick off warnings or even a full
   // block when the situation asks for it.
   if (!$domains_c) {
@@ -167,6 +177,14 @@ function _acquia_purge_get_diagnosis_domains($t) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('No domains have been detected which implies that'
       . ' something is seriously wrong. Pending purges will not be processed.');
+  }
+  elseif ($wildcard_domains_found) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('The domain "@baddomain" has a asterisk in it,'
+      . ' which implies that its subdomains require clearing. However, this is'
+      . ' unfortunately not supported by Acquia Cloud and therefore will lead'
+      . ' to purge failure. Please remove this domain from your configuration.',
+      array('@baddomain' => $wildcard_domains_found));
   }
   elseif ((php_sapi_name() === 'cli') && in_array('default', $domains)) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
