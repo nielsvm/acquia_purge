@@ -710,11 +710,11 @@ function _acquia_purge_get_diagnosis_status($t) {
   if ($stats['bad'] > $errorlimit) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t(
-        'Acquia Purge failed more then @limit times (@bad) at clearing pages,'
-      . ' since the queue finished last time. To prevent endless attempts to'
-      . ' process the queue, external cache invalidation has been disabled.'
-      . ' It is recommended to ask your site maintainer to analyze the logs'
-      . ' for errors, before lifting the blockade with "drush ap-forget".',
+        'Acquia Purge failed over @limit times (@bad), since the last time the'
+      . ' queue was processed. To avoid crashing your site with endless queue'
+      . ' processing, cache invalidation has been disabled. We recommend you to'
+      . " ask your site maintainer to check Drupal's watchdog logs for errors,"
+      . ' before lifting the blockade with "drush ap-forget".',
       array('@limit' => $errorlimit, '@bad' => $stats['bad']));
     return $test;
   }
