@@ -1608,7 +1608,8 @@ function _acquia_purge_variable($name) {
       'acquia_purge_http'         => TRUE,
       'acquia_purge_https'        => FALSE,
       'acquia_purge_token'        => FALSE,
-      'acquia_purge_base_path'    => $GLOBALS['base_path'], // See d.o.#2506881.
+      // For the usage of $GLOBALS, see https://www.drupal.org/node/2506881.
+      'acquia_purge_base_path'    => $GLOBALS['base_path'],
       'acquia_purge_errorlimit'   => TRUE,
       'acquia_purge_log_success'  => TRUE,
       'acquia_purge_variations'   => TRUE,
