@@ -1198,6 +1198,7 @@ function _acquia_purge_load($path) {
   // Initialize our module path just once, to avoid doing this many times.
   static $module_path;
   if (is_null($module_path)) {
+    require_once DRUPAL_ROOT . '/includes/common.inc';
     $module_path = drupal_get_path('module', 'acquia_purge');
   }
 
