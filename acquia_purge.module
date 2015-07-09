@@ -94,7 +94,7 @@ function acquia_purge_permission() {
   return array(
     'purge on-screen' => array(
       'title' => t('Purge on-screen'),
-      'description' => t('Process purges visually using a progress bar and grant access to the editorial manual purge blocks.'),
+      'description' => t('Allow user to see purges as they are processed. Includes text and a progress bar.'),
     ),
     'use manual purge blocks' => array(
       'title' => t('Use manual purge blocks'),
