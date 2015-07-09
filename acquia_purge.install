@@ -203,7 +203,17 @@ function acquia_purge_update_7106(&$sandbox) {
     ->execute();
   foreach ($roles_onscreen as $role) {
     if (!in_array($role->rid, $rids_to_avoid)) {
-      user_role_grant_permissions($role->rid, array('use manual purge blocks'));
+      db_merge('role_permission')
+        ->key(array(
+          'rid' => $role->rid,
+          'permission' => 'use manual purge blocks',
+        ))
+        ->fields(array('module' => 'acquia_purge'))
+        ->execute();
     }
   }
+
+  // Clear the user access cache.
+  drupal_static_reset('user_access');
+  drupal_static_reset('user_role_permissions');
 }
