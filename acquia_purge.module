@@ -791,6 +791,9 @@ function _acquia_purge_get_domains() {
  *   A reference to the array of currently gathered domain names.
  */
 function _acquia_purge_get_domains_add($domain, array &$domains) {
+  if (!function_exists('drupal_strtolower')) {
+    include_once DRUPAL_ROOT . '/includes/unicode.inc';
+  }
   $domain = trim(drupal_strtolower($domain));
   if (!empty($domain) && !in_array($domain, $domains)) {
     $domains[] = $domain;
