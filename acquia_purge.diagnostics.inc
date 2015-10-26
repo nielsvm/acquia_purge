@@ -393,9 +393,12 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
 
   // Determine what "find out more" link we can provide.
   $link = 'http://blog.merge.nl/20120118/how-does-caching-work-drupal';
-  if (user_access('administer site configuration')) {
-    $link = url('admin/config/development/performance');
+  if (function_exists('user_access')) {
+    if (user_access('administer site configuration')) {
+      $link = url('admin/config/development/performance');
+    }
   }
+
 
   // Users without a TTL configured won't put our module to much use.
   if ($age === 0) {
