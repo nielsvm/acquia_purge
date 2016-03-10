@@ -146,7 +146,7 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  */
 function _acquia_purge_get_diagnosis_domains($t) {
   $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
-  $domains_link = drupal_get_path('module', 'acquia_purge') . '/DOMAINS.txt';
+  $domains_link = drupal_get_path('module', 'acquia_purge') . '/DOMAINS.md';
   $domains_link = url($domains_link);
   $domains = _acquia_purge_get_domains();
   $domains_c = count($domains);
@@ -553,7 +553,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
     . ' two protocol schemes with this many domain names can likely bring'
     . ' down your website at some point. Its better to either only wipe'
     . ' https:// or by reducing unnecessary domain names, for instance'
-    . ' bare domains that redirect. See README.txt and DOMAINS.txt for more'
+    . ' bare domains that redirect. See INSTALL.md and DOMAINS.md for more'
     . ' information on tuning.');
   }
 
@@ -565,7 +565,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
     . ' if you have more than 1-2 domains as this will lead in the double'
     . ' amount of work that gets done. Keep a close eye on the queue and'
     . ' consider delivering all your traffic off https:// (by doing a full'
-    . ' -site redirect) and to disable http:// purging, see README.txt.');
+    . ' -site redirect) and to disable http:// purging, see INSTALL.md.');
   }
 
   return $test;

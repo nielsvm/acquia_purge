@@ -1601,7 +1601,7 @@ function _acquia_purge_variable($name) {
   static $defaults;
   if (is_null($defaults)) {
 
-    // All default variable values, see README.txt as well for further info.
+    // All default variable values, see INSTALL.md as well for further info.
     $defaults = array(
       'acquia_purge_domains'      => FALSE,
       'acquia_purge_sphpskippath' => TRUE,
