@@ -49,6 +49,6 @@ Feel free to contact me anytime regarding questions you might have, or if you
 are a Acquia customer, feel free to file a ticket with our support team and
 mention its about Acquia Purge.
 
-* [**INSTALL.md**](http://cgit.drupalcode.org/acquia_purge/plain/INSTALL.md?h=7.x-1.x)
-* [**DOMAINS.md**](http://cgit.drupalcode.org/acquia_purge/plain/DOMAINS.md?h=7.x-1.x)
-* [**FAQ.md**](http://cgit.drupalcode.org/acquia_purge/plain/FAQ.md?=7.x-1.x)
+* [**INSTALL.md**](http://cgit.drupalcode.org/acquia_purge/plain/INSTALL.md)
+* [**DOMAINS.md**](http://cgit.drupalcode.org/acquia_purge/plain/DOMAINS.md)
+* [**FAQ.md**](http://cgit.drupalcode.org/acquia_purge/plain/FAQ.md)
