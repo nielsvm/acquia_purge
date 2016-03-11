@@ -9,6 +9,7 @@ namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\State\StateInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
@@ -45,10 +46,33 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   protected $acquiaPurgeHostinginfo;
 
   /**
+   * The state key value store.
+   *
+   * @var \Drupal\Core\State\StateInterface
+   */
+  protected $state;
+
+  /**
+   * Associative array with invalidation type (key) and measurement (value).
+   *
+   * @var float[]
+   */
+  protected $typeMeasurements = [];
+
+  /**
+   * The name of the state API key in which type measurements are stored.
+   *
+   * @var string
+   */
+  protected $typeMeasurementsStateKey = 'acquia_purge_type_measurements';
+
+  /**
    * Constructs a AcquiaCloudPurger object.
    *
    * @param \Drupal\acquia_purge\HostingInfoInterface $acquia_purge_hostinginfo
    *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\Core\State\StateInterface $state
+   *   The state key value store.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -56,9 +80,11 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
+  function __construct(HostingInfoInterface $acquia_purge_hostinginfo, StateInterface $state, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->acquiaPurgeHostingInfo = $acquia_purge_hostinginfo;
+    $this->typeMeasurements = $state->get($this->typeMeasurementsStateKey, []);
+    $this->state = $state;
   }
 
   /**
@@ -67,10 +93,18 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $container->get('acquia_purge.hostinginfo'),
+      $container->get('state'),
       $configuration,
       $plugin_id,
       $plugin_definition
     );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function delete() {
+    $this->state->delete($this->typeMeasurementsStateKey);
   }
 
   /**
@@ -88,7 +122,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    *
    * @return void
    */
-  public function executeRequests(array $requests) {
+  protected function executeRequests(array $requests) {
 
     // Presort the request objects in request groups based on the maximum amount
     // of requests we can perform in parallel. Max SELF::PARALLEL_REQUESTS each!
@@ -210,6 +244,10 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     // execution time. Although always respected as outer limit, it will be lower
     // in practice as PHP resource limits (max execution time) bring it further
     // down. However, the maximum amount of requests will be higher on the CLI.
+    $balancers = count($this->acquiaPurgeHostingInfo->getBalancerAddresses());
+    if ($balancers) {
+      return intval(ceil(200 / $balancers));
+    }
     return 100;
   }
 
@@ -217,7 +255,25 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * {@inheritdoc}
    */
   public function getTimeHint() {
-    return 4.0;
+    $measurements = $this->typeMeasurements();
+
+    // Calculate the worst-case scenario time hint upon first use (URL based).
+    if (empty($measurements)) {
+      $balancers = count($this->acquiaPurgeHostingInfo->getBalancerAddresses());
+      $estimate = (float) ($balancers * SELF::REQUEST_TIMEOUT)/SELF::PARALLEL_REQUESTS;
+      if ($estimate < 0.2) {
+        $estimate = 0.2;
+      }
+      elseif ($estimate > 10.0) {
+        $estimate = 10.0;
+      }
+      return $estimate;
+    }
+
+    // When our measurements do exist, return the slowest timing we have.
+    else {
+      return max($measurements);
+    }
   }
 
   /**
@@ -277,6 +333,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateUrls(array $invalidations) {
+    $this->typeMeasurementsStart('url');
     $balancer_addresses = $this->acquiaPurgeHostingInfo->getBalancerAddresses();
     $balancer_token = $this->acquiaPurgeHostingInfo->getBalancerToken();
 
@@ -331,6 +388,9 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       }
       $invalidation->setState(InvalidationInterface::FAILED);
     }
+
+    // Stop measuring execution time for URLs.
+    $this->typeMeasurementsStop('url', $invalidations);
   }
 
   /**
@@ -342,6 +402,99 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       'url'  => 'invalidateUrls',
     ];
     return isset($methods[$type]) ? $methods[$type] : 'invalidate';
+  }
+
+  /**
+   * Retrieve all stored measurements from state storage.
+   *
+   * @return float[]
+   *   Associative array with invalidation type (key) and measurement (value).
+   */
+  protected function typeMeasurements() {
+    return $this->typeMeasurements;
+  }
+
+  /**
+   * Start measuring execution time.
+   *
+   * @param string $type
+   *   The invalidation type that started processing.
+   *
+   * @return float
+   *   Either 0.0 at the first call or the spent total at the second call.
+   */
+  protected function typeMeasurementsStart($type) {
+    static $timers;
+    if (is_null($timers)) {
+      $timers = [];
+    }
+    if (!isset($timers[$type])) {
+      $timers[$type] = microtime(TRUE);
+      return 0.0;
+    }
+    else {
+      $spent = $timers[$type];
+      unset($timers[$type]);
+      return microtime(TRUE) - $spent;
+    }
+  }
+
+  /**
+   * Stop measuring execution time.
+   *
+   * When one of the invalidations is not set to state ::SUCCEEDED, the measure
+   * will be discarded, only total successes are representative. Measurements
+   * that were faster then previously stored results, are also discarded as the
+   * purpose of this tracking is to come up with realistic and safe time hints.
+   *
+   * @param string $type
+   *   The invalidation type that stopped processing.
+   * @param \Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface[] $invalidations
+   *   Non-associative array of processed invalidation objects.
+   *
+   * @return void.
+   */
+  protected function typeMeasurementsStop($type, array $invalidations) {
+
+    // Small closure to add measurements and write them to state storage.
+    $write = function($type, $measurement) {
+      $this->typeMeasurements[$type] = (float)$measurement;
+      $this->state->set(
+        $this->typeMeasurementsStateKey,
+        $this->typeMeasurements
+      );
+    };
+
+    // Check if any of the invalidations failed, if so, stop.
+    foreach ($invalidations as $invalidation) {
+      if ($invalidation->getState() !== InvalidationInterface::SUCCEEDED) {
+        return;
+      }
+    }
+
+    // Calculate the measurement and keep it within ::getTimeHint() boundaries.
+    if (($spent = $this->typeMeasurementsStart($type)) !== 0.0) {
+      $spent = ($spent / count($invalidations)) * 1.15;// Add 15% safety time!
+      if ($spent < 0.1) {
+        $spent = 0.1;
+      }
+      elseif ($spent > 10.0) {
+        $spent = 10.0;
+      }
+    }
+    else {
+      return;
+    }
+
+    // Check if we need to store or update this measurement.
+    if (isset($this->typeMeasurements[$type])) {
+      if ($spent > $this->typeMeasurements[$type]) {
+        $write($type, $spent);
+      }
+    }
+    else {
+      $write($type, $spent);
+    }
   }
 
 }
