@@ -1,12 +1,13 @@
-[//]: # ( clear&&curl -s -F input_files[]=@PROJECTPAGE.md -F from=markdown -F to=html http://c.docverter.com/convert|tail -n+11|head -n-2 )
+[//]: # ( clear&&curl -s -F input_files[]=@PROJECTPAGE.md -F from=markdown -F to=html http://c.docverter.com/convert|tail -n+11|head -n-2|sed 's/\&#39;/\"/g'|sed 's/\&amp;/\&/g'|sed 's/\&quot;/\"/g' )
 [//]: # ( curl -s -F input_files[]=@PROJECTPAGE.md -F from=markdown -F to=pdf http://c.docverter.com/convert>PROJECTPAGE.pdf )
 
 **_Top-notch cache invalidation on Acquia Cloud!_**
 
-The ``acquia_purge`` module invalidates Varnish on your Acquia Cloud site. When
-this is combined by setting Drupal's _time to live (TTL)_ extremely high, your
-stack requires less servers, becomes much more resilient against _DDOS_
-attacks and both real and perceived performance will dramatically improve.
+The ``acquia_purge`` module invalidates your
+[Varnish caches](https://www.varnish-cache.org/about) on your Acquia Cloud site.
+When this is combined by setting Drupal's _time to live (TTL)_ extremely high,
+your stack requires less servers, becomes much more resilient against _DDOS
+attacks_ and performance dramatically improves!
 
 ## When do I need this?
 Although we **recommend every Acquia Cloud customer** to use this module, you
