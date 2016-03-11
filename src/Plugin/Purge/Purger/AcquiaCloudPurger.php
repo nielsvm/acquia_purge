@@ -326,6 +326,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       if (isset($results[$inv_id]) && count($results[$inv_id])) {
         if (!in_array(FALSE, $results[$inv_id])) {
           $invalidation->setState(InvalidationInterface::SUCCEEDED);
+          continue;
         }
       }
       $invalidation->setState(InvalidationInterface::FAILED);
