@@ -7,8 +7,6 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\ClientInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
@@ -36,17 +34,10 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   protected $acquiaPurgeHostinginfo;
 
   /**
-   * @var \GuzzleHttp\Client
-   */
-  protected $client;
-
-  /**
    * Constructs a AcquiaCloudPurger object.
    *
    * @param \Drupal\acquia_purge\HostingInfoInterface $acquia_purge_hostinginfo
    *   Technical information accessors for the Acquia Cloud environment.
-   * @param \GuzzleHttp\ClientInterface $http_client
-   *   An HTTP client that can perform remote requests.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -54,10 +45,9 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  function __construct(HostingInfoInterface $acquia_purge_hostinginfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
+  function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->acquiaPurgeHostingInfo = $acquia_purge_hostinginfo;
-    $this->client = $http_client;
   }
 
   /**
@@ -66,7 +56,6 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $container->get('acquia_purge.hostinginfo'),
-      $container->get('http_client'),
       $configuration,
       $plugin_id,
       $plugin_definition
@@ -92,25 +81,6 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    */
   public function getTimeHint() {
     return 4.0;
-  }
-
-  /**
-   * Retrieve the URI to connect to.
-   *
-   * @param array $token_data
-   *   An array of keyed objects, to pass on to the token service.
-   *
-   * @return string
-   *   URL string representation.
-   */
-  protected function getUri($token_data) {
-    die(__CLASS__.'::'.__METHOD__);
-    // return sprintf(
-    //   '%s://%s%s',
-    //   $this->settings->scheme,
-    //   $this->settings->hostname,
-    //   $this->token->replace($this->settings->path, $token_data)
-    // );
   }
 
   /**
