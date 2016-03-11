@@ -7,6 +7,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
@@ -73,6 +74,135 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   }
 
   /**
+   * Execute a set of HTTP requests.
+   *
+   * Executes a set of HTTP requests using the cUrl PHP extension and adds
+   * resulting information to the ->attributes parameter bag on each request
+   * object. It will perform parallel processing to reduce the PHP execution
+   * time taken.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request[] $requests
+   *   Unassociative list of Request objects to execute. When the 'connect_to'
+   *   attribute key is present, this value will be used to connect to instead
+   *   of the 'host' header.
+   *
+   * @return void
+   */
+  public function executeRequests(array $requests) {
+
+    // Presort the request objects in request groups based on the maximum amount
+    // of requests we can perform in parallel. Max SELF::PARALLEL_REQUESTS each!
+    $request_groups = [];
+    $unprocessed = count($requests);
+    reset($requests);
+    while ($unprocessed > 0) {
+      $group = [];
+      for ($n = 0; $n < SELF::PARALLEL_REQUESTS; $n++) {
+        if (!is_null($i = key($requests))) {
+          $group[] = $requests[$i];
+          $unprocessed--;
+          next($requests);
+        }
+      }
+      if (count($group)) {
+        $request_groups[] = $group;
+      }
+    }
+
+    // Perform HTTP processing for each request group.
+    foreach ($request_groups as $group) {
+      $multihandler = (count($group) === 1) ? FALSE : curl_multi_init();
+
+      // Prepare the cUrl handlers for each Request.
+      foreach ($group as $r) {
+        $handler = curl_init();
+        curl_setopt($handler, CURLOPT_TIMEOUT, SELF::REQUEST_TIMEOUT);
+        curl_setopt($handler, CURLOPT_CUSTOMREQUEST, $r->getMethod());
+        curl_setopt($handler, CURLOPT_FAILONERROR, TRUE);
+        curl_setopt($handler, CURLOPT_RETURNTRANSFER, TRUE);
+        $r->attributes->set('curl_handler', $handler);
+
+        // Confgure the URL to connect to on the handler.
+        $url = $r->getUri();
+        if ($connect_to = $r->attributes->get('connect_to')) {
+          $url = str_replace($r->getHttpHost(), $connect_to, $url);
+        }
+        curl_setopt($handler, CURLOPT_URL, $url);
+
+        // Generate and set the list of headers to send.
+        $headers = [];
+        foreach (explode("\r\n", trim($r->headers->__toString())) as $line) {
+          $headers[] = $line;
+        }
+        curl_setopt($handler, CURLOPT_HTTPHEADER, $headers);
+
+        // For requests over SSL, we disable host and peer verification. This
+        // is usually a red flag to the security concerned, but avoids a great
+        // deal of trouble with self-signed certificates. Above all, this is
+        // only used for external cache invalidation.
+        if ($r->isSecure()) {
+          curl_setopt($handler, CURLOPT_SSL_VERIFYHOST, FALSE);
+          curl_setopt($handler, CURLOPT_SSL_VERIFYPEER, FALSE);
+        }
+
+        // With parallel processing, add this resource to the multihandler.
+        if (is_resource($multihandler)) {
+          curl_multi_add_handle($multihandler, $handler);
+        }
+      }
+
+      // Let cUrl execute the requests (single mode or multihandling).
+      if (is_resource($multihandler)) {
+        $active = NULL;
+        do {
+          $mrc = curl_multi_exec($multihandler, $active);
+        } while ($mrc == CURLM_CALL_MULTI_PERFORM);
+        while ($active && $mrc == CURLM_OK) {
+          if (curl_multi_select($multihandler) != -1) {
+            do {
+              $mrc = curl_multi_exec($multihandler, $active);
+            } while ($mrc == CURLM_CALL_MULTI_PERFORM);
+          }
+        }
+      }
+      else {
+        $handler = $group[0]->attributes->get('curl_handler');
+        curl_exec($handler);
+        $single_info = ['result' => curl_errno($handler)];
+      }
+
+      // Query the handlers to put the results as attributes onto the request.
+      foreach ($group as $r) {
+        if (!($handler = $r->attributes->get('curl_handler'))) {
+          continue;
+        }
+
+        // Set the general request results as attributes to the request.
+        if (is_resource($multihandler)) {
+          $info = curl_multi_info_read($multihandler);
+        }
+        else {
+          $info = $single_info;
+        }
+        $r->attributes->set('curl_result', $info['result']);
+        $r->attributes->set('curl_result_ok', $info['result'] == CURLE_OK);
+
+        // Add all other cUrl information as attributes to the request.
+        foreach (curl_getinfo($handler) as $key => $value) {
+          $r->attributes->set('curl_' . $key, $value);
+        }
+
+        // Remove all cUrl resources except the results of course.
+        if (is_resource($multihandler)) {
+          curl_multi_remove_handle($multihandler, $handler);
+        }
+        curl_close($handler);
+        $r->attributes->remove('curl_handler');
+      }
+    }
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getIdealConditionsLimit() {
@@ -94,8 +224,20 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * {@inheritdoc}
    */
   public function invalidate(array $invalidations) {
-    throw new \Exception("Malum consilium quod mutari non potest ");
 
+    // Since we implemented ::routeTypeToMethod(), this Latin preciousness
+    // shouldn't ever occur and when it does, will be easily recognized.
+    throw new \Exception("Malum consilium quod mutari non potest!");
+  }
+
+  /**
+   * Invalidate a set of tag invalidations.
+   *
+   * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::invalidate()
+   * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
+   */
+  public function invalidateTags(array $invalidations) {
+    throw new \Exception(__METHOD__);
     // $logger = \Drupal::logger('purge_purger_http');
     //
     // // Iterate every single object and fire a request per object.
@@ -129,322 +271,69 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   }
 
   /**
-   * Invalidate a set of tag invalidations.
-   *
-   * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::invalidate()
-   * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
-   */
-  public function invalidateTags(array $invalidations) {
-    throw new \Exception(__METHOD__);
-  }
-
-  /**
    * Invalidate a set of URL invalidations.
    *
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::invalidate()
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateUrls(array $invalidations) {
-    throw new \Exception(__METHOD__);
+    $balancer_addresses = $this->acquiaPurgeHostingInfo->getBalancerAddresses();
+    $balancer_token = $this->acquiaPurgeHostingInfo->getBalancerToken();
+
+    // Set all invalidation states to PROCESSING before we kick off purging.
+    foreach ($invalidations as $invalidation) {
+      $invalidation->setState(InvalidationInterface::PROCESSING);
+    }
+
+    // Define HTTP requests for every URL*BAL that we are going to invalidate.
+    $requests = [];
+    foreach ($invalidations as $invalidation) {
+      foreach ($balancer_addresses as $balancer_address) {
+        $r = Request::create($invalidation->getExpression(), 'PURGE');
+        $r->attributes->set('connect_to', $balancer_address);
+        $r->attributes->set('invalidation_id', $invalidation->getId());
+        $r->headers->remove('Accept-Language');
+        $r->headers->remove('Accept-Charset');
+        $r->headers->remove('Accept');
+        $r->headers->set('X-Acquia-Purge', $balancer_token);
+        $r->headers->set('Accept-Encoding', 'gzip');
+        $r->headers->set('User-Agent', 'Acquia Purge');
+        $requests[] = $r;
+      }
+    }
+
+    // Perform the requests, results will be set as attributes onto the objects.
+    $this->executeRequests($requests);
+
+    // Collect all results per invalidation object based on the cUrl data.
+    $results = [];
+    foreach ($requests as $request) {
+      if (!is_null($inv_id = $request->attributes->get('invalidation_id'))) {
+
+        // URLs not in varnish return 404, that's also seen as a success.
+        if ($request->attributes->get('curl_http_code') === 404) {
+          $results[$inv_id][] = TRUE;
+        }
+        else {
+          $results[$inv_id][] = $request->attributes->get('curl_result_ok');
+        }
+      }
+    }
+
+    // Triage and set all invalidation states correctly.
+    foreach ($invalidations as $invalidation) {
+      $inv_id = $invalidation->getId();
+      if (isset($results[$inv_id]) && count($results[$inv_id])) {
+        if (!in_array(FALSE, $results[$inv_id])) {
+          $invalidation->setState(InvalidationInterface::SUCCEEDED);
+        }
+      }
+      $invalidation->setState(InvalidationInterface::FAILED);
+    }
   }
 
-  // /**
-  //  * Purge a single path on all domains and load balancers.
-  //  *
-  //  * @param string $path
-  //  *   The Drupal path (for example: '<front>', 'user/1' or a alias).
-  //  *
-  //  * @warning
-  //  *   This is the core HTTP purge implementation for a single path item, and is
-  //  *   NOT TO BE CALLED DIRECTLY! Instead AcquiaPurgeService has to be utilized
-  //  *   which takes care of queuing, statistics, capacity calculation and several
-  //  *   other safety checks and balances. This is a example of how to do this:
-  //  *   $queue = _acquia_purge_service();
-  //  *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
-  //  *   $queue->process();
-  //  *
-  //  * @return true|false
-  //  *   Boolean TRUE/FALSE indicating success or failure of the attempt.
-  //  */
-  // function _acquia_purge_purge($path) {
-  //
-  //   // Ask our built-in diagnostics system to preliminary find issues that are so
-  //   // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
-  //   // will cause purging to cease and log messages to be written. Because we
-  //   // return FALSE, the queued items will be purged later in better weather.
-  //   if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
-  //     _acquia_purge_get_diagnosis_logged($err);
-  //     return FALSE;
-  //   }
-  //
-  //   // Fetch and statically store the base path.
-  //   static $base_path;
-  //   if (is_null($base_path)) {
-  //     $base_path = _acquia_purge_variable('acquia_purge_base_path');
-  //   }
-  //
-  //   // Determine the request token, this makes up the X-Acquia-Purge header.
-  //   static $request_token;
-  //   if (is_null($request_token)) {
-  //     if ($token_configured = _acquia_purge_variable('acquia_purge_token')) {
-  //       $request_token = (string) $token_configured;
-  //     }
-  //     else {
-  //       $request_token = _acquia_purge_get_site_name();
-  //     }
-  //   }
-  //
-  //   // Because a single path can exist on http://, https://, on various domain
-  //   // names and could be cached on any of the known load balancers. Therefore we
-  //   // define a list of HTTP requests that we are going to fire in a moment.
-  //   $requests = array();
-  //   foreach (_acquia_purge_get_balancers() as $balancer_ip) {
-  //     foreach (_acquia_purge_get_domains() as $domain) {
-  //       foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
-  //         $rqst = new stdClass();
-  //         $rqst->scheme = $scheme;
-  //         $rqst->rtype = 'PURGE';
-  //         $rqst->balancer = $balancer_ip;
-  //         $rqst->domain = $domain;
-  //         $rqst->path = str_replace('//', '/', $base_path . $path);
-  //         $rqst->uri = $rqst->scheme . '://' . $rqst->domain . $rqst->path;
-  //         $rqst->uribal = $rqst->scheme . '://' . $rqst->balancer . $rqst->path;
-  //         $rqst->headers = array(
-  //           'Host: ' . $rqst->domain,
-  //           'Accept-Encoding: gzip',
-  //           'X-Acquia-Purge: ' . $request_token,
-  //         );
-  //         $requests[] = $rqst;
-  //       }
-  //     }
-  //   }
-  //
-  //   // Before we issue these purges against the load balancers we ensure that any
-  //   // of these URLs are not left cached in Drupal's ordinary page cache.
-  //   $already_cleared = array();
-  //   foreach ($requests as $rqst) {
-  //     if (!in_array($rqst->uri, $already_cleared)) {
-  //       cache_clear_all($rqst->uri, 'cache_page');
-  //       $already_cleared[] = $rqst->uri;
-  //     }
-  //   }
-  //
-  //   // Execute the prepared requests efficiently and log their results.
-  //   $overall_success = TRUE;
-  //   foreach (_acquia_purge_purge_requests($requests) as $rqst) {
-  //     if ($rqst->result == TRUE) {
-  //       if (_acquia_purge_variable('acquia_purge_log_success') === TRUE) {
-  //         watchdog(
-  //           'acquia_purge',
-  //           "Purged '%url' from load balancer %balancer.",
-  //           array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
-  //           WATCHDOG_INFO);
-  //       }
-  //       _acquia_purge_service()->history($rqst->uri);
-  //     }
-  //     else {
-  //       if ($overall_success) {
-  //         $overall_success = FALSE;
-  //       }
-  //
-  //       // Write the failure to watchdog and be as descriptive as we can.
-  //       switch ($rqst->error_curl) {
-  //         case CURLE_COULDNT_CONNECT:
-  //           $msg = "Cannot connect to %bal:80, '%path' goes back to queue!";
-  //           break;
-  //
-  //         case CURLE_COULDNT_RESOLVE_HOST:
-  //           $msg = "Cannot resolve host %bal, '%path' goes back to queue!";
-  //           break;
-  //
-  //         case CURLE_OPERATION_TIMEOUTED:
-  //           $msg = "Connecting to %bal exceeded %timeout seconds, '%path'"
-  //             . ' goes back to queue!';
-  //           break;
-  //
-  //         case CURLE_URL_MALFORMAT:
-  //           $msg = "Cannot purge malformed URL '%uri', '%path' goes back to"
-  //             . ' queue! DEBUG: %debug';
-  //           break;
-  //
-  //         default:
-  //           $msg = "Failed purging '%uri' from %bal, '%path' goes back to queue!"
-  //             . ' CURL: %curl; DEBUG: %debug';
-  //           break;
-  //       }
-  //       watchdog('acquia_purge', $msg,
-  //         array(
-  //           '%uri' => $rqst->uri,
-  //           '%bal' => $rqst->balancer,
-  //           '%path' => $rqst->path,
-  //           '%curl' => (string) curl_strerror($rqst->error_curl),
-  //           '%debug' => $rqst->error_debug,
-  //           '%timeout' => ACQUIA_PURGE_REQUEST_TIMEOUT,
-  //         ), WATCHDOG_ERROR);
-  //     }
-  //   }
-  //
-  //   // If one the many HTTP requests failed we treat the full path as a failure,
-  //   // by sending back FALSE the item will remain in the queue. Failsafe style.
-  //   return $overall_success;
-  // }
-  //
-  // /**
-  //  * Process the HTTP requests for a single purge.
-  //  *
-  //  * @param string $requests
-  //  *   Unassociative array (list) of simple Stdclass objects with the following
-  //  *   properties: scheme, rtype, server, domain, path, uri, uribal.
-  //  *
-  //  * @see _acquia_purge_purge()
-  //  *
-  //  * @return array
-  //  *   The given requests array with added properties that describe the result of
-  //  *   the request: 'result', 'error_curl', 'error_http', 'error_debug'.
-  //  */
-  // function _acquia_purge_purge_requests($requests) {
-  //   $single_mode = (count($requests) === 1);
-  //   $results = array();
-  //
-  //   // Initialize the cURL multi handler.
-  //   if (!$single_mode) {
-  //     static $curl_multi;
-  //     if (is_null($curl_multi)) {
-  //       $curl_multi = curl_multi_init();
-  //     }
-  //   }
-  //
-  //   // Enter our event loop and keep on requesting until $unprocessed is empty.
-  //   $unprocessed = count($requests);
-  //   while ($unprocessed > 0) {
-  //
-  //     // Group requests per sets that we can run in parallel.
-  //     for ($i = 0; $i < ACQUIA_PURGE_PARALLEL_REQUESTS; $i++) {
-  //       if ($rqst = array_shift($requests)) {
-  //         $rqst->curl = curl_init();
-  //
-  //         // Instantiate the cURL resource and configure its runtime parameters.
-  //         curl_setopt($rqst->curl, CURLOPT_URL, $rqst->uribal);
-  //         curl_setopt($rqst->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
-  //         curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
-  //         curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->rtype);
-  //         curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
-  //         curl_setopt($rqst->curl, CURLOPT_RETURNTRANSFER, TRUE);
-  //
-  //         // For SSL purging, we disable SSL host and peer verification. Although
-  //         // this triggers red flags to the security concerned user, this avoids
-  //         // purges to fail on sites with self-signed certificates. All we request
-  //         // the remote balancer is to wipe items from its cache after all.
-  //         if ($rqst->scheme === 'https') {
-  //           curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYHOST, FALSE);
-  //           curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-  //         }
-  //
-  //         // Add our handle to the multiple cURL handle.
-  //         if (!$single_mode) {
-  //           curl_multi_add_handle($curl_multi, $rqst->curl);
-  //         }
-  //
-  //         // Add the shifted request to the results array and change the counter.
-  //         $results[] = $rqst;
-  //         $unprocessed--;
-  //       }
-  //     }
-  //
-  //     // Execute the created handles in parallel.
-  //     if (!$single_mode) {
-  //       $active = NULL;
-  //       do {
-  //         $mrc = curl_multi_exec($curl_multi, $active);
-  //       } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-  //       while ($active && $mrc == CURLM_OK) {
-  //         if (curl_multi_select($curl_multi) != -1) {
-  //           do {
-  //             $mrc = curl_multi_exec($curl_multi, $active);
-  //           } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-  //         }
-  //       }
-  //     }
-  //
-  //     // In single mode there's only one request to do, use curl_exec().
-  //     else {
-  //       curl_exec($results[0]->curl);
-  //       $single_info = array('result' => curl_errno($results[0]->curl));
-  //     }
-  //
-  //     // Iterate the set of results and fetch cURL result and resultcodes. Only
-  //     // process those with the 'curl' property as the property will be removed.
-  //     foreach ($results as $i => $rqst) {
-  //       if (!isset($rqst->curl)) {
-  //         continue;
-  //       }
-  //       $info = $single_mode ? $single_info : curl_multi_info_read($curl_multi);
-  //       $results[$i]->result = ($info['result'] == CURLE_OK) ? TRUE : FALSE;
-  //       $results[$i]->error_curl = $info['result'];
-  //       $results[$i]->error_http = curl_getinfo($rqst->curl, CURLINFO_HTTP_CODE);
-  //
-  //       // Curl hasn't proven to be always as reliable when it comes to result
-  //       // reporting, and therefore we enforce success whenever the HTTP codes
-  //       // are 200 or 404, which is Varnish-talk for 'things are good my friend'.
-  //       if (in_array($results[$i]->error_http, array(404, 200))) {
-  //         $results[$i]->result = TRUE;
-  //       }
-  //
-  //       // Collect debugging information if necessary.
-  //       $results[$i]->error_debug = '';
-  //       if (!$results[$i]->result) {
-  //         $debug = curl_getinfo($rqst->curl);
-  //         $debug['headers'] = implode('|', $rqst->headers);
-  //         unset($debug['certinfo']);
-  //         $results[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
-  //       }
-  //
-  //       // Remove the handle if parallel processing occurred.
-  //       if (!$single_mode) {
-  //         curl_multi_remove_handle($curl_multi, $rqst->curl);
-  //       }
-  //
-  //       // Close the resource and delete its property.
-  //       curl_close($rqst->curl);
-  //       unset($rqst->curl);
-  //     }
-  //   }
-  //
-  //   return $results;
-  // }
-
   /**
-   * Route certain type of invalidations to other methods.
-   *
-   * Simple purgers supporting just one type - for example 'tag' - will get that
-   * specific type offered in ::invalidate(). However, when supporting multiple
-   * types it might be useful to have PurgersService sort and route these for
-   * you to the methods you specify. The expected signature and method behavior
-   * is equal to \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::invalidate.
-   *
-   * One note of warning: depending on the implementation specifics of a plugin,
-   * sorting and dispatching types to different code paths can be less efficient
-   * compared to external platforms allowing you to mix and send everyhing in
-   * one single batch. Therefore, consult the API of the platform your plugin
-   * supports to decide what the most efficient implementation will be.
-   *
-   * A simple implementation will look like this:
-   * @code
-   *   public function routeTypeToMethod($type) {
-   *     $methods = [
-   *       'path' => 'invalidatePaths',
-   *       'tag'  => 'invalidateTags',
-   *       'url'  => 'invalidateUrls',
-   *     ];
-   *     return isset($methods[$type]) ? $methods[$type] : 'invalidate';
-   *   }
-   * @endcode
-   *
-   * @param string $type
-   *   The type of invalidation(s) about to be offered to the purger.
-   *
-   * @return string
-   *   The PHP method name called on the purger with a $invalidations parameter.
+   * {@inheritdoc}
    */
   public function routeTypeToMethod($type) {
     $methods = [
