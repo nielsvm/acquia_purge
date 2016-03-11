@@ -3,17 +3,17 @@
 
 # Installation
 
-[//]: # (Acquia Purge has been designed from the ground up to be extremely simple and)
-[//]: # (almost failsafe to use. The module provides the _means_ to purge all load)
-[//]: # (balancers on Acquia Cloud and focuses on doing that well, where the Expire)
-[//]: # (module remains responsible for telling what needs to be purged. Setting up both)
-[//]: # (modules shouldn't take long:)
+The Acquia Purge module provides integration with the [Purge module](https://www.drupal.org/project/purge)
+and makes it extremely simple to achieve accurate, efficient cache invalidation
+on your Acquia Cloud site.
+
+Setting it all up shouldn't take long:
 
 1. Download and enable the required modules: ``drush en acquia_purge --yes``
 
-2. Verify if there are any warnings or errors to fix: ``drush p-diagnostics``
+2. Add the "Acquia Cloud" purger at ``/admin/config/development/performance/purge``.
 
-3. If so, head over to ``/admin/config/development/performance/purge``.
+3. Verify if there are no diagnostic issues by running ``drush p-diagnostics``.
 
 Do you have any questions, bugs or comments? Feel free to lookup common
 questions in the ``FAQ.md`` file or file a issue on Drupal.org.
@@ -36,6 +36,6 @@ exist as of this version and documented below:
 ║                          ║       ║ offset DDOS style attacks but requires    ║
 ║                          ║       ║ balancer level configuration chances for  ║
 ║                          ║       ║ you need to contact Acquia Support.       ║
-║                          ║       ║ $settings['acquia_purge_token'] = 'secret';   ║
+║                          ║       ║ $settings['acquia_purge_token'] = 'secret'║
 ╚══════════════════════════╩═══════╩═══════════════════════════════════════════╝
 ```
