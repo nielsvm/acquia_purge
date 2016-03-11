@@ -442,10 +442,18 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   /**
    * Stop measuring execution time.
    *
-   * When one of the invalidations is not set to state ::SUCCEEDED, the measure
-   * will be discarded, only total successes are representative. Measurements
-   * that were faster then previously stored results, are also discarded as the
-   * purpose of this tracking is to come up with realistic and safe time hints.
+   * To gather safe time hint measurements, the following rules apply:
+   *
+   *  - All invalidations MUST have ::SUCCEEDED, if any of them failed the
+   *    measurement will not be saved as its likely unrepresentative data.
+   *
+   *  - Measurements slower than previous records take priority. This means that
+   *    a single slow (but successful) request will relentlessly adjust the
+   *    capacity calculator downwards. Better safe...
+   *
+   *  - Every measure faster than previously stored records lead to 15%
+   *    reductions of the last recorded measurement. This means structural low
+   *    performance will be rewarded by more capacity, albeit in slow steps!
    *
    * @param string $type
    *   The invalidation type that stopped processing.
@@ -456,13 +464,22 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    */
   protected function typeMeasurementsStop($type, array $invalidations) {
 
-    // Small closure to add measurements and write them to state storage.
+    // Small closures to deal with measurement values and state storage.
     $write = function($type, $measurement) {
       $this->typeMeasurements[$type] = (float)$measurement;
       $this->state->set(
         $this->typeMeasurementsStateKey,
         $this->typeMeasurements
       );
+    };
+    $keep_measure_within_boundaries = function($measurement) {
+      if ($measurement < 0.1) {
+        return 0.1;
+      }
+      elseif ($measurement > 10.0) {
+        return 10.0;
+      }
+      return $measurement;
     };
 
     // Check if any of the invalidations failed, if so, stop.
@@ -472,28 +489,35 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       }
     }
 
-    // Calculate the measurement and keep it within ::getTimeHint() boundaries.
+    // Calculate the spent execution time per invalidation by dividing it
+    // through the number of invalidations processed. We're also adding 15% of
+    // time for theoretic overhead and ensure that the final value remains
+    // within the boundaries of ::getTimeHint().
     if (($spent = $this->typeMeasurementsStart($type)) !== 0.0) {
-      $spent = ($spent / count($invalidations)) * 1.15;// Add 15% safety time!
-      if ($spent < 0.1) {
-        $spent = 0.1;
-      }
-      elseif ($spent > 10.0) {
-        $spent = 10.0;
-      }
+      $spent = ($spent / count($invalidations)) * 1.15;
+      $spent = $keep_measure_within_boundaries($spent);
     }
     else {
       return;
     }
 
-    // Check if we need to store or update this measurement.
-    if (isset($this->typeMeasurements[$type])) {
-      if ($spent > $this->typeMeasurements[$type]) {
-        $write($type, $spent);
-      }
-    }
-    else {
+    // Write new measurements at all times.
+    if (!isset($this->typeMeasurements[$type])) {
       $write($type, $spent);
+    }
+
+    // Store slower measurements immediately.
+    elseif ($spent > $this->typeMeasurements[$type]) {
+      $write($type, $spent);
+    }
+
+    // Slowly adapt to faster measurements by lowering by 15%.
+    elseif ($spent < $this->typeMeasurements[$type]) {
+      $slow_downward_adjustment = $keep_measure_within_boundaries(
+        $this->typeMeasurements[$type] * 0.85);
+      if ($slow_downward_adjustment >= $spent) {
+        $write($type, $slow_downward_adjustment);
+      }
     }
   }
 
