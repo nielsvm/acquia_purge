@@ -162,6 +162,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
   foreach ($form['paths']['path'] as $i => $item) {
     $form['paths']['path'][$i]['#field_prefix'] = $prefix;
     $form['paths']['path'][$i]['#size'] = 30;
+    $form['paths']['path'][$i]['#maxlength'] = 2000;
   }
 
   return $form;
