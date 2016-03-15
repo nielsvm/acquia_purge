@@ -254,26 +254,8 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   /**
    * {@inheritdoc}
    */
-  public function getTimeHint() {
-    $measurements = $this->typeMeasurements();
-
-    // Calculate the worst-case scenario time hint upon first use (URL based).
-    if (empty($measurements)) {
-      $balancers = count($this->acquiaPurgeHostingInfo->getBalancerAddresses());
-      $estimate = (float) ($balancers * SELF::REQUEST_TIMEOUT)/SELF::PARALLEL_REQUESTS;
-      if ($estimate < 0.2) {
-        $estimate = 0.2;
-      }
-      elseif ($estimate > 10.0) {
-        $estimate = 10.0;
-      }
-      return $estimate;
-    }
-
-    // When our measurements do exist, return the slowest timing we have.
-    else {
-      return max($measurements);
-    }
+  public function hasRuntimeMeasurement() {
+    return TRUE;
   }
 
   /**
@@ -333,7 +315,6 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateUrls(array $invalidations) {
-    $this->typeMeasurementsStart('url');
     $balancer_addresses = $this->acquiaPurgeHostingInfo->getBalancerAddresses();
     $balancer_token = $this->acquiaPurgeHostingInfo->getBalancerToken();
 
@@ -386,11 +367,8 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
           continue;
         }
       }
-      $invalidation->setState(InvalidationInterface::FAILED);
+      $invalidation->setState(InvalidationInterface::SUCCEEDED);
     }
-
-    // Stop measuring execution time for URLs.
-    $this->typeMeasurementsStop('url', $invalidations);
   }
 
   /**
@@ -402,123 +380,6 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       'url'  => 'invalidateUrls',
     ];
     return isset($methods[$type]) ? $methods[$type] : 'invalidate';
-  }
-
-  /**
-   * Retrieve all stored measurements from state storage.
-   *
-   * @return float[]
-   *   Associative array with invalidation type (key) and measurement (value).
-   */
-  protected function typeMeasurements() {
-    return $this->typeMeasurements;
-  }
-
-  /**
-   * Start measuring execution time.
-   *
-   * @param string $type
-   *   The invalidation type that started processing.
-   *
-   * @return float
-   *   Either 0.0 at the first call or the spent total at the second call.
-   */
-  protected function typeMeasurementsStart($type) {
-    static $timers;
-    if (is_null($timers)) {
-      $timers = [];
-    }
-    if (!isset($timers[$type])) {
-      $timers[$type] = microtime(TRUE);
-      return 0.0;
-    }
-    else {
-      $spent = $timers[$type];
-      unset($timers[$type]);
-      return microtime(TRUE) - $spent;
-    }
-  }
-
-  /**
-   * Stop measuring execution time.
-   *
-   * To gather safe time hint measurements, the following rules apply:
-   *
-   *  - All invalidations MUST have ::SUCCEEDED, if any of them failed the
-   *    measurement will not be saved as its likely unrepresentative data.
-   *
-   *  - Measurements slower than previous records take priority. This means that
-   *    a single slow (but successful) request will relentlessly adjust the
-   *    capacity calculator downwards. Better safe...
-   *
-   *  - Every measure faster than previously stored records lead to 15%
-   *    reductions of the last recorded measurement. This means structural low
-   *    performance will be rewarded by more capacity, albeit in slow steps!
-   *
-   * @param string $type
-   *   The invalidation type that stopped processing.
-   * @param \Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface[] $invalidations
-   *   Non-associative array of processed invalidation objects.
-   *
-   * @return void.
-   */
-  protected function typeMeasurementsStop($type, array $invalidations) {
-
-    // Small closures to deal with measurement values and state storage.
-    $write = function($type, $measurement) {
-      $this->typeMeasurements[$type] = (float)$measurement;
-      $this->state->set(
-        $this->typeMeasurementsStateKey,
-        $this->typeMeasurements
-      );
-    };
-    $keep_measure_within_boundaries = function($measurement) {
-      if ($measurement < 0.1) {
-        return 0.1;
-      }
-      elseif ($measurement > 10.0) {
-        return 10.0;
-      }
-      return $measurement;
-    };
-
-    // Check if any of the invalidations failed, if so, stop.
-    foreach ($invalidations as $invalidation) {
-      if ($invalidation->getState() !== InvalidationInterface::SUCCEEDED) {
-        return;
-      }
-    }
-
-    // Calculate the spent execution time per invalidation by dividing it
-    // through the number of invalidations processed. We're also adding 15% of
-    // time for theoretic overhead and ensure that the final value remains
-    // within the boundaries of ::getTimeHint().
-    if (($spent = $this->typeMeasurementsStart($type)) !== 0.0) {
-      $spent = ($spent / count($invalidations)) * 1.15;
-      $spent = $keep_measure_within_boundaries($spent);
-    }
-    else {
-      return;
-    }
-
-    // Write new measurements at all times.
-    if (!isset($this->typeMeasurements[$type])) {
-      $write($type, $spent);
-    }
-
-    // Store slower measurements immediately.
-    elseif ($spent > $this->typeMeasurements[$type]) {
-      $write($type, $spent);
-    }
-
-    // Slowly adapt to faster measurements by lowering by 15%.
-    elseif ($spent < $this->typeMeasurements[$type]) {
-      $slow_downward_adjustment = $keep_measure_within_boundaries(
-        $this->typeMeasurements[$type] * 0.85);
-      if ($slow_downward_adjustment >= $spent) {
-        $write($type, $slow_downward_adjustment);
-      }
-    }
   }
 
 }
