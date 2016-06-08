@@ -42,7 +42,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   /**
    * @var \Drupal\acquia_purge\HostingInfoInterface
    */
-  protected $acquiaPurgeHostinginfo;
+  protected $hostingInfo;
 
   /**
    * Constructs a AcquiaCloudPurger object.
@@ -58,7 +58,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    */
   function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->acquiaPurgeHostingInfo = $acquia_purge_hostinginfo;
+    $this->hostingInfo = $acquia_purge_hostinginfo;
   }
 
   /**
@@ -210,7 +210,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     // execution time. Although always respected as outer limit, it will be lower
     // in practice as PHP resource limits (max execution time) bring it further
     // down. However, the maximum amount of requests will be higher on the CLI.
-    $balancers = count($this->acquiaPurgeHostingInfo->getBalancerAddresses());
+    $balancers = count($this->hostingInfo->getBalancerAddresses());
     if ($balancers) {
       return intval(ceil(200 / $balancers));
     }
@@ -281,8 +281,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateUrls(array $invalidations) {
-    $balancer_addresses = $this->acquiaPurgeHostingInfo->getBalancerAddresses();
-    $balancer_token = $this->acquiaPurgeHostingInfo->getBalancerToken();
+    $this->logger->debug(__METHOD__);
 
     // Set all invalidation states to PROCESSING before we kick off purging.
     foreach ($invalidations as $invalidation) {
@@ -291,10 +290,11 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
 
     // Define HTTP requests for every URL*BAL that we are going to invalidate.
     $requests = [];
+    $balancer_token = $this->hostingInfo->getBalancerToken();
     foreach ($invalidations as $invalidation) {
-      foreach ($balancer_addresses as $balancer_address) {
+      foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
         $r = Request::create($invalidation->getExpression(), 'PURGE');
-        $r->attributes->set('connect_to', $balancer_address);
+        $r->attributes->set('connect_to', $ip_address);
         $r->attributes->set('invalidation_id', $invalidation->getId());
         $r->headers->remove('Accept-Language');
         $r->headers->remove('Accept-Charset');
