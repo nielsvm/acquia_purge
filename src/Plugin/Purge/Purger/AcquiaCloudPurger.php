@@ -9,7 +9,6 @@ namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\Core\State\StateInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
@@ -46,33 +45,10 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   protected $acquiaPurgeHostinginfo;
 
   /**
-   * The state key value store.
-   *
-   * @var \Drupal\Core\State\StateInterface
-   */
-  protected $state;
-
-  /**
-   * Associative array with invalidation type (key) and measurement (value).
-   *
-   * @var float[]
-   */
-  protected $typeMeasurements = [];
-
-  /**
-   * The name of the state API key in which type measurements are stored.
-   *
-   * @var string
-   */
-  protected $typeMeasurementsStateKey = 'acquia_purge_type_measurements';
-
-  /**
    * Constructs a AcquiaCloudPurger object.
    *
    * @param \Drupal\acquia_purge\HostingInfoInterface $acquia_purge_hostinginfo
    *   Technical information accessors for the Acquia Cloud environment.
-   * @param \Drupal\Core\State\StateInterface $state
-   *   The state key value store.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -80,11 +56,9 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  function __construct(HostingInfoInterface $acquia_purge_hostinginfo, StateInterface $state, array $configuration, $plugin_id, $plugin_definition) {
+  function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->acquiaPurgeHostingInfo = $acquia_purge_hostinginfo;
-    $this->typeMeasurements = $state->get($this->typeMeasurementsStateKey, []);
-    $this->state = $state;
   }
 
   /**
@@ -93,18 +67,10 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $container->get('acquia_purge.hostinginfo'),
-      $container->get('state'),
       $configuration,
       $plugin_id,
       $plugin_definition
     );
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function delete() {
-    $this->state->delete($this->typeMeasurementsStateKey);
   }
 
   /**
