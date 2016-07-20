@@ -24,7 +24,7 @@ use Drupal\acquia_purge\HostingInfoInterface;
  *   cooldown_time = 0.2,
  *   description = @Translation("Invalidates Varnish powered load balancers on your Acquia Cloud site."),
  *   multi_instance = FALSE,
- *   types = {"url"},
+ *   types = {"url", "tag"},
  * )
  */
 class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
@@ -241,37 +241,60 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateTags(array $invalidations) {
-    throw new \Exception(__METHOD__);
-    // $logger = \Drupal::logger('purge_purger_http');
-    //
-    // // Iterate every single object and fire a request per object.
-    // foreach ($invalidations as $invalidation) {
-    //   $token_data = ['invalidation' => $invalidation];
-    //   $uri = $this->getUri($token_data);
-    //   $opt = $this->getOptions($token_data);
-    //
-    //   try {
-    //     $this->client->request($this->settings->request_method, $uri, $opt);
-    //     $invalidation->setState(InvalidationInterface::SUCCEEDED);
-    //   }
-    //   catch (\Exception $e) {
-    //     $invalidation->setState(InvalidationInterface::FAILED);
-    //     $headers = $opt['headers'];
-    //     unset($opt['headers']);
-    //     $logger->emergency(
-    //       "%exception thrown by %id, invalidation marked as failed. URI: %uri# METHOD: %request_method# HEADERS: %headers#mOPT: %opt#MSG: %exceptionmsg#",
-    //       [
-    //         '%exception' => get_class($e),
-    //         '%exceptionmsg' => $e->getMessage(),
-    //         '%request_method' => $this->settings->request_method,
-    //         '%opt' => $this->exportDebuggingSymbols($opt),
-    //         '%headers' => $this->exportDebuggingSymbols($headers),
-    //         '%uri' => $uri,
-    //         '%id' => $this->getid()
-    //       ]
-    //     );
-    //   }
-    // }
+    $this->logger->debug(__METHOD__);
+
+    // Collect tags and set all states to PROCESSING before we kick off.
+    $tags = [];
+    foreach ($invalidations as $invalidation) {
+      $invalidation->setState(InvalidationInterface::PROCESSING);
+      $tags[] = $invalidation->getExpression();
+    }
+    $tags_string = implode('|', $tags);
+
+    // Predescribe the requests to make.
+    $requests = [];
+    $site_name = $this->hostingInfo->getSiteName();
+    foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
+      if (count($tags) === 1) {
+        $r = Request::create("http://$ip_address/tag", 'BAN');
+        $r->headers->set('X-Acquia-Purge', $site_name);
+        $r->headers->set('X-Acquia-Purge-Tag', $tags_string);
+      }
+      else {
+        $r = Request::create("http://$ip_address/tags", 'BAN');
+        $r->headers->set('X-Acquia-Purge', $site_name);
+        $r->headers->set('X-Acquia-Purge-Tags', $tags_string);
+      }
+      $r->headers->remove('Accept-Language');
+      $r->headers->remove('Accept-Charset');
+      $r->headers->remove('Accept');
+      $r->headers->set('Accept-Encoding', 'gzip');
+      $r->headers->set('User-Agent', 'Acquia Purge');
+      $requests[] = $r;
+    }
+
+    // Perform the requests, results will be set as attributes onto the objects.
+    $this->executeRequests($requests);
+
+    // Collect all results per invalidation object based on the cUrl data.
+    $overall_success = TRUE;
+    foreach ($requests as $request) {
+      if ($request->attributes->get('curl_http_code') !== 200) {
+        $overall_success = FALSE;
+        $this->logFailedRequest($request);
+      }
+    }
+
+    // Set the object states according to our overall result.
+    foreach ($invalidations as $invalidation) {
+      if ($overall_success) {
+        $invalidation->setState(InvalidationInterface::SUCCEEDED);
+      }
+      else {
+        $invalidation->setState(InvalidationInterface::FAILED);
+      }
+    }
+
   }
 
   /**
@@ -320,6 +343,9 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
         }
         else {
           $results[$inv_id][] = $request->attributes->get('curl_result_ok');
+          if (!$request->attributes->get('curl_result_ok')) {
+            $this->logFailedRequest($request);
+          }
         }
       }
     }
@@ -335,6 +361,54 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       }
       $invalidation->setState(InvalidationInterface::SUCCEEDED);
     }
+  }
+
+  /**
+   * Write an error to the log for a failed request.
+   *
+   * Writes messages to the logs after requests passed through ::executeRequests
+   * and didn't pass invalidation-type specific requirements. The messages are
+   * as human-readable as possible, with debugging symbols as last resort.
+   *
+   * @param \Symfony\Component\HttpFoundation\Request $r
+   *   The request object, after it passed through ::executeRequests()..
+   *
+   * @return void
+   */
+  protected function logFailedRequest(Request $r) {
+    $msg = 'Failed %method to %uri%urisuffix: ';
+    $vars = [
+      "%method" => $r->getMethod(),
+      "%timeout" => SELF::REQUEST_TIMEOUT,
+      "%uri" => $r->attributes->get('curl_url'),
+      "%urisuffix" => $r->attributes->get('connect_to') ? sprintf(" (host=%s)", $r->getHttpHost()) : '',
+      "%curl_total_time" => var_export($r->attributes->get('curl_total_time'), TRUE),
+    ];
+    switch ($r->attributes->get('curl_result')) {
+      case CURLE_COULDNT_CONNECT:
+        $msg .= "couldn't connect.";
+        break;
+
+      case CURLE_COULDNT_RESOLVE_HOST:
+        $msg .= "unable to resolve host.";
+        break;
+
+      case CURLE_OPERATION_TIMEOUTED:
+        $msg .= "timed out: timeout=%timeout, total_time=%curl_total_time.";
+        break;
+
+      case CURLE_URL_MALFORMAT:
+        $msg .= "URL malformatted!";
+        break;
+
+      default:
+        $msg .= "unknown, debugging info (JSON): %debug";
+        $vars['%debug'] = str_replace('curl_', '', json_encode(current((array)$r->attributes)));
+        break;
+    }
+    $this->logger->error($msg, $vars);
+    $this->logger->debug("REQHEADERS= %v", ['%v' => json_encode(current((array)$r->headers))]);
+    $this->logger->debug("CONTENT= %v", ['%v' => $r->getContent()]);
   }
 
   /**
