@@ -117,8 +117,7 @@ class HostingInfo implements HostingInfoInterface {
       && $this->balancerToken
       && $this->siteEnvironment
       && $this->siteName
-      && $this->siteGroup
-      && function_exists('curl_init');
+      && $this->siteGroup;
   }
 
   /**
