@@ -18,4 +18,13 @@ use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
  *   header_name = "X-Acquia-Purge-Tags",
  * )
  */
-class AcquiaPurgeTagsHeader extends TagsHeaderBase implements TagsHeaderInterface {}
+class AcquiaPurgeTagsHeader extends TagsHeaderBase implements TagsHeaderInterface {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getValue(array $tags) {
+    return implode('|', $tags);
+  }
+
+}
