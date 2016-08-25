@@ -68,9 +68,9 @@ class AlphaProgrammeCheck extends DiagnosticCheckBase implements DiagnosticCheck
         $this->value = $this->t("Participating in the AP alpha programme!");
         return SELF::SEVERITY_OK;
       }
-      $this->recommendation = $this->t("The acquia_purge module isn't ready for prime time yet. If you want join our alpha-testing programme, you will need dedicated load balancers and a access key. Please contact Acquia support!");
-      return SELF::SEVERITY_ERROR;
     }
+    $this->recommendation = $this->t("The acquia_purge module isn't ready for prime time yet. If you want join our alpha-testing programme, you will need dedicated load balancers and a access key. Please contact Acquia support!");
+    return SELF::SEVERITY_ERROR;
   }
 
 }
