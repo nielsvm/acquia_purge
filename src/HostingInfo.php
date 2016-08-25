@@ -102,6 +102,11 @@ class HostingInfo implements HostingInfoInterface {
         }
       }
     }
+    else if(!empty($GLOBALS['gardens_site_settings'])) {
+      $this->siteEnvironment = $GLOBALS['gardens_site_settings']['env'];
+      $this->siteGroup = $GLOBALS['gardens_site_settings']['site'];
+      $this->siteName = $this->siteGroup . '.' . $this->siteEnvironment;
+    }
 
     // Determine the authentication token is going to be, usually the site name.
     $this->balancerToken = $this->siteName;
