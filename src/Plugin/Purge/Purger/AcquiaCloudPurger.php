@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_purge\Plugin\Purge\Purger\HttpPurger.
- */
-
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use Symfony\Component\HttpFoundation\Request;

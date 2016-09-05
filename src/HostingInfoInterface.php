@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_purge\HostingInfoInterface.
- */
-
 namespace Drupal\acquia_purge;
 
 /**

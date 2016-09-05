@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_purge\Plugin\Purge\DiagnosticCheck\AcquiaCloudCheck.
- */
-
 namespace Drupal\acquia_purge\Plugin\Purge\DiagnosticCheck;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;

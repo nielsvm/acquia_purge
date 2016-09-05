@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_purge\Plugin\Purge\TagsHeader\AcquiaSiteHeader.
- */
-
 namespace Drupal\acquia_purge\Plugin\Purge\TagsHeader;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;

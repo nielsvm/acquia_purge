@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_purge\HostingInfo.
- */
-
 namespace Drupal\acquia_purge;
 
 use Drupal\Core\Site\Settings;

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\acquia_purge\Plugin\Purge\TagsHeader\AcquiaPurgeTagsHeader.
- */
-
 namespace Drupal\acquia_purge\Plugin\Purge\TagsHeader;
 
 use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
