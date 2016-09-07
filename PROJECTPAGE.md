@@ -41,22 +41,6 @@ The Drupal 8 version is under full development but cannot be considered stable
 as of March 2016. The following limitations currently block full production
 usage:
 
-###### Load balancer discovery fails
-Upon installation and after enabling the purger, the diagnostics will block
-cache invalidation with: "_No balancers were discovered, therefore cache
-invalidation has been disabled._". Acquia is aware of this issue and busy
-resolving it, in the meantime you can work around this by temporarily placing
-this in ``settings.php`` after your _Acquia Cloud include statement_:
-
-```
-/**
- * Acquia Purge - temporary workaround as of March 2016.
- */
-if (!isset($settings['reverse_proxies']) && isset($trusted_reverse_proxy_ips)) {
-  $settings['reverse_proxies'] = $trusted_reverse_proxy_ips;
-}
-```
-
 ###### For now, tag-based invalidation isn't supported.
 Acquia is busy overhauling its Varnish configuration to - among other reasons -
 support tag-based invalidation and make Acquia Cloud the best supported platform
