@@ -36,17 +36,14 @@ and especially its
 [domains](http://cgit.drupalcode.org/acquia_purge/plain/DOMAINS.md?h=7.x-1.x)
 documentation.
 
-## Temporary but important Drupal 8 information!
-The Drupal 8 version is under full development but cannot be considered stable
-as of March 2016. The following limitations currently block full production
-usage:
+## IMPORTANT D8 information!
+The Drupal 8 version is under full development and **is not yet available** for
+customers of Acquia Cloud yet. Platform support is on its way as well and
+expected later this year.
 
-###### For now, tag-based invalidation isn't supported.
-Acquia is busy overhauling its Varnish configuration to - among other reasons -
-support tag-based invalidation and make Acquia Cloud the best supported platform
-for this. Since this process is still ongoing, only URL-based invalidation works
-and requires you to temporarily install and use the
-[URLs queuer module](https://www.drupal.org/project/purge_queuer_url), which is
-considered inferior but functional for those that cannot wait. Make sure to stop
-using this module when tag-based invalidation is officially rolled out and when
-invalidating your CDN doesn't require it either.
+###### Alpha program
+Acquia launched its "_Acquia Purge alpha program_", which is a special program
+for selected customers who are closely monitored over a period of time to see
+how their sites perform.
+
+Interested in joining the program? Contact Acquia support!
