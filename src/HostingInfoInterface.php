@@ -48,6 +48,14 @@ interface HostingInfoInterface {
   public function getSiteName();
 
   /**
+   * Get the Drupal site path.
+   *
+   * @return string
+   *   The site path, e.g. 'site/default' or 'site/mysecondsite'.
+   */
+  public function getSitePath();
+
+  /**
    * Determine whether the current hosting environment is Acquia Cloud or not.
    *
    * @return true|false

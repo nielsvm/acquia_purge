@@ -2,6 +2,8 @@
 
 namespace Drupal\acquia_purge;
 
+use Symfony\Component\HttpFoundation\RequestStack;
+use Drupal\Core\DrupalKernel;
 use Drupal\Core\Site\Settings;
 use Drupal\acquia_purge\HostingInfoInterface;
 
@@ -32,6 +34,13 @@ class HostingInfo implements HostingInfoInterface {
   protected $balancerToken = '';
 
   /**
+  * Whether the current hosting environment is Acquia Cloud or not.
+  *
+  * @var bool
+  */
+  protected $isThisAcquiaCloud = FALSE;
+
+  /**
    * The Acquia site environment.
    *
    * @var string
@@ -53,19 +62,24 @@ class HostingInfo implements HostingInfoInterface {
   protected $siteName = '';
 
   /**
-   * Whether the current hosting environment is Acquia Cloud or not.
+   * The Drupal site path.
    *
-   * @var bool
+   * @var string
    */
-  protected $isThisAcquiaCloud = FALSE;
+  protected $sitePath = '';
 
   /**
    * Constructs a HostingInfo object.
    *
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
    * @param \Drupal\Core\Site\Settings $settings
    *   Drupal site settings object.
    */
-  public function __construct(Settings $settings) {
+  public function __construct(RequestStack $request_stack, Settings $settings) {
+
+    // Generate the Drupal sitepath by querying the SitePath from this request.
+    $this->sitePath = DrupalKernel::findSitePath($request_stack->getCurrentRequest());
 
     // Take the IP addresses from the 'reverse_proxies' setting.
     if (is_array($reverse_proxies = $settings->get('reverse_proxies'))) {
@@ -153,6 +167,13 @@ class HostingInfo implements HostingInfoInterface {
    */
   public function getSiteName() {
     return $this->siteName;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSitePath() {
+    return $this->sitePath;
   }
 
   /**
