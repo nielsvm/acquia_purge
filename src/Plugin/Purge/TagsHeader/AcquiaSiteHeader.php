@@ -23,6 +23,13 @@ class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
   protected $acquia_purge_hostinginfo;
 
   /**
+   * The identifier for this site.
+   *
+   * @var string
+   */
+  protected $identifier = '';
+
+  /**
    * Constructs a AcquiaSiteHeader object.
    *
    * @param array $configuration
@@ -37,6 +44,7 @@ class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
   public function __construct(array $configuration, $plugin_id, $plugin_definition, HostingInfoInterface $acquia_purge_hostinginfo) {
     $this->acquia_purge_hostinginfo = $acquia_purge_hostinginfo;
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->identifier = $this->acquia_purge_hostinginfo->getSiteIdentifier();
   }
 
   /**
@@ -55,7 +63,7 @@ class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
    * {@inheritdoc}
    */
   public function getValue(array $tags) {
-    return $this->acquia_purge_hostinginfo->getSiteName();
+    return $this->identifier;
   }
 
 }

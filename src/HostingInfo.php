@@ -55,6 +55,13 @@ class HostingInfo implements HostingInfoInterface {
   protected $siteGroup = '';
 
   /**
+   * Unique identifier for this site.
+   *
+   * @var string
+   */
+  protected $siteIdentifier = '';
+
+  /**
    * The Acquia site name.
    *
    * @var string
@@ -125,11 +132,15 @@ class HostingInfo implements HostingInfoInterface {
       }
     }
 
+    // Use the sitename and site path directory as site identifier.
+    $this->siteIdentifier = $this->siteName . basename($this->sitePath);
+
     // Test the gathered information to determine if this is/isn't Acquia Cloud.
     $this->isThisAcquiaCloud =
       count($this->balancerAddresses)
       && $this->balancerToken
       && $this->siteEnvironment
+      && $this->siteIdentifier
       && $this->siteName
       && $this->siteGroup;
   }
@@ -160,6 +171,13 @@ class HostingInfo implements HostingInfoInterface {
   */
   public function getSiteGroup() {
     return $this->siteGroup;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSiteIdentifier() {
+    return $this->siteIdentifier;
   }
 
   /**

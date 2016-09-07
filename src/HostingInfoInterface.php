@@ -40,6 +40,14 @@ interface HostingInfoInterface {
   public function getSiteGroup();
 
   /**
+   * Get a unique identifier for this Acquia site.
+   *
+   * @return string
+   *   Unique string for this Drupal instance, even within multisites!
+   */
+  public function getSiteIdentifier();
+
+  /**
    * Get the Acquia site name.
    *
    * @return string
