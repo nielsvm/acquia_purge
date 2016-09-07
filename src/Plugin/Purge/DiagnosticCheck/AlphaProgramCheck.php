@@ -8,17 +8,17 @@ use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckInterface;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckBase;
 
 /**
- * Acquia Cloud.
+ * Special check for the AP8 Alpha Program (removed later).
  *
  * @PurgeDiagnosticCheck(
- *   id = "acquia_purge_prebeta",
+ *   id = "ap8_alpha_program",
  *   title = @Translation("Acquia Cloud"),
  *   description = @Translation(""),
  *   dependent_queue_plugins = {},
  *   dependent_purger_plugins = {"acquia_purge"}
  * )
  */
-class AlphaProgrammeCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
+class AlphaProgramCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
    * @var \Drupal\Core\Site\Settings
