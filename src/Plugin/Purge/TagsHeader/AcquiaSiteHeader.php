@@ -18,11 +18,6 @@ use Drupal\acquia_purge\HostingInfoInterface;
 class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
 
   /**
-   * @var \Drupal\acquia_purge\HostingInfoInterface
-   */
-  protected $acquia_purge_hostinginfo;
-
-  /**
    * The identifier for this site.
    *
    * @var string
@@ -42,9 +37,8 @@ class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
    *   Provides technical information accessors for Acquia Cloud.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, HostingInfoInterface $acquia_purge_hostinginfo) {
-    $this->acquia_purge_hostinginfo = $acquia_purge_hostinginfo;
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->identifier = $this->acquia_purge_hostinginfo->getSiteIdentifier();
+    $this->identifier = $acquia_purge_hostinginfo->getSiteIdentifier();
   }
 
   /**
