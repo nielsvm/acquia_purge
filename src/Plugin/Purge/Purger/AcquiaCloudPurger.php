@@ -51,7 +51,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->hostingInfo = $acquia_purge_hostinginfo;
   }
@@ -398,11 +398,11 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
 
       default:
         $msg .= "unknown, debugging info (JSON): %debug";
-        $vars['%debug'] = str_replace('curl_', '', json_encode(current((array)$r->attributes)));
+        $vars['%debug'] = str_replace('curl_', '', json_encode(current((array) $r->attributes)));
         break;
     }
     $this->logger->error($msg, $vars);
-    $this->logger->debug("REQHEADERS= %v", ['%v' => json_encode(current((array)$r->headers))]);
+    $this->logger->debug("REQHEADERS= %v", ['%v' => json_encode(current((array) $r->headers))]);
     $this->logger->debug("CONTENT= %v", ['%v' => $r->getContent()]);
   }
 

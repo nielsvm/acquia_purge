@@ -79,7 +79,7 @@ class HostingInfo implements HostingInfoInterface {
     // Call the AH_INFO_FUNCTION and take the keys 'sitename' and 'sitegroup'.
     $function = SELF::AH_INFO_FUNCTION;
     if (function_exists($function)) {
-      if (is_array($info = $function())) {
+      if (is_array($info = $function ())) {
         if (isset($info['environment'])) {
           if (is_string($info['environment']) && $info['environment']) {
             $this->siteEnvironment = $info['environment'];
