@@ -695,9 +695,10 @@ function _acquia_purge_get_capacity_factor() {
     $balancers = count(_acquia_purge_get_balancers());
     $domains = count(_acquia_purge_get_domains());
     $schemes = count(_acquia_purge_get_protocol_schemes());
+    $cloudedge = _acquia_purge_are_we_purging_cloudedge() ? 1 : 0;
 
-    // Multiply all configuration actors with each other.
-    $slowdown_factor = $schemes * $domains * $balancers;
+    // Multiply the amount of HTTP requests being made, and add Cloud Edge's.
+    $slowdown_factor = ($schemes * $domains * $balancers) + $cloudedge;
 
     // When running outside of Acquia Cloud, the factor could become 0 and since
     // we don't need division-by-zero bugs everywhere, we'd make it 1. Module
