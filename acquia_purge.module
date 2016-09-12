@@ -414,9 +414,10 @@ function _acquia_purge_are_we_allowed_to_purge() {
 function _acquia_purge_are_we_purging_cloudedge() {
   static $enabled;
   if (is_null($enabled)) {
-    $mail_not_empty = _acquia_purge_variable('acquia_purge_ce_mail');
-    $key_not_empty = _acquia_purge_variable('acquia_purge_ce_key');
-    $enabled = $mail_not_empty && $mail_not_empty;
+    $mail = _acquia_purge_variable('acquia_purge_ce_mail');
+    $key = _acquia_purge_variable('acquia_purge_ce_key');
+    $zoneid = _acquia_purge_variable('acquia_purge_ce_zoneid');
+    $enabled = $mail && $key && $zoneid;
   }
   return $enabled;
 }
@@ -1623,6 +1624,7 @@ function _acquia_purge_variable($name) {
       'acquia_purge_domains'      => FALSE,
       'acquia_purge_ce_mail'      => '',
       'acquia_purge_ce_key'       => '',
+      'acquia_purge_ce_zoneid'    => '',
       'acquia_purge_sphpskippath' => TRUE,
       'acquia_purge_stripports'   => array(80, 443),
       'acquia_purge_cron'         => FALSE,
