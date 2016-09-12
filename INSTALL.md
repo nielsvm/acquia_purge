@@ -43,9 +43,15 @@ exist as of this version and documented below:
 ║ acquia_purge_domains     ║ FALSE ║ Allows you to control which domains will  ║
 ║                          ║       ║ get purged, see DOMAINS.md                ║
 ║                          ║       ║                                           ║
+
 ║ acquia_purge_ce_email    ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_ce_apikey   ║
+║                          ║       ║                                           ║
+║ acquia_purge_ce_zoneid   ║
+║                          ║       ║                                           ║
+@TODO.
+
 ║                          ║       ║                                           ║
 ║ acquia_purge_sphpskippath║ TRUE  ║ By default, the sites.php domain detection║
 ║                          ║       ║ skips records that do not end on a known  ║
