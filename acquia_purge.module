@@ -1615,6 +1615,8 @@ function _acquia_purge_variable($name) {
     // All default variable values, see INSTALL.md as well for further info.
     $defaults = array(
       'acquia_purge_domains'      => FALSE,
+      'acquia_purge_ce_mail'      => '',
+      'acquia_purge_ce_key'       => '',
       'acquia_purge_sphpskippath' => TRUE,
       'acquia_purge_stripports'   => array(80, 443),
       'acquia_purge_cron'         => FALSE,
