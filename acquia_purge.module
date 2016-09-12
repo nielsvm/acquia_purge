@@ -406,6 +406,22 @@ function _acquia_purge_are_we_allowed_to_purge() {
 }
 
 /**
+ * Determine if the user configured Acquia Cloud Edge support.
+ *
+ * @return true|false
+ *   Boolean TRUE if configured, FALSE if not.
+ */
+function _acquia_purge_are_we_purging_cloudedge() {
+  static $enabled;
+  if (is_null($enabled)) {
+    $mail_not_empty = _acquia_purge_variable('acquia_purge_ce_mail');
+    $key_not_empty = _acquia_purge_variable('acquia_purge_ce_key');
+    $enabled = $mail_not_empty && $mail_not_empty;
+  }
+  return $enabled;
+}
+
+/**
  * Determine if its safe to use memcached based features.
  *
  * @return true|false
