@@ -14,6 +14,7 @@ technical configuration.
 
 **Features:**
 
+* **NEW:** Built-in support for [Acquia Cloud Edge](https://www.acquia.com/nl/products-services/acquia-cloud-edge).
 * Built with editorial people and end-users in mind.
 * On-screen progressbar showing pages being cleared and made public.
 * Turn-key installation for simple content sites.
