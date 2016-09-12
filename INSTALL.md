@@ -37,11 +37,15 @@ attempts to stay as turnkey and zeroconf as possible, the following options
 exist as of this version and documented below:
 
 ```
-╔══════════════════════════╦═══════╦═══════════════════════════════════════════╗
+╔══════════════════════════╦═══════╦═════════════════════════════╗
 ║      $conf setting       ║ Deflt ║               Description                 ║
 ╠══════════════════════════╬═══════╬═══════════════════════════════════════════╣
 ║ acquia_purge_domains     ║ FALSE ║ Allows you to control which domains will  ║
 ║                          ║       ║ get purged, see DOMAINS.md                ║
+║                          ║       ║                                           ║
+║ acquia_purge_ce_email    ║
+║                          ║       ║                                           ║
+║ acquia_purge_ce_apikey   ║
 ║                          ║       ║                                           ║
 ║ acquia_purge_sphpskippath║ TRUE  ║ By default, the sites.php domain detection║
 ║                          ║       ║ skips records that do not end on a known  ║
