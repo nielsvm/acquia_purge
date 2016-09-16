@@ -435,7 +435,7 @@ function _acquia_purge_are_we_using_memcached() {
  *
  * @param string $requests
  *   Unassociative array (list) of simple Stdclass objects with the following
- *   properties: scheme, rtype, server, domain, path, uri, uri_real.
+ *   properties: scheme, method, uri, uri_real (optional).
  *
  * @return array
  *   The given requests array with added properties that describe the result of
@@ -450,6 +450,13 @@ function _acquia_purge_curl($requests) {
     static $curl_multi;
     if (is_null($curl_multi)) {
       $curl_multi = curl_multi_init();
+    }
+  }
+
+  // Validate the incoming objects, to prevent coding errors.
+  foreach ($requests as $r) {
+    if (!isset($r->scheme, $r->uri, $r->method)) {
+      throw new Exception("Not all properties of (scheme, uri, method) exist!");
     }
   }
 
@@ -471,7 +478,7 @@ function _acquia_purge_curl($requests) {
         }
         curl_setopt($rqst->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
         curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
-        curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->rtype);
+        curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->method);
         curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
         curl_setopt($rqst->curl, CURLOPT_RETURNTRANSFER, TRUE);
 
@@ -1476,7 +1483,7 @@ function _acquia_purge_purge($path) {
       foreach (_acquia_purge_get_protocol_schemes() as $scheme) {
         $rqst = new stdClass();
         $rqst->scheme = $scheme;
-        $rqst->rtype = 'PURGE';
+        $rqst->method = 'PURGE';
         $rqst->balancer = $balancer_ip;
         $rqst->domain = $domain;
         $rqst->path = str_replace('//', '/', $base_path . $path);
