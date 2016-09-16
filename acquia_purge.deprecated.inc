@@ -42,6 +42,16 @@ function _acquia_purge_get($name, $get_default = FALSE) {
 }
 
 /**
+ * DEPRECATED: Process the HTTP requests for a single purge.
+ *
+ * @deprecated
+ */
+function _acquia_purge_purge_requests($requests) {
+  _acquia_purge_deprecated('_acquia_purge_curl()');
+  return _acquia_purge_curl($requests);
+}
+
+/**
  * DEPRECATED: Check if the current request path is blacklisted.
  *
  * @deprecated
@@ -177,8 +187,8 @@ function _acquia_purge_queue_processpurge($path) {
  * @deprecated
  */
 function _acquia_purge_queue_processpurge_requests($requests) {
-  _acquia_purge_deprecated('_acquia_purge_purge_requests()');
-  return _acquia_purge_purge_requests($requests);
+  _acquia_purge_deprecated('_acquia_purge_curl()');
+  return _acquia_purge_curl($requests);
 }
 
 /**
