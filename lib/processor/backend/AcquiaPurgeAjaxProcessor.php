@@ -50,7 +50,7 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
    *
    * @var string
    */
-  protected $scriptClient = '/processor/backend/AcquiaPurgeAjaxProcessor.js';
+  protected $jsClient = '/lib/processor/backend/AcquiaPurgeAjaxProcessor.js';
 
   /**
    * {@inheritdoc}
@@ -64,7 +64,7 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
    */
   public function __construct($service) {
     parent::__construct($service);
-    $this->scriptClient = $this->service->modulePath . $this->scriptClient;
+    $this->jsClient = $this->service->modulePath . $this->jsClient;
   }
 
   /**
@@ -300,7 +300,7 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
       // starts hitting /acquia_purge_ajax_processor, which in turn will process
       // a chunk from the queue. With queue locking in place, multiple requests
       // will not do any harm.
-      drupal_add_js($this->scriptClient);
+      drupal_add_js($this->jsClient);
 
       // Although the behavior always loads and works the queue, it doesn't mean
       // its always presented to the user. Print the DSM message when needed.
