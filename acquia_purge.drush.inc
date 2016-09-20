@@ -327,7 +327,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
 
     // Process the maximum amount of paths we can process during runtime.
     printf("\n# %d items left...\n", $service->stats('remaining'));
-    if ($service()->process()) {
+    if ($service->process()) {
       $printed_urls = array();
       foreach ($service->history() as $url) {
         if (!(in_array($url, $printed_urls))) {
