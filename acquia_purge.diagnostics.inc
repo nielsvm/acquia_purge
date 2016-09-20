@@ -728,6 +728,34 @@ function _acquia_purge_get_diagnosis_statedata($t, $hostingInfo) {
 }
 
 /**
+* Report the X-Acquia-Purge header token.
+*
+* @param string $t
+*   Name of the t() function to call.
+* @param AcquiaPurgeHostingInfo $hostingInfo
+*   The hosting info object.
+*
+* @return array
+*   Associative array with the following elements:
+*   - title: The name of the requirement.
+*   - value: The current value (e.g., version, time, level, etc).
+*   - description: The description of the requirement/status.
+*   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+*/
+function _acquia_purge_get_diagnosis_token($t, $hostingInfo) {
+  $test = array(
+    'title' => $t('Authentication Token'),
+    'value' => $hostingInfo->getBalancerToken(),
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
+  );
+  if (trim(empty($hostingInfo->getBalancerToken()))) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t('Empty token configured!');
+  }
+  return $test;
+}
+
+/**
  * Report on the current status of the system.
  *
  * @param string $t
