@@ -27,7 +27,17 @@ function _acquia_purge_deprecated($new) {
 }
 
 /**
- * Retrieve a variable or state data property.
+ * DEPRECATED: Determine whether we are running on Acquia Cloud or not.
+ *
+ * @deprecated
+ */
+function _acquia_purge_are_we_on_acquiacloud() {
+  _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->isThisAcquiaCloud()');
+  return _acquia_purge_service()->hostingInfo()->isThisAcquiaCloud();
+}
+
+/**
+ * DEPRECATED: Retrieve a variable or state data property.
  *
  * @deprecated
  */
@@ -39,6 +49,66 @@ function _acquia_purge_get($name, $get_default = FALSE) {
   catch (Exception $e) {
     return _acquia_purge_service()->state()->get($name)->get();
   }
+}
+
+/**
+ * DEPRECATED: Get a list of bal IP addresses in front of this site.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_balancers() {
+  _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->getBalancerAddresses()');
+  return _acquia_purge_service()->hostingInfo()->getBalancerAddresses();
+}
+
+/**
+ * DEPRECATED: Get a list of defined domains that we can purge for.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_domains() {
+  _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->getDomains()');
+  return _acquia_purge_service()->hostingInfo()->getDomains();
+}
+
+/**
+ * DEPRECATED: Add a domain to the domain list.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_domains_add($domain, array &$domains) {
+  _acquia_purge_deprecated('$domains[] = "new domain";');
+  $domains[] = $domain;
+}
+
+/**
+ * DEPRECATED: Get a list of protocol schemes that will be purged.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_protocol_schemes() {
+  _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->getSchemes()');
+  return _acquia_purge_service()->hostingInfo()->getSchemes();
+}
+
+/**
+ * DEPRECATED: Determine the Acquia site name.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_site_name() {
+  _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->getSiteName()');
+  return _acquia_purge_service()->hostingInfo()->getSiteName();
+}
+
+/**
+ * DEPRECATED: Determine the Acquia site group.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_site_group() {
+  _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->getSiteGroup()');
+  return _acquia_purge_service()->hostingInfo()->getSiteGroup();
 }
 
 /**

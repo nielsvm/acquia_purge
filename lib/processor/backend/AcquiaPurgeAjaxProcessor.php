@@ -184,7 +184,7 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
     }
 
     // Are we running on a Acquia Cloud environment?
-    if (!_acquia_purge_are_we_on_acquiacloud()) {
+    if (!$service->hostingInfo->isThisAcquiaCloud()) {
       return FALSE;
     }
 

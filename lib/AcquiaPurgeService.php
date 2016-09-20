@@ -36,6 +36,13 @@ class AcquiaPurgeService {
   protected $history = array();
 
   /**
+   * The loaded AcquiaPurgeHostingInfo object.
+   *
+   * @var AcquiaPurgeHostingInfo
+   */
+  protected $hostingInfo = NULL;
+
+  /**
    * The loaded AcquiaPurgeProcessorsService object.
    *
    * @var AcquiaPurgeProcessorsService
@@ -215,6 +222,20 @@ class AcquiaPurgeService {
       $this->history[] = $url;
     }
     return $this->history;
+  }
+
+  /**
+   * Retrieve the hosting info object.
+   *
+   * @return AcquiaPurgeHostingInfo
+   *   The hosting info object.
+   */
+  public function hostingInfo() {
+    if (is_null($this->hostingInfo)) {
+      _acquia_purge_load('lib/AcquiaPurgeHostingInfo.php');
+      $this->hostingInfo = new AcquiaPurgeHostingInfo();
+    }
+    return $this->hostingInfo;
   }
 
   /**

@@ -87,6 +87,7 @@ function acquia_purge_autocomplete($string) {
  * UX rich form that lets administrative users purge paths manually.
  */
 function acquia_purge_manualpurge_form_full($form, &$form_state) {
+  $hostingInfo = _acquia_purge_service()->hostingInfo();
 
   // Do not render the full form if error conditions are found.
   if (!_acquia_purge_are_we_allowed_to_purge()) {
@@ -136,7 +137,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
   }
 
   // Build up table rows with domains on the left and examples on the right.
-  $domains = _acquia_purge_get_domains($form, $form_state);
+  $domains = $hostingInfo->getDomains();
   $rows = array();
   $rowsc = count($domains);
   if (count($examples) > count($domains)) {
@@ -156,7 +157,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
   );
 
   // Decorate the textfields and prepend URL's as helpful guide.
-  $schemes = _acquia_purge_get_protocol_schemes();
+  $schemes = $hostingInfo->getSchemes();
   $base_path = _acquia_purge_variable('acquia_purge_base_path');
   $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], $base_path);
   foreach ($form['paths']['path'] as $i => $item) {

@@ -7,7 +7,7 @@
  * Define the full list of TLD's we have to check against to determine if a
  * embedded domain name in '<port>.<domain>.<path>' seems valid for us.
  *
- * @see _acquia_purge_get_domains_add_sitesphp()
+ * @see AcquiaPurgeHostingInfo::domainsAddFromSitesPhp()
  */
 
 // Information has been taken from: http://xaviesteve.com/2094/

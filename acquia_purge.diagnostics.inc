@@ -10,6 +10,8 @@
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -18,11 +20,15 @@
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_acquiacloud($t) {
-  $site = _acquia_purge_get_site_name();
+function _acquia_purge_get_diagnosis_acquiacloud($t, $hostingInfo) {
   $test = array('title' => $t('Hosting environment'));
-  if (_acquia_purge_are_we_on_acquiacloud()) {
-    $test['value'] = $t('Acquia Cloud (@site)', array('@site' => $site));
+  if ($hostingInfo->isThisAcquiaCloud()) {
+    $test['value'] = $t('Acquia Cloud (@name.@env)',
+      array(
+        '@name' => $hostingInfo->getSiteName(),
+        '@env' => $hostingInfo->getSiteEnvironment(),
+      )
+    );
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
   else {
@@ -40,6 +46,8 @@ function _acquia_purge_get_diagnosis_acquiacloud($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -48,11 +56,10 @@ function _acquia_purge_get_diagnosis_acquiacloud($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_balancers($t) {
-  $balancers = _acquia_purge_get_balancers();
-  $balancers_c = count($balancers);
+function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
+  $balancers_c = count($hostingInfo->getBalancerAddresses());
   $test = array(
-    'value' => implode(', ', $balancers),
+    'value' => implode(', ', $hostingInfo->getBalancerAddresses()),
     'title' => $t('Load balancers'),
   );
 
@@ -86,6 +93,8 @@ function _acquia_purge_get_diagnosis_balancers($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -94,7 +103,7 @@ function _acquia_purge_get_diagnosis_balancers($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_conflicts($t) {
+function _acquia_purge_get_diagnosis_conflicts($t, $hostingInfo) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('None'),
@@ -136,6 +145,8 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -144,11 +155,11 @@ function _acquia_purge_get_diagnosis_conflicts($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_domains($t) {
+function _acquia_purge_get_diagnosis_domains($t, $hostingInfo) {
   $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
   $domains_link = drupal_get_path('module', 'acquia_purge') . '/DOMAINS.md';
   $domains_link = url($domains_link);
-  $domains = _acquia_purge_get_domains();
+  $domains = $hostingInfo->getDomains();
   $domains_c = count($domains);
   $test = array(
     'value' => implode(', ', $domains),
@@ -230,6 +241,8 @@ function _acquia_purge_get_diagnosis_domains($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -238,7 +251,7 @@ function _acquia_purge_get_diagnosis_domains($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_expire($t) {
+function _acquia_purge_get_diagnosis_expire($t, $hostingInfo) {
   $test = array('title' => $t('Cache expiration'));
 
   // If the module is disabled, Acquia Purge will still work as API, but warn!
@@ -308,6 +321,8 @@ function _acquia_purge_get_diagnosis_expire($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -316,7 +331,7 @@ function _acquia_purge_get_diagnosis_expire($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_logging($t) {
+function _acquia_purge_get_diagnosis_logging($t, $hostingInfo) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('successes and failures'),
@@ -334,6 +349,8 @@ function _acquia_purge_get_diagnosis_logging($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -342,7 +359,7 @@ function _acquia_purge_get_diagnosis_logging($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_page_cache($t) {
+function _acquia_purge_get_diagnosis_page_cache($t, $hostingInfo) {
   $cache = variable_get('cache', 0);
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
@@ -372,6 +389,8 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -380,7 +399,7 @@ function _acquia_purge_get_diagnosis_page_cache($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_page_cache_age($t) {
+function _acquia_purge_get_diagnosis_page_cache_age($t, $hostingInfo) {
   $age = (int) variable_get('page_cache_maximum_age', 0);
   $test = array('title' => $t('Expiration of cached pages'));
 
@@ -441,6 +460,8 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -449,7 +470,7 @@ function _acquia_purge_get_diagnosis_page_cache_age($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_processing_mode($t) {
+function _acquia_purge_get_diagnosis_processing_mode($t, $hostingInfo) {
   $test = array(
     'title' => $t('Processing mode(s)'),
     'value' => array($t('ajax')),
@@ -487,6 +508,8 @@ function _acquia_purge_get_diagnosis_processing_mode($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -495,7 +518,7 @@ function _acquia_purge_get_diagnosis_processing_mode($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_processing_capacity($t) {
+function _acquia_purge_get_diagnosis_processing_capacity($t, $hostingInfo) {
   $maxitems = _acquia_purge_get_capacity();
   $factor = _acquia_purge_get_capacity_factor();
   $test = array(
@@ -512,6 +535,8 @@ function _acquia_purge_get_diagnosis_processing_capacity($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -520,16 +545,15 @@ function _acquia_purge_get_diagnosis_processing_capacity($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_protocol_schemes($t) {
-  $schemes = _acquia_purge_get_protocol_schemes();
-  $domains = _acquia_purge_get_domains();
+function _acquia_purge_get_diagnosis_protocol_schemes($t, $hostingInfo) {
+  $schemes = $hostingInfo->getSchemes();
   $test = array(
     'title' => $t('Purged schemes'),
     'value' => implode(', ', $schemes),
   );
 
   // Test if no protocol schemes are to be purged.
-  if (in_array('ERROR', $schemes)) {
+  if (empty($schemes)) {
     $test['value'] = $t('None');
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('It seems as if you have put both '
@@ -545,7 +569,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
   }
 
   // Test for the Molotov cocktail scenario, two schemes with >4 domains.
-  elseif ((count($schemes) === 2) && (count($domains) > 4)) {
+  elseif ((count($schemes) === 2) && (count($hostingInfo->getDomains()) > 4)) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('You are purging both <b>http://</b> as'
     . ' <b>https://</b> paths on your site with more than 4 domain names.'
@@ -576,6 +600,8 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -584,7 +610,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_queue_backend($t) {
+function _acquia_purge_get_diagnosis_queue_backend($t, $hostingInfo) {
   $test = array(
     'title' => $t('Queue backend'),
     'value' => t('Database'),
@@ -601,6 +627,8 @@ function _acquia_purge_get_diagnosis_queue_backend($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -609,7 +637,7 @@ function _acquia_purge_get_diagnosis_queue_backend($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_queue_volume($t) {
+function _acquia_purge_get_diagnosis_queue_volume($t, $hostingInfo) {
   $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
   $stats = _acquia_purge_service()->stats();
   $test = array('title' => $t('Queue volume'));
@@ -676,6 +704,8 @@ function _acquia_purge_get_diagnosis_queue_volume($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -684,7 +714,7 @@ function _acquia_purge_get_diagnosis_queue_volume($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_statedata($t) {
+function _acquia_purge_get_diagnosis_statedata($t, $hostingInfo) {
   $test = array(
     'title' => $t('State data location'),
     'value' => ACQUIA_PURGE_STATE_FILE,
@@ -702,6 +732,8 @@ function _acquia_purge_get_diagnosis_statedata($t) {
  *
  * @param string $t
  *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
  *
  * @return array
  *   Associative array with the following elements:
@@ -710,7 +742,7 @@ function _acquia_purge_get_diagnosis_statedata($t) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_status($t) {
+function _acquia_purge_get_diagnosis_status($t, $hostingInfo) {
   $passivemode = _acquia_purge_variable('acquia_purge_passivemode');
   $errorlimit = _acquia_purge_variable('acquia_purge_errorlimit');
   $stats = _acquia_purge_service()->stats();
