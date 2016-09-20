@@ -351,7 +351,7 @@ class AcquiaPurgeService {
    */
   public function processors() {
     if (is_null($this->processors)) {
-      _acquia_purge_load('processor/');
+      _acquia_purge_load('lib/processor/');
       $this->processors = new AcquiaPurgeProcessorsService($this);
     }
     return $this->processors;
@@ -371,11 +371,11 @@ class AcquiaPurgeService {
 
       // Load the configured smart or normal backend.
       if (_acquia_purge_variable('acquia_purge_smartqueue')) {
-        _acquia_purge_load('queue/backend/AcquiaPurgeSmartQueue.php');
+        _acquia_purge_load('lib/queue/backend/AcquiaPurgeSmartQueue.php');
         $this->queue = new AcquiaPurgeSmartQueue($state);
       }
       else {
-        _acquia_purge_load('queue/backend/AcquiaPurgeEfficientQueue.php');
+        _acquia_purge_load('lib/queue/backend/AcquiaPurgeEfficientQueue.php');
         $this->queue = new AcquiaPurgeEfficientQueue($state);
       }
     }
@@ -431,14 +431,14 @@ class AcquiaPurgeService {
     // Initialize the state storage backend.
     if (is_null($this->state)) {
       if (_acquia_purge_are_we_using_memcached()) {
-        _acquia_purge_load('state/backend/AcquiaPurgeMemcachedStateStorage.php');
+        _acquia_purge_load('lib/state/backend/AcquiaPurgeMemcachedStateStorage.php');
         $this->state = new AcquiaPurgeMemcachedStateStorage(
           ACQUIA_PURGE_STATE_MEMKEY,
           ACQUIA_PURGE_STATE_MEMBIN
         );
       }
       else {
-        _acquia_purge_load('state/backend/AcquiaPurgeDiskStateStorage.php');
+        _acquia_purge_load('lib/state/backend/AcquiaPurgeDiskStateStorage.php');
         $this->state = new AcquiaPurgeDiskStateStorage(ACQUIA_PURGE_STATE_FILE);
       }
     }

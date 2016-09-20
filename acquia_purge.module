@@ -1335,7 +1335,7 @@ function _acquia_purge_load($path) {
   // Parse the files[] section from acquia_purge.info.
   static $files;
   if (is_null($files)) {
-    $cache_key = __FUNCTION__ . '_v1';
+    $cache_key = __FUNCTION__ . '_v2';
     if ($cache = cache_get($cache_key)) {
       $files = $cache->data;
     }
@@ -1347,7 +1347,7 @@ function _acquia_purge_load($path) {
     }
   }
 
-  // Maintain the indexea of already loaded files.
+  // Maintain the index of already loaded files.
   static $loaded;
   if (is_null($loaded)) {
     $loaded = array();
@@ -1586,7 +1586,7 @@ function _acquia_purge_purge($path) {
 function _acquia_purge_service() {
   static $service;
   if (is_null($service)) {
-    _acquia_purge_load('AcquiaPurgeService.php');
+    _acquia_purge_load('lib/AcquiaPurgeService.php');
     $service = new AcquiaPurgeService();
   }
   return $service;
