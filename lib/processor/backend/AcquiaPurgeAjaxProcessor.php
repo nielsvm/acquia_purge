@@ -113,7 +113,7 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
       'title' => 'Acquia Purge AJAX processor',
       'page callback' => 'AcquiaPurgeAjaxProcessor::pathCallback',
       'access callback' => 'user_is_logged_in',
-      'file' => 'processor/backend/AcquiaPurgeAjaxProcessor.php',
+      'file' => 'lib/processor/backend/AcquiaPurgeAjaxProcessor.php',
       'type' => MENU_CALLBACK,
     );
   }
