@@ -16,9 +16,9 @@ class AcquiaPurgeProcessorsService {
    * @var string[]
    */
   protected $backends = array(
-    'AcquiaPurgeAjaxProcessor',
-    'AcquiaPurgeCronProcessor',
-    'AcquiaPurgeRuntimeProcessor',
+    'processor_ajax',
+    'processor_cron',
+    'processor_runtime',
   );
 
   /**
@@ -52,7 +52,8 @@ class AcquiaPurgeProcessorsService {
     $this->service = $service;
 
     // Initialize the processors that advertize themselves as enabled.
-    foreach ($this->backends as $class) {
+    foreach ($this->backends as $service) {
+      $class = _acquia_purge_load($service);
       if ($class::isEnabled()) {
         $this->processors[$class] = new $class($this->service);
       }

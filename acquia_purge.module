@@ -982,77 +982,119 @@ function _acquia_purge_input_validate_msgs($msg) {
 }
 
 /**
- * Load PHP files in the order specified in acquia_purge.info.
+ * Load code on which Acquia Purge depends.
+ *
+ * This function is a complex mix of a self-built registry, a class loader and a
+ * service container. It allows us to load our shipped classes with the full
+ * ability for third-party code to smartly overload them (via variables). This
+ * code doesn't conflict with core, nothing runs twice and we cache what we can.
  *
  * Although Drupal takes care of code loading with its registry, we aren't able
- * to rely on it. Since we introduced a OOP core later on, upgrading users can
+ * to rely on it. Since we introduced a OOP core in 7.x-1.3, upgrading users can
  * not be exposed to a situation where their just-upgraded module calls the new
- * stack from _acquia_purge_service() - resulting in 'class not found' errors.
+ * stack and get 'class not found' errors - this all prevents that.
  *
- * This helper effectively parses (and caches) our info file and loads the files
- * specified in it. The order of files is preserved and files get loaded in that
- * order so that no code composition issues can arise.
+ * @param string $dependency
+ *   - Relative or absolute paths (must contain '.' so that they're recognized).
+ *   - Services defined in _acquia_purge_variable(), such as "hostinginfo",
+ *     "processor_runtime" or "queue_smart".
  *
- * This conflicts in no way with registry itself, nothing loads twice.
- *
- * @param string $path
- *   The path to load ('AcquiaPurgeService.php') or a globbed path ('queue/').
- *
+ * @return string
+ *   The name of the class the requested service or file declared.
  * @see acquia_purge.info
  */
-function _acquia_purge_load($path) {
+function _acquia_purge_load($dependency) {
+  $dependency_is_a_service = !(strpos($dependency, '.') !== FALSE);
 
-  // Initialize our module path just once, to avoid doing this many times.
-  static $module_path;
-  if (is_null($module_path)) {
+  // Initialize $path_module.
+  static $path_module;
+  if (is_null($path_module)) {
     require_once DRUPAL_ROOT . '/includes/common.inc';
-    $module_path = drupal_get_path('module', 'acquia_purge');
+    $path_module = drupal_get_path('module', 'acquia_purge');
   }
 
-  // Parse the files[] section from acquia_purge.info.
-  static $files;
-  if (is_null($files)) {
-    $cache_key = __FUNCTION__ . '_v2';
-    if ($cache = cache_get($cache_key)) {
-      $files = $cache->data;
-    }
-    else {
-      $info_path = $module_path . '/acquia_purge.info';
-      $info = drupal_parse_info_file($info_path);
-      $files = $info['files'];
-      cache_set($cache_key, $files);
-    }
-  }
-
-  // Maintain the index of already loaded files.
+  // Initialize $loaded, which indexes the files we've already loaded.
   static $loaded;
   if (is_null($loaded)) {
     $loaded = array();
   }
 
-  // Identify up to which index, we need to load files.
-  $load_up_to_index = FALSE;
-  foreach ($files as $index => $file) {
-    if (strpos($file, $path) === 0) {
-      $load_up_to_index = $index;
+  // Initialize $apcode. This is a small cached registry containing all the
+  // paths (as defined in acquia_purge.info) and the classes they define.
+  static $apcode;
+  if (is_null($apcode)) {
+    $cache_key = __FUNCTION__ . '_v2';
+    if ($cache = cache_get($cache_key)) {
+      $apcode = $cache->data;
+    }
+    else {
+      $info_path = $path_module . '/acquia_purge.info';
+      $info = drupal_parse_info_file($info_path);
+      $apcode = array(
+        'classes' => array(),
+        'paths' => array(),
+      );
+      foreach ($info['files'] as $path) {
+        $class = str_replace('.php', '', basename($path));
+        $apcode['classes'][$class] = count($apcode['paths']);
+        $apcode['paths'][] = $path;
+      }
+      cache_set($cache_key, $apcode);
     }
   }
 
-  // Load all files up to the index or directly attempt to load it.
-  if ($load_up_to_index === FALSE) {
-    require_once $module_path . '/' . $path;
+  // SERVICES: lookup the actual class and file and recurse.
+  if ($dependency_is_a_service) {
+    $variable = '_acquia_purge_' . $dependency;
+    $path = _acquia_purge_variable('_acquia_purge_' . $dependency);
+    if (!(strpos($path, '.') !== FALSE)) {
+      $path_index = $apcode['classes'][$path];
+      $path = $apcode['paths'][$path_index];
+    }
+    if (!(strpos($path, '.') !== FALSE)) {
+      throw new LogicException("$variable doesn't point to a class known to AP or a file on disk.");
+    }
+    return _acquia_purge_load($path);
   }
-  else {
-    foreach ($files as $index => $file) {
-      if (in_array($index, $loaded)) {
-        continue;
-      }
-      if ($index <= $load_up_to_index) {
-        require_once $module_path . '/' . $file;
-        $loaded[] = $index;
+
+  // PATHS WITH lib/: extend path and preload dependencies by recursing.
+  elseif (strpos($dependency, 'lib/') === 0) {
+    $dependency = $path_module . '/' . $dependency;
+
+    // The files in acquia_purge.info are ordered by dependency order, so we
+    // always load files defined prior to our dependency.
+    $load_up_to_index = FALSE;
+    foreach ($apcode['paths'] as $index => $path) {
+      $path = $path_module . '/' . $path;
+      if (strpos($dependency, $path) === 0) {
+        $load_up_to_index = $index;
       }
     }
+    if ($load_up_to_index) {
+      foreach ($apcode['paths'] as $index => $path) {
+        $path = $path_module . '/' . $path;
+        if (in_array($path, $loaded)) {
+          continue;
+        }
+        if ($index < $load_up_to_index) {
+          _acquia_purge_load($path);
+        }
+      }
+    }
+
+    return _acquia_purge_load($dependency);
   }
+
+  // Load a simple path.
+  else {
+    if (!in_array($dependency, $loaded)) {
+      $loaded[] = $dependency;
+      require_once $dependency;
+    }
+    // Return the classname which to help instantiating it.
+    return str_replace('.php', '', basename($dependency));
+  }
+
 }
 
 /**
@@ -1255,8 +1297,8 @@ function _acquia_purge_purge($path) {
 function _acquia_purge_service() {
   static $service;
   if (is_null($service)) {
-    _acquia_purge_load('lib/AcquiaPurgeService.php');
-    $service = new AcquiaPurgeService();
+    $class = _acquia_purge_load('service');
+    $service = new $class();
   }
   return $service;
 }
@@ -1301,6 +1343,21 @@ function _acquia_purge_variable($name) {
       'acquia_purge_silentmode'   => FALSE,
       'acquia_purge_allriskmode'  => FALSE,
       'acquia_purge_smartqueue'   => FALSE,
+      // Define DIC-like "service" variables that third-party code can override
+      // to replace the code that _acquia_purge_load() loads. Override with a
+      // relative path, which must contain the class name in the path.
+      '_acquia_purge_service' => 'AcquiaPurgeService',
+      '_acquia_purge_hostinginfo' => 'AcquiaPurgeHostingInfo',
+      '_acquia_purge_processor' => 'AcquiaPurgeProcessorsService',
+      '_acquia_purge_processor_ajax' => 'AcquiaPurgeAjaxProcessor',
+      '_acquia_purge_processor_cron' => 'AcquiaPurgeCronProcessor',
+      '_acquia_purge_processor_runtime' => 'AcquiaPurgeRuntimeProcessor',
+      '_acquia_purge_state_item' => 'AcquiaPurgeStateItem',
+      '_acquia_purge_state_counter' => 'AcquiaPurgeStateCounter',
+      '_acquia_purge_state_disk' => 'AcquiaPurgeDiskStateStorage',
+      '_acquia_purge_state_memcached' => 'AcquiaPurgeMemcachedStateStorage',
+      '_acquia_purge_queue_efficient' => 'AcquiaPurgeEfficientQueue',
+      '_acquia_purge_queue_smart' => 'AcquiaPurgeSmartQueue',
     );
   }
 
