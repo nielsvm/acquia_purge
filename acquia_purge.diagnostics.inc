@@ -748,7 +748,7 @@ function _acquia_purge_get_diagnosis_token($t, $hostingInfo) {
     'value' => $hostingInfo->getBalancerToken(),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
-  if (trim(empty($hostingInfo->getBalancerToken()))) {
+  if (!strlen($hostingInfo->getBalancerToken())) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Empty token configured!');
   }
