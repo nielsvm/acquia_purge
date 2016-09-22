@@ -1356,7 +1356,8 @@ function _acquia_purge_variable($name) {
       // relative path, which must contain the class name in the path.
       '_acquia_purge_service' => 'AcquiaPurgeService',
       '_acquia_purge_hostinginfo' => 'AcquiaPurgeHostingInfo',
-      '_acquia_purge_processor' => 'AcquiaPurgeProcessorsService',
+      '_acquia_purge_processors' => 'AcquiaPurgeProcessorsService',
+      '_acquia_purge_processor_base' => 'AcquiaPurgeProcessorBase',
       '_acquia_purge_processor_ajax' => 'AcquiaPurgeAjaxProcessor',
       '_acquia_purge_processor_cron' => 'AcquiaPurgeCronProcessor',
       '_acquia_purge_processor_runtime' => 'AcquiaPurgeRuntimeProcessor',

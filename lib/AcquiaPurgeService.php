@@ -372,7 +372,8 @@ class AcquiaPurgeService {
    */
   public function processors() {
     if (is_null($this->processors)) {
-      $class = _acquia_purge_load('processor');
+      _acquia_purge_load('processor_base');
+      $class = _acquia_purge_load('processors');
       $this->processors = new $class($this);
     }
     return $this->processors;
