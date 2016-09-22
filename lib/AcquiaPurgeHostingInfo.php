@@ -91,7 +91,6 @@ class AcquiaPurgeHostingInfo {
       }
     }
     $this->balancerToken = $this->siteName;
-    $this->balancerToken = '';
     if ($token_configured = _acquia_purge_variable('acquia_purge_token')) {
       $this->balancerToken = (string) trim($token_configured);
     }

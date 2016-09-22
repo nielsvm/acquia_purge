@@ -184,7 +184,7 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
     }
 
     // Are we running on a Acquia Cloud environment?
-    if (!$service->hostingInfo->isThisAcquiaCloud()) {
+    if (!$service->hostingInfo()->isThisAcquiaCloud()) {
       return FALSE;
     }
 
@@ -231,7 +231,6 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
       $stats['running'] = FALSE;
       return drupal_json_output($stats);
     }
-
     // Test for blocking diagnostic issues and report any if found.
     if (!_acquia_purge_are_we_allowed_to_purge()) {
       $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
