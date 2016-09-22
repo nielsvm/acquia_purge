@@ -91,6 +91,27 @@ function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
       . ' attention to the number of items in the queue table.',
       array('@no' => $balancers_c));
   }
+  elseif (in_array('geoip', $oddities)) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t(
+      'The HTTP_X_GEO_COUNTRY variable has been detected, which indicates'
+      . ' that you have GeoIP enabled. If AP appears to function, but your'
+      . " URLs' remain outdated, this is likely the reason why. For the time"
+      . " being, the ideal scenario is to use Maxmind's javascript client"
+      . ' library and redirect your visitors to country-varied pages, see:'
+      . ' https://docs.acquia.com/cloud/configure/geoip'
+    );
+  }
+  elseif (in_array('403', $oddities)) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t(
+        'Acquia Purge received HTTP 403 (forbidden) responses from one of your'
+      . ' load balancers, this is abnormal behavior! This suggests that you are'
+      . ' running a customized VCL configuration which likely hinders the'
+      . ' proper functioning of this module. Please contact Acquia support with'
+      . ' this message to get further guidance on how to resolve the problem.'
+    );
+  }
   else {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
   }
@@ -752,12 +773,22 @@ function _acquia_purge_get_diagnosis_statedata($t, $hostingInfo) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_token($t, $hostingInfo) {
+  $oddities = _acquia_purge_service()->vclOddities();
   $test = array(
     'title' => $t('Authentication Token'),
     'value' => $hostingInfo->getBalancerToken(),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
-  if (!strlen($hostingInfo->getBalancerToken())) {
+  if (in_array('405', $oddities)) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t(
+      'Acquia Purge received HTTP 405 (not allowed) responses from one of'
+      . ' your load balancers! What this suggests is that your authentication'
+      . ' token is (or has been) invalid. If purging constantly appears to'
+      . ' fail, please contact Acquia support.'
+    );
+  }
+  elseif (!strlen($hostingInfo->getBalancerToken())) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
     $test['description'] = $t('Empty token configured!');
   }
