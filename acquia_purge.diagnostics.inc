@@ -57,13 +57,22 @@ function _acquia_purge_get_diagnosis_acquiacloud($t, $hostingInfo) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
-  $balancers_c = count($hostingInfo->getBalancerAddresses());
+  $service = _acquia_purge_service();
   $test = array(
     'value' => implode(', ', $hostingInfo->getBalancerAddresses()),
     'title' => $t('Load balancers'),
   );
 
-  // Determine whether the amount of load balancers is healthy.
+  // When HTTP_X_GEO_COUNTRY is detected, register it as VCL oddity.
+  if (isset($_SERVER['HTTP_X_GEO_COUNTRY'])) {
+    if (strlen($_SERVER['HTTP_X_GEO_COUNTRY'])) {
+      $service->vclOddities('geoip');
+    }
+  }
+
+  // Evaluate the sanity of the amount of load balancers.
+  $oddities = $service->vclOddities();
+  $balancers_c = count($hostingInfo->getBalancerAddresses());
   if (!$balancers_c) {
     $test['value'] = $t('No load balancers detected.');
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;

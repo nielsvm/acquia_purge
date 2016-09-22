@@ -1224,11 +1224,19 @@ function _acquia_purge_purge($path) {
   $overall_success = TRUE;
   foreach (_acquia_purge_curl($requests) as $rqst) {
 
-    // Curl hasn't proven to be always as reliable when it comes to result
-    // reporting, and therefore we enforce success whenever the HTTP codes
-    // are 200 or 404, which is Varnish-talk for 'things are good my friend'.
+    // HTTP response codes 404 and 200 should be evaluated as successful. A 404
+    // simply means "object not in cache" and 200's confirm that it got deleted.
     if (in_array($rqst->error_http, array(404, 200))) {
       $rqst->result = TRUE;
+    }
+
+    // HTTP response codes 403 (forbidden) and 405 (not allowed) should always
+    // be evaluated as failures. In addition to just that, these behaviors are
+    // also highly suspcious as they shouldn't happen with Acquia's default VCL,
+    // so we're also registering them with ::vclOddities() for diagnostics.
+    if (in_array($rqst->error_http, array(403, 405))) {
+      $service->vclOddities((string) $rqst->error_http);
+      $rqst->result = FALSE;
     }
 
     if ($rqst->result == TRUE) {
