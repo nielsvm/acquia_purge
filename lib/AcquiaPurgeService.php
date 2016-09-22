@@ -500,4 +500,26 @@ class AcquiaPurgeService {
     return is_null($key) ? $info : $info[$key];
   }
 
+  /**
+   * Keep track of detected issues in the upstream VCL deployed on Acquia Cloud.
+   *
+   * @param null|string $add_oddity
+   *   (optional) When passed, it registers the parameter as detected behavioral
+   *   oddity. For example: 403's are not normal and indicate a custom VCL.
+   *
+   * @return string[]
+   *   The list of known oddities.
+   */
+  public function vclOddities($add_oddity = NULL) {
+    $state_item = $this->state()->get('vcl_oddities', array());
+    if (!is_null($add_oddity)) {
+      $oddities = $state_item->get();
+      if (!in_array($add_oddity, $oddities)) {
+        $oddities[] = $add_oddity;
+        $state_item->set($oddities);
+      }
+    }
+    return $state_item->get();
+  }
+
 }
