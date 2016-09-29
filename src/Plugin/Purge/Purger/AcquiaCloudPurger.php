@@ -264,8 +264,35 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     // Collect tags and set all states to PROCESSING before we kick off.
     $tags = [];
     foreach ($invalidations as $invalidation) {
-      $invalidation->setState(InvalidationInterface::PROCESSING);
-      $tags[] = $invalidation->getExpression();
+      $expression = $invalidation->getExpression();
+
+      // Detect tags with the "|" character in it. Officially this character is
+      // not forbidden to be used in tags, but is likely going to cause issues
+      // for Varnish based implementations. Therefore we explicitly forbid this
+      // practice and log about it as well.
+      if (strpos($expression, '|') !== FALSE) {
+        $invalidation->setState(InvalidationInterface::FAILED);
+        $this->logger->error(
+          "The tag '%tag' contains the | sign, which is a explicitly forbidden practice, this character causes"
+          . " problems for Varnish based invalidation implementations. Please file an issue against the module"
+          . " that generated it or a core issue if it comes from Drupal itself.",
+          [
+            '%tag' => $expression,
+          ]
+        );
+      }
+      else {
+        $invalidation->setState(InvalidationInterface::PROCESSING);
+        $tags[] = $expression;
+      }
+    }
+
+    // Test if we have at least one tag to purge, if not, bail.
+    if (!count($tags)) {
+      foreach ($invalidations as $invalidation) {
+        $invalidation->setState(InvalidationInterface::FAILED);
+      }
+      return;
     }
     $tags_string = implode('|', $tags);
 
@@ -307,11 +334,13 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
 
     // Set the object states according to our overall result.
     foreach ($invalidations as $invalidation) {
-      if ($overall_success) {
-        $invalidation->setState(InvalidationInterface::SUCCEEDED);
-      }
-      else {
-        $invalidation->setState(InvalidationInterface::FAILED);
+      if ($invalidation->getState() === InvalidationInterface::PROCESSING) {
+        if ($overall_success) {
+          $invalidation->setState(InvalidationInterface::SUCCEEDED);
+        }
+        else {
+          $invalidation->setState(InvalidationInterface::FAILED);
+        }
       }
     }
 
