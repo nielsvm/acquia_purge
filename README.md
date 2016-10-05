@@ -52,3 +52,21 @@ mention its about Acquia Purge.
 * [**INSTALL.md**](http://cgit.drupalcode.org/acquia_purge/plain/INSTALL.md?h=7.x-1.x)
 * [**DOMAINS.md**](http://cgit.drupalcode.org/acquia_purge/plain/DOMAINS.md?h=7.x-1.x)
 * [**FAQ.md**](http://cgit.drupalcode.org/acquia_purge/plain/FAQ.md?h=7.x-1.x)
+
+## Scenario specific advice
+If any of the following scenarios apply to your configuration, please continue reading.
+
+#### Your Acquia Load balancers run a customized VCL
+Officially, this module **does not support** customized VCL configurations. It is hard to support these customizations because they vary widely and having various different code paths within Acquia Purge itself, is a big risks for its general use case. If you however do require one, make sure to not overload ``vcl_hash``, any of the PURGE routines within ``vcl_recv`` and ``vcl_hit``. Sites with whitelist customizations need to explicitly hardcode their webservers internal IP addresses in order to make it technically work.
+
+#### We use Acquia's GeoIP feature
+This feature is currently incompatible with Acquia Purge and was - until recently - not detectable through general usage. For the time being, the ideal scenario is to serve static pages and use Maxmind's javascript client library and redirect your visitors to country-varied pages. Please see: https://docs.acquia.com/cloud/configure/geoip.
+
+#### Single database, more than 6 domains
+Acquia Purge calculates URLs for each domain your site is served on and this is resource-intensive. To prevent your Drupal site from killing itself, the module disables itself when more than 6 domains are configured. You can serve on as many domains as you want, but what we recommend is to ``.htaccess``-redirect everything onto just 1 domain name so that the amount of cached entries are kept to a minimum. This then allows you to set ``$conf['acquia_purge_domains']`` for a single domain and have both high cache efficiency and a low usage footprint on your load balancers.
+
+#### Multiple databases, many domains (multi-site, domain access)
+It actually depends whether this scenario is going to work for you, mainly on how many domains are serving a single database. In all cases, you will likely need to create a single ``settings.php`` file for each connecting database, and set ``$conf['acquia_purge_domains']`` with the domains that database serves. Alternatively, you can utilize reversed parsing of ``sites/sites.php`` but this might be complexer than maintaining configuration overrides. If a single site has more than 6 domain names associated to it, the same advice applies as here above: you will need to redirect traffic onto one (or <6) domains.
+
+#### Acquia Cloud Site Factory
+This scenario is a cousin of a multi-site configuration, and is supported as long as the individual ACFS site has less than 6 domain names associated to it. In any case, you will need to hardcode the domain name for the site using ``$conf['acquia_purge_domains']``.
