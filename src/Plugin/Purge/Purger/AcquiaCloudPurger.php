@@ -297,18 +297,10 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     $requests = [];
     $site_identifier = $this->hostingInfo->getSiteIdentifier();
     foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-      if (count($tags) === 1) {
-        $r = Request::create("http://$ip_address/tag", 'BAN');
-        $this->disableTrustedHostsMechanism($r);
-        $r->headers->set('X-Acquia-Purge', $site_identifier);
-        $r->headers->set('X-Acquia-Purge-Tag', $tags_string);
-      }
-      else {
-        $r = Request::create("http://$ip_address/tags", 'BAN');
-        $this->disableTrustedHostsMechanism($r);
-        $r->headers->set('X-Acquia-Purge', $site_identifier);
-        $r->headers->set('X-Acquia-Purge-Tags', $tags_string);
-      }
+      $r = Request::create("http://$ip_address/tags", 'BAN');
+      $this->disableTrustedHostsMechanism($r);
+      $r->headers->set('X-Acquia-Purge', $site_identifier);
+      $r->headers->set('X-Acquia-Purge-Tags', $tags_string);
       $r->headers->remove('Accept-Language');
       $r->headers->remove('Accept-Charset');
       $r->headers->remove('Accept');
