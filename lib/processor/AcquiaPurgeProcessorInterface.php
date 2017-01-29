@@ -11,7 +11,7 @@
 interface AcquiaPurgeProcessorInterface {
 
   /**
-   * Determine if the processor considers itself enabled.
+   * Determine if the processor is enabled or not.
    */
   public static function isEnabled();
 

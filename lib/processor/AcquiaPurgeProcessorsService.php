@@ -51,6 +51,9 @@ class AcquiaPurgeProcessorsService {
   public function __construct(AcquiaPurgeService $service) {
     $this->service = $service;
 
+    // Make sure the base class is available in case it gets referenced.
+    _acquia_purge_load('processor_base');
+
     // Initialize the processors that advertize themselves as enabled.
     foreach ($this->backends as $service) {
       $class = _acquia_purge_load($service);
