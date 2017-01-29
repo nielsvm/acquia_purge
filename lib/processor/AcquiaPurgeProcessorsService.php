@@ -16,9 +16,9 @@ class AcquiaPurgeProcessorsService {
    * @var string[]
    */
   protected $backends = array(
-    'processor_ajax',
-    'processor_cron',
-    'processor_runtime',
+    '_acquia_purge_processor_ajax',
+    '_acquia_purge_processor_cron',
+    '_acquia_purge_processor_runtime',
   );
 
   /**
@@ -50,9 +50,8 @@ class AcquiaPurgeProcessorsService {
    */
   public function __construct(AcquiaPurgeService $service) {
     $this->service = $service;
-
-    // Make sure the base class is available in case it gets referenced.
-    _acquia_purge_load('processor_base');
+    _acquia_purge_load('_acquia_purge_processor_interface');
+    _acquia_purge_load('_acquia_purge_processor_base');
 
     // Initialize the processors that advertize themselves as enabled.
     foreach ($this->backends as $service) {

@@ -232,7 +232,7 @@ class AcquiaPurgeService {
    */
   public function hostingInfo() {
     if (is_null($this->hostingInfo)) {
-      $class = _acquia_purge_load('hostinginfo');
+      $class = _acquia_purge_load('_acquia_purge_hosting_info');
       $this->hostingInfo = new $class();
     }
     return $this->hostingInfo;
@@ -372,8 +372,7 @@ class AcquiaPurgeService {
    */
   public function processors() {
     if (is_null($this->processors)) {
-      _acquia_purge_load('processor_base');
-      $class = _acquia_purge_load('processors');
+      $class = _acquia_purge_load('_acquia_purge_processors');
       $this->processors = new $class($this);
     }
     return $this->processors;
@@ -392,12 +391,13 @@ class AcquiaPurgeService {
       $state = $this->state();
 
       // Load the configured smart or normal backend.
+      _acquia_purge_load('_acquia_purge_queue_interface');
       if (_acquia_purge_variable('acquia_purge_smartqueue')) {
-        $class = _acquia_purge_load('queue_smart');
+        $class = _acquia_purge_load('_acquia_purge_queue_smart');
         $this->queue = new $class($state);
       }
       else {
-        $class = _acquia_purge_load('queue_efficient');
+        $class = _acquia_purge_load('_acquia_purge_queue_efficient');
         $this->queue = new $class($state);
       }
     }
@@ -452,15 +452,17 @@ class AcquiaPurgeService {
 
     // Initialize the state storage backend.
     if (is_null($this->state)) {
+      _acquia_purge_load('_acquia_purge_state_storage_interface');
+      _acquia_purge_load('_acquia_purge_state_storage_base');
       if (_acquia_purge_are_we_using_memcached()) {
-        $class = _acquia_purge_load('state_memcached');
+        $class = _acquia_purge_load('_acquia_purge_state_storage_memcache');
         $this->state = new $class(
           ACQUIA_PURGE_STATE_MEMKEY,
           ACQUIA_PURGE_STATE_MEMBIN
         );
       }
       else {
-        $class = _acquia_purge_load('state_disk');
+        $class = _acquia_purge_load('_acquia_purge_state_storage_disk');
         $this->state = new $class(ACQUIA_PURGE_STATE_FILE);
       }
     }

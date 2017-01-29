@@ -16,8 +16,8 @@ class AcquiaPurgeExecutorsService {
    * @var string[]
    */
   protected $backends = array(
-    'executor_ah',
-    'executor_pagecache',
+    '_acquia_purge_executor_ah',
+    '_acquia_purge_executor_page_cache',
   );
 
   /**
@@ -42,9 +42,8 @@ class AcquiaPurgeExecutorsService {
    */
   public function __construct(AcquiaPurgeService $service) {
     $this->service = $service;
-
-    // Make sure the base class is available in case it gets referenced.
-    _acquia_purge_load('executor_base');
+    _acquia_purge_load('_acquia_purge_executor_interface');
+    _acquia_purge_load('_acquia_purge_executor_base');
 
     // Initialize the executors that advertize themselves as enabled.
     foreach ($this->backends as $service) {
