@@ -12,7 +12,7 @@
  * attempt to reduce database communication as much as possible. By bundling
  * items into single queries, total queries and roundtrips reduce drastically!
  */
-class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueInterface {
+class AcquiaPurgeQueueEfficient extends SystemQueue implements AcquiaPurgeQueueInterface {
 
   /**
    * The state storage which holds the counter state items.
@@ -22,7 +22,7 @@ class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueI
   protected $state;
 
   /**
-   * Construct a AcquiaPurgeEfficientQueue instance.
+   * Construct a AcquiaPurgeQueueEfficient instance.
    *
    * @param AcquiaPurgeStateStorageInterface $state
    *   The state storage required for the queue counters.

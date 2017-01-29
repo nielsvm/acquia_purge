@@ -127,10 +127,10 @@ function _acquia_purge_purge_requests($requests) {
  * @deprecated
  */
 function _acquia_purge_ui_path_blacklisted() {
-  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::isPathBlacklisted()');
+  _acquia_purge_deprecated('AcquiaPurgeProcessorAjax::isPathBlacklisted()');
   return _acquia_purge_service()
     ->processors()
-    ->get('AcquiaPurgeAjaxProcessor')
+    ->get('AcquiaPurgeProcessorAjax')
     ->isPathBlacklisted();
 }
 
@@ -140,9 +140,9 @@ function _acquia_purge_ui_path_blacklisted() {
  * @deprecated
  */
 function _acquia_purge_ui_trigger_purge() {
-  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::initializeClientSideProcessor()');
+  _acquia_purge_deprecated('AcquiaPurgeProcessorAjax::initializeClientSideProcessor()');
   // Call onInit, which will call initializeClientSideProcessor when it should.
-  _acquia_purge_service()->processors()->get('AcquiaPurgeAjaxProcessor')->onInit();
+  _acquia_purge_service()->processors()->get('AcquiaPurgeProcessorAjax')->onInit();
 }
 
 /**
@@ -206,10 +206,10 @@ function _acquia_purge_queue_history($url = NULL) {
  * @deprecated
  */
 function _acquia_purge_queue_is_user_purging() {
-  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::isUserOwningTheQueue()');
+  _acquia_purge_deprecated('AcquiaPurgeProcessorAjax::isUserOwningTheQueue()');
   // Since ::isUserOwningTheQueue is static, call it through a small loophole.
   $service = _acquia_purge_service();
-  $ajaxprocessor = $service->processors()->get('AcquiaPurgeAjaxProcessor');
+  $ajaxprocessor = $service->processors()->get('AcquiaPurgeProcessorAjax');
   return $ajaxprocessor::isUserOwningTheQueue($service);
 }
 
