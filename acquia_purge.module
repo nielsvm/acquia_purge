@@ -1317,7 +1317,7 @@ function _acquia_purge_purge($path) {
 function _acquia_purge_registry() {
   static $registry;
   if (is_null($registry)) {
-    $cache_key = __FUNCTION__ . '_v2';
+    $cache_key = __FUNCTION__ . '_v1';
     if ($cache = cache_get($cache_key)) {
       $registry = $cache->data;
     }
