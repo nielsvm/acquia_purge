@@ -22,6 +22,13 @@ class AcquiaPurgeService {
   public $modulePath;
 
   /**
+   * Drupal's base path (or the one Acquia Purge is told to clear).
+   *
+   * @var string
+   */
+  private $basePath;
+
+  /**
    * Deduplication lists.
    *
    * @var array[]
@@ -75,6 +82,12 @@ class AcquiaPurgeService {
    */
   public function __construct() {
     $this->modulePath = drupal_get_path('module', 'acquia_purge');
+
+    // Set and normalize the base path so that it doesn't cause any trouble.
+    $this->basePath = _acquia_purge_variable('acquia_purge_base_path');
+    if ($base_path !== '/') {
+      $this->basePath = '/' . trim(trim($this->basePath, '//'), '/') . '/';
+    }
   }
 
   /**
@@ -314,20 +327,11 @@ class AcquiaPurgeService {
   /**
    * Process as many items from the queue as the runtime capacity allows.
    *
-   * @param string $callback
-   *   (optional) A PHP callable that processes one queue item, which will get
-   *   called with call_user_func_array(). The callback MUST return TRUE on
-   *   success and FALSE when it failed so queue items can get released/deleted.
-   *
-   *   The $callback is committed to processing the item. Crashes during the
-   *   callback's execution, will result in a claimed queue item not getting
-   *   processed until it expired.
-   *
    * @return bool
    *   Returns TRUE when it processed items, FALSE when the capacity limit has
    *   been reached or when the queue is empty and there's nothing left to do.
    */
-  public function process($callback = '_acquia_purge_purge') {
+  public function process() {
 
     // Do not even attempt to process when the total counter is zero.
     if ($this->queue()->total()->get() === 0) {
@@ -340,32 +344,65 @@ class AcquiaPurgeService {
       return FALSE;
     }
 
+    // Ask the diagnostic subsystem to identify ACQUIA_PURGE_SEVLEVEL_ERROR
+    // level severities, which mandate processing to stop and log the problem.
+    if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+      _acquia_purge_get_diagnosis_logged($e);
+      return FALSE;
+    }
+
     // Claim a number of items we can maximally process during request lifetime.
-    if (!($claims = $this->queue()->claimItemMultiple($maxitems))) {
+    if (!($queue_items = $this->queue()->claimItemMultiple($maxitems))) {
       $this->state()->wipe();
       return FALSE;
     }
 
-    // Process the claims and let the queue delete/release them.
-    $deletes = $releases = array();
-    foreach ($queue_items as $queue_item) {
-      if ($this->deduplicate($queue_item->getPath(), 'purged')) {
-        $deletes[] = $queue_item;
+    // Setup the $succeeded and $failed lists and fill $invalidations. Make sure
+    // that already processed paths are immediately dismissed.
+    $succeeded = $failed = $invalidations = array();
+    foreach ($queue_items as $i => $item) {
+      if ($this->deduplicate($item->getPath(), 'purged')) {
+        $succeeded[] = $item;
+        unset($queue_items[$i]);
         continue;
       }
-      if (call_user_func_array($callback, $queue_item->data)) {
-        $this->deduplicate($queue_item->getPath(), 'purged');
-        $deletes[] = $queue_item;
-      }
-      else {
-        $releases[] = $claim;
+      foreach ($this->hostingInfo()->getSchemes() as $s) {
+        foreach ($this->hostingInfo()->getDomains() as $d) {
+          $invalidations[] = $item->getInvalidation($s, $d, $this->basePath);
+        }
       }
     }
-    $this->queue()->deleteItemMultiple($deletes);
-    $this->queue()->releaseItemMultiple($releases);
+
+    // Iterate each executor and feed the invalidations to all of them.
+    foreach ($this->executors() as $executor) {
+      $executor_id = $executor->getId();
+      foreach ($invalidations as $i) {
+        $i->setStatusContext($executor_id);
+      }
+      $executor->invalidate($invalidations);
+    }
+
+    // Put each and every invalidation back into general context.
+    foreach ($invalidations as $i) {
+      $i->setStatusContext(NULL);
+    }
+
+    // In reality, $invalidation::setStatus() has kept the statuses on the queue
+    // item, so we can now use ::getStatusBoolean() to delete/release items.
+    foreach ($queue_items as $item) {
+      if ($item->getStatusBoolean() === TRUE) {
+        $this->deduplicate($item->getPath(), 'purged');
+        $succeeded[] = $item;
+      }
+      else {
+        $failed[] = $item;
+      }
+    }
+    $this->queue()->deleteItemMultiple($succeeded);
+    $this->queue()->releaseItemMultiple($failed);
 
     // Adjust the remaining capacity downwards for future ::process() calls.
-    _acquia_purge_get_capacity(count($deletes) + count($releases));
+    _acquia_purge_get_capacity(count($succeeded) + count($failed));
 
     // When the bottom of the queue has been reached, reset all state data.
     if ($this->queue()->numberOfItems() === 0) {
