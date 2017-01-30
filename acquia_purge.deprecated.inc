@@ -17,11 +17,15 @@
  *
  * @param string $new
  *   Suggested code replacement.
+ * @param string|null $caller
+ *   Caller that is deprecated, leave NULL for automatic backtrace lookup.
  */
-function _acquia_purge_deprecated($new) {
+function _acquia_purge_deprecated($new, $caller = NULL) {
   $msg = "!old() is deprecated, port your code to !new immediately!";
   $backtrace = debug_backtrace();
-  $caller = $backtrace[1]['function'];
+  if ($caller == NULL) {
+    $caller = $backtrace[1]['function'];
+  }
   $replacements = array('!old' => $caller, '!new' => $new);
   watchdog('acquia_purge', $msg, $replacements, WATCHDOG_WARNING);
 }
