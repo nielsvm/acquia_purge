@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Contains AcquiaPurgeExecutorPageCache.
+ */
+
+/**
+ * Executor that pre-clears URLs from Drupal's page cache.
+ */
+class AcquiaPurgeExecutorPageCache extends AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function isEnabled() {
+    return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function invalidate($invalidations) {
+    foreach ($invalidations as $invalidation) {
+      $invalidation->setStatusSucceeded();
+    }
+  }
+
+}
