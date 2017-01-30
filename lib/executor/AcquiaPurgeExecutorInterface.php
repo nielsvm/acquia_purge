@@ -6,73 +6,51 @@
  */
 
 /**
- * Describes an executor, which executes a set of path purges.
+ * Describes an executor, which is responsible for taking a set of invalidation
+ * objects and wiping these paths/URLs from an external cache.
  */
 interface AcquiaPurgeExecutorInterface {
 
   /**
-  * Determine if the executor is enabled or not.
-  */
-  public static function isEnabled();
-
-  /**
-   * Construct a executor object.
+   * Construct an executor object.
    *
    * @param AcquiaPurgeService $service
-   *   The Acquia Purge service instance.
+   *   The Acquia Purge service.
    */
   public function __construct(AcquiaPurgeService $service);
 
   /**
-   * Claims multiple items from the queue for processing.
+   * Get a unique identifier for this executor.
    *
-   * @param string $scheme
-   *   The requested scheme to be invalidated: 'http' or 'https'.
-   * @param string $domain
-   *   The domain name to clear the path on, e.g. "foo.com" or "bar.baz".
-   * @param string $path
-   *   The path to wipe, e.g. 'user/1?destination=foo' or 'news/*'.
-   *
-   * @return array
-   *   On success we return a non-associative array with item objects. When the
-   *   queue has no items that can be claimed, this doesn't return FALSE as
-   *   claimItem() does, but an empty array instead.
-   *
-   *   If claims return, the objects have at least these properties:
-   *   - data: the same as what what passed into createItem().
-   *   - item_id: the unique ID returned from createItem().
-   *   - created: timestamp when the item was put into the queue.
+   * @return string
    */
-  public function getRequests($scheme, $domain, $path);
+  public function getId();
 
   /**
-   * Claims multiple items from the queue for processing.
+   * Invalidate one or multiple paths from an external layer.
    *
-   * @param int $claims
-   *   Determines how many claims at once should be claimed from the queue. When
-   *   the queue is unable to return as many items as requested it will return
-   *   as much items as it can.
-   * @param int $lease_time
-   *   How long the processing is expected to take in seconds, defaults to an
-   *   hour. After this lease expires, the item will be reset and another
-   *   consumer can claim the item. For idempotent tasks (which can be run
-   *   multiple times without side effects), shorter lease times would result
-   *   in lower latency in case a consumer fails. For tasks that should not be
-   *   run more than once (non-idempotent), a larger lease time will make it
-   *   more rare for a given task to run multiple times in cases of failure,
-   *   at the cost of higher latency.
+   * This method is responsible for clearing all the given invalidation objects
+   * from the external cache layer this executor covers. Executors decide /how/
+   * they clear something, as long as they correctly call ::setStatusSucceeded()
+   * or ::setStatusFailed() on each processed object.
    *
-   * @return array
-   *   On success we return a non-associative array with item objects. When the
-   *   queue has no items that can be claimed, this doesn't return FALSE as
-   *   claimItem() does, but an empty array instead.
-   *
-   *   If claims return, the objects have at least these properties:
-   *   - data: the same as what what passed into createItem().
-   *   - item_id: the unique ID returned from createItem().
-   *   - created: timestamp when the item was put into the queue.
+   * @param AcquiaPurgeInvalidationInterface[] $invalidations
+   *   Unassociative list of AcquiaPurgeInvalidationInterface-compliant objects
+   *   that contain the necessary info in them. You may likely need several of
+   *   the following methods on the invalidation object:
+   *     - ::getScheme(): e.g.: 'https' or 'https://' when passing TRUE.
+   *     - ::getDomain(): e.g.: 'site.com'
+   *     - ::getPath(): e.g.: '/basepath/products/electrical/*'
+   *     - ::getUri(): e.g.: 'https://site.com/basepath/products/electrical/*'
+   *     - ::hasWildcard(): call this to find out if there's a asterisk ('*').
+   *     - ::setStatusFailed(): call this when clearing this item failed.
+   *     - ::setStatusSucceeded(): call this when clearing this item succeeded.
    */
-  public function evaluate($request);
+  public function invalidate($invalidations);
 
+  /**
+   * Determine if the executor is enabled or not.
+   */
+  public static function isEnabled();
 
 }
