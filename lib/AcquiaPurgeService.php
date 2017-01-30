@@ -29,6 +29,13 @@ class AcquiaPurgeService {
   protected $deduplicateLists = array();
 
   /**
+   * The loaded AcquiaPurgeExecutorsService object.
+   *
+   * @var AcquiaPurgeExecutorsService
+   */
+  protected $executors = NULL;
+
+  /**
    * Purged URLs for UI visualization.
    *
    * @var string[]
@@ -209,6 +216,20 @@ class AcquiaPurgeService {
   }
 
   /**
+   * Retrieve the AcquiaPurgeExecutorsService object.
+   *
+   * @return AcquiaPurgeExecutorsService
+   *   The executors service.
+   */
+  protected function executors() {
+    if (is_null($this->executors)) {
+      $class = _acquia_purge_load('_acquia_purge_executors');
+      $this->executors = new $class($this);
+    }
+    return $this->executors;
+  }
+
+  /**
    * Maintains a runtime list of purged URLs for UI visualization.
    *
    * @param string $url
@@ -351,14 +372,20 @@ class AcquiaPurgeService {
       $this->state()->wipe();
     }
 
-    // Invoke hook_acquia_purge_purge_failure()/success() implementations.
-    if (module_implements('acquia_purge_purge_failure') && count($releases)) {
-      $paths = $this->queueItemPaths($releases);
-      module_invoke_all('acquia_purge_purge_failure', $paths);
+    // Invoke deprecated hook_acquia_purge_purge_(failure|success) hooks!
+    if (count($failed)) {
+      foreach (module_implements('acquia_purge_purge_failure') as $module) {
+        $function = $module . '_acquia_purge_purge_failure';
+        _acquia_purge_deprecated('hook_acquia_purge_executors()', $function);
+        $function($this->queueItemPaths($failed));
+      }
     }
-    if (module_implements('acquia_purge_purge_success') && count($deletes)) {
-      $paths = $this->queueItemPaths($deletes);
-      module_invoke_all('acquia_purge_purge_success', $paths);
+    if (count($succeeded)) {
+      foreach (module_implements('acquia_purge_purge_success') as $module) {
+        $function = $module . '_acquia_purge_purge_success';
+        _acquia_purge_deprecated('hook_acquia_purge_executors()', $function);
+        $function($this->queueItemPaths($succeeded));
+      }
     }
 
     return TRUE;
