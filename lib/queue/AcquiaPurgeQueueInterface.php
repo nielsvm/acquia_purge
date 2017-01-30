@@ -75,7 +75,7 @@ interface AcquiaPurgeQueueInterface extends DrupalReliableQueueInterface {
    *   more rare for a given task to run multiple times in cases of failure,
    *   at the cost of higher latency.
    *
-   * @return array
+   * @return AcquiaPurgeInvalidationInterface[]
    *   On success we return a non-associative array with item objects. When the
    *   queue has no items that can be claimed, this doesn't return FALSE as
    *   claimItem() does, but an empty array instead.
