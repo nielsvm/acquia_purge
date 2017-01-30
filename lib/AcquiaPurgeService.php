@@ -327,14 +327,14 @@ class AcquiaPurgeService {
 
     // Process the claims and let the queue delete/release them.
     $deletes = $releases = array();
-    foreach ($claims as $claim) {
-      if ($this->deduplicate($this->queueItemPath($claim), 'purged')) {
-        $deletes[] = $claim;
+    foreach ($queue_items as $queue_item) {
+      if ($this->deduplicate($queue_item->getPath(), 'purged')) {
+        $deletes[] = $queue_item;
         continue;
       }
-      if (call_user_func_array($callback, $claim->data)) {
-        $this->deduplicate($this->queueItemPath($claim), 'purged');
-        $deletes[] = $claim;
+      if (call_user_func_array($callback, $queue_item->data)) {
+        $this->deduplicate($queue_item->getPath(), 'purged');
+        $deletes[] = $queue_item;
       }
       else {
         $releases[] = $claim;
@@ -405,20 +405,13 @@ class AcquiaPurgeService {
   }
 
   /**
-   * Filter out the HTTP path from the given queue item object.
+   * DEPRECATED: Filter out the HTTP path from the given queue item object.
    *
-   * @param object $item
-   *   Queue item object as defined in AcquiaPurgeQueueInterface::claimItem(),
-   *   with at least the following properties:
-   *   - data: the same as what what passed into createItem().
-   *   - item_id: the unique ID returned from createItem().
-   *   - created: timestamp when the item was put into the queue.
-   *
-   * @return string
-   *   The HTTP path that has to be purged.
+   * @deprecated
    */
   protected function queueItemPath($item) {
-    return $item->data[0];
+    _acquia_purge_deprecated('$queue_item->getPath()');
+    return $item->getPath();
   }
 
   /**
@@ -437,7 +430,7 @@ class AcquiaPurgeService {
   protected function queueItemPaths(array $items) {
     $paths = array();
     foreach ($items as $item) {
-      $paths[] = $this->queueItemPath($item);
+      $paths[] = $item->getPath();
     }
     return $paths;
   }

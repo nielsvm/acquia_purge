@@ -112,7 +112,14 @@ class AcquiaPurgeQueueItem implements AcquiaPurgeQueueItemInterface {
    * {@inheritdoc}
    */
   public function getInvalidation($scheme, $domain, $base_path) {
-    return new $this->invalidationclass($scheme, $domain, $base_path, $this);
+    return new $this->class_invalidation($scheme, $domain, $base_path, $this);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPath() {
+    return $this->data[0];
   }
 
 }

@@ -72,4 +72,12 @@ interface AcquiaPurgeQueueItemInterface extends AcquiaPurgeQueueStatusInterface 
    */
   public function getInvalidation($scheme, $domain, $base_path);
 
+  /**
+   * Get the HTTP path.
+   *
+   * @return string
+   *   The path to wipe, e.g. 'user/1?d=foo' or 'news/*'.
+   */
+  public function getPath();
+
 }
