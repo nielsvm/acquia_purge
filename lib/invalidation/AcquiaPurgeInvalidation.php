@@ -11,7 +11,9 @@
  * render the entire path as failed so that it goes back into the queue.
  */
 class AcquiaPurgeInvalidation implements AcquiaPurgeInvalidationInterface {
-  use AcquiaPurgeQueueStatusTrait;
+  use AcquiaPurgeQueueStatusTrait {
+    setStatusContext as setStatusContextTrait;
+  }
 
   /**
    * Drupal's base path (or the one Acquia Purge is told to clear).
@@ -46,9 +48,9 @@ class AcquiaPurgeInvalidation implements AcquiaPurgeInvalidationInterface {
    */
   public function __construct($scheme, $domain, $base_path, AcquiaPurgeQueueItemInterface $queue_item) {
     $this->queue_item = $queue_item;
-    $this->base_path = $base_path;
     $this->domain = $domain;
     $this->scheme = $scheme;
+    $this->base_path = $base_path;
   }
 
   /**
@@ -72,14 +74,19 @@ class AcquiaPurgeInvalidation implements AcquiaPurgeInvalidationInterface {
    * {@inheritdoc}
    */
   public function getPath() {
-    return str_replace('//', '/', $this->base_path . $this->data[0]);
+    return $this->base_path . $this->queue_item->getPath();
   }
 
   /**
    * {@inheritdoc}
+   *
+   * Route any calls to the queue item's function so that a single queue item
+   * holds the overal statuses for all domain and scheme-varied copies of a
+   * single HTTP path.
    */
   public function getStatus() {
-    die(__METHOD__);
+    $this->queue_item->setStatusContext($this->context);
+    return $this->queue_item->getStatus();
   }
 
   /**
@@ -93,25 +100,32 @@ class AcquiaPurgeInvalidation implements AcquiaPurgeInvalidationInterface {
    * {@inheritdoc}
    */
   public function hasWildcard() {
-    return strpos($this->path, '*') !== FALSE;
+    return strpos($this->getPath(), '*') !== FALSE;
   }
 
   /**
    * {@inheritdoc}
    *
-   * Wrap
+   * Set status on the queue item, in the invalidation-specific context.
    */
   public function setStatus($status) {
-    die(__METHOD__);
+    $this->queue_item->setStatusContext($this->context);
+    $this->queue_item->setStatus($status);
   }
 
   /**
    * {@inheritdoc}
    *
-   * Wrap
+   * Since queue items hold multiple invalidations, the context is kept local.
    */
   public function setStatusContext($id) {
-    die(__METHOD__);
+    if ($id !== NULL) {
+      $id = $this->scheme . '_' . $this->domain . '_' . $id;
+    }
+    else {
+      $this->queue_item->setStatusContext(NULL);
+    }
+    $this->setStatusContextTrait($id);
   }
 
 }
