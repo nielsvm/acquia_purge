@@ -71,8 +71,8 @@ class AcquiaPurgeExecutorRequest implements AcquiaPurgeExecutorRequestInterface 
   /**
    * {@inheritdoc}
    */
-  public function __construct($method = 'GET') {
-    $this->method = $method;
+  public function __construct($uri) {
+    $this->uri = $uri;
   }
 
 }
