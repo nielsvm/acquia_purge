@@ -23,6 +23,7 @@ class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPur
   public function invalidate($invalidations) {
     $hosting_info = $this->service->hostingInfo();
     $balancer_token = $hosting_info->getBalancerToken();
+    $geoip = in_array('geoip', $this->service->vclOddities());
 
     // Create a long list of executable HTTP requests.
     $requests = array();
@@ -37,7 +38,7 @@ class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPur
         $r->scheme = $invalidation->getScheme();
         $r->path = $invalidation->getPath();
         $r->uri = $r->scheme . '://' . $r->_balancer_ip . $r->path;
-        $r->method = $invalidation->hasWildcard() ? 'BAN' : 'PURGE';
+        $r->method = ($geoip || $invalidation->hasWildcard()) ? 'BAN' : 'PURGE';
         $r->headers = array(
           'Host: ' . $r->_host,
           'Accept-Encoding: gzip',
