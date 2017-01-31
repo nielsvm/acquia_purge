@@ -85,7 +85,7 @@ class AcquiaPurgeService {
 
     // Set and normalize the base path so that it doesn't cause any trouble.
     $this->basePath = _acquia_purge_variable('acquia_purge_base_path');
-    if ($base_path !== '/') {
+    if ($this->basePath !== '/') {
       $this->basePath = '/' . trim(trim($this->basePath, '//'), '/') . '/';
     }
   }
