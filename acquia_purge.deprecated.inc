@@ -121,8 +121,7 @@ function _acquia_purge_get_site_group() {
  * @deprecated
  */
 function _acquia_purge_purge_requests($requests) {
-  _acquia_purge_deprecated('_acquia_purge_curl()');
-  return _acquia_purge_curl($requests);
+  _acquia_purge_deprecated('AcquiaPurgeExecutorInterface::requestsExecute()');
 }
 
 /**

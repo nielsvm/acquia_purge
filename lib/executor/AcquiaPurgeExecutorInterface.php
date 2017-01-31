@@ -27,6 +27,16 @@ interface AcquiaPurgeExecutorInterface {
   public function getId();
 
   /**
+   * Instantiate a new request object.
+   *
+   * @param string $uri
+   *   The URL to connect to, e.g.: http://domain.com/path/a/b/c
+   *
+   * @return AcquiaPurgeExecutorRequestInterface
+   */
+  public function getRequest($uri = NULL);
+
+  /**
    * Invalidate one or multiple paths from an external layer.
    *
    * This method is responsible for clearing all the given invalidation objects
@@ -52,5 +62,26 @@ interface AcquiaPurgeExecutorInterface {
    * Determine if the executor is enabled or not.
    */
   public static function isEnabled();
+
+  /**
+   * Execute a series of HTTP requests efficiently through cURL's multi handler.
+   *
+   * @param AcquiaPurgeExecutorRequestInterface[] $requests
+   *   Unassociative list of request objects created by ::getRequest(). The
+   *   properties 'scheme', 'method', 'uri' are used for executing the request.
+   *   The properties 'result', 'error_curl', 'response_code' and 'error_debug'
+   *   are updated during execution.
+   */
+  public function requestsExecute($requests);
+
+  /**
+   * Log a series of requests according to their 'result' properties.
+   *
+   * @param AcquiaPurgeExecutorRequestInterface[] $requests
+   *   Unassociative list of ::requestsExecute() processed requests.
+   * @param string $consequence
+   *   Appendable message determing what happens because of a failed request.
+   */
+  public function requestsLog($requests, $consequence = 'goes back to queue');
 
 }
