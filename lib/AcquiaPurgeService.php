@@ -385,6 +385,9 @@ class AcquiaPurgeService {
     // Put each and every invalidation back into general context.
     foreach ($invalidations as $i) {
       $i->setStatusContext(NULL);
+      if ($i->getStatusBoolean() === TRUE) {
+        $this->history($i->getUri());
+      }
     }
 
     // In reality, $invalidation::setStatus() has kept the statuses on the queue
