@@ -71,8 +71,11 @@ interface AcquiaPurgeExecutorInterface {
    *   properties 'scheme', 'method', 'uri' are used for executing the request.
    *   The properties 'result', 'error_curl', 'response_code' and 'error_debug'
    *   are updated during execution.
+   * @param string $no_ssl_verify
+   *   Skip host and peer verification, don't use for requests that include
+   *   sensitive data (e.g. API keys).
    */
-  public function requestsExecute($requests);
+  public function requestsExecute($requests, $no_ssl_verify = FALSE);
 
   /**
    * Log a series of requests according to their 'result' properties.

@@ -74,9 +74,9 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
   /**
    * {@inheritdoc}
    */
-  public function requestsExecute($requests) {
+  public function requestsExecute($requests, $no_ssl_verify = FALSE) {
     $single_mode = (count($requests) === 1);
-    $results = array();
+    $processed = array();
 
     // Initialize the cURL multi handler.
     if (!$single_mode) {
@@ -92,33 +92,34 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
 
       // Group requests per sets that we can run in parallel.
       for ($i = 0; $i < ACQUIA_PURGE_PARALLEL_REQUESTS; $i++) {
-        if ($rqst = array_shift($requests)) {
-          $rqst->curl = curl_init();
+        if ($r = array_shift($requests)) {
+          $r->curl = curl_init();
 
           // Instantiate the cURL resource and configure its runtime parameters.
-          curl_setopt($rqst->curl, CURLOPT_URL, $rqst->uri);
-          curl_setopt($rqst->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
-          curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
-          curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->method);
-          curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
-          curl_setopt($rqst->curl, CURLOPT_RETURNTRANSFER, TRUE);
+          curl_setopt($r->curl, CURLOPT_URL, $r->uri);
+          curl_setopt($r->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
+          curl_setopt($r->curl, CURLOPT_HTTPHEADER, $r->headers);
+          curl_setopt($r->curl, CURLOPT_CUSTOMREQUEST, $r->method);
+          curl_setopt($r->curl, CURLOPT_FAILONERROR, TRUE);
+          curl_setopt($r->curl, CURLOPT_RETURNTRANSFER, TRUE);
 
-          // For SSL purging, we disable SSL host and peer verification. Although
-          // this triggers red flags to the security concerned user, this avoids
-          // purges to fail on sites with self-signed certificates. All we request
-          // the remote balancer is to wipe items from its cache after all.
-          if ($rqst->scheme === 'https') {
-            curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYHOST, FALSE);
-            curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+          // For SSL purging, we disable SSL host and peer verification. This
+          // should trigger red flags to the security concerned user, but it
+          // also avoids purges to fail on sites with self-signed certs. This
+          // therefore is a risk worth taking in return for a better user
+          // experience as compromised cache invalidation requests couldn't
+          // cause much harm anyway.
+          if ($no_ssl_verify && ($r->scheme === 'https')) {
+            curl_setopt($r->curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+            curl_setopt($r->curl, CURLOPT_SSL_VERIFYPEER, FALSE);
           }
 
           // Add our handle to the multiple cURL handle.
           if (!$single_mode) {
-            curl_multi_add_handle($curl_multi, $rqst->curl);
+            curl_multi_add_handle($curl_multi, $r->curl);
           }
 
-          // Add the shifted request to the results array and change the counter.
-          $results[] = $rqst;
+          $processed[] = $r;
           $unprocessed--;
         }
       }
@@ -140,42 +141,39 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
 
       // In single mode there's only one request to do, use curl_exec().
       else {
-        curl_exec($results[0]->curl);
-        $single_info = array('result' => curl_errno($results[0]->curl));
+        curl_exec($processed[0]->curl);
+        $single_info = array('result' => curl_errno($processed[0]->curl));
       }
 
       // Iterate the set of results and fetch cURL result and resultcodes. Only
       // process those with the 'curl' property as the property will be removed.
-      foreach ($results as $i => $rqst) {
-        if (!isset($rqst->curl)) {
+      foreach ($processed as $i => $r) {
+        if (!isset($r->curl)) {
           continue;
         }
         $info = $single_mode ? $single_info : curl_multi_info_read($curl_multi);
-        $results[$i]->result = ($info['result'] == CURLE_OK) ? TRUE : FALSE;
-        $results[$i]->error_curl = $info['result'];
-        $results[$i]->response_code = curl_getinfo($rqst->curl, CURLINFO_HTTP_CODE);
+        $processed[$i]->result = ($info['result'] == CURLE_OK) ? TRUE : FALSE;
+        $processed[$i]->error_curl = $info['result'];
+        $processed[$i]->response_code = curl_getinfo($r->curl, CURLINFO_HTTP_CODE);
 
         // Collect debugging information if necessary.
-        $results[$i]->error_debug = '';
-        if (!$results[$i]->result) {
-          $debug = curl_getinfo($rqst->curl);
-          $debug['headers'] = implode('|', $rqst->headers);
+        $processed[$i]->error_debug = '';
+        if (!$processed[$i]->result) {
+          $debug = curl_getinfo($r->curl);
+          $debug['headers'] = implode('|', $r->headers);
           unset($debug['certinfo']);
-          $results[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
+          $processed[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
         }
 
         // Remove the handle if parallel processing occurred.
         if (!$single_mode) {
-          curl_multi_remove_handle($curl_multi, $rqst->curl);
+          curl_multi_remove_handle($curl_multi, $r->curl);
         }
 
-        // Close the resource and delete its property.
-        curl_close($rqst->curl);
-        unset($rqst->curl);
+        curl_close($r->curl);
+        $r->curl = NULL;
       }
     }
-
-    return $results;
   }
 
   /**
