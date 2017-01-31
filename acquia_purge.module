@@ -813,9 +813,6 @@ function _acquia_purge_input_validate($path) {
   if (preg_match('/\s/', $path)) {
     return _acquia_purge_input_validate_msgs('space');
   }
-  if (stristr($path, '*')) {
-    return _acquia_purge_input_validate_msgs('wildcard');
-  }
   if (in_array($path, $history)) {
     return _acquia_purge_input_validate_msgs('double');
   }
@@ -843,7 +840,6 @@ function _acquia_purge_input_validate_msgs($msg) {
     $messages['space'] = t('The path cannot contain a space!');
     $messages['double'] = t('You have already listed this path!');
     $messages['nostring'] = t('The path is not a string!');
-    $messages['wildcard'] = t('You cannot purge paths with wildcard signs (*), unfortunately this is not supported.');
     $messages['url'] = t('You provided a URL which is not compatible with the way Acquia Purge works, as it constructs full URLs for its configured domains.');
     $messages['empty'] = t('The path cannot be empty, if you intended to purge the frontpage of your site, use "/" or "!front".',
       array(
