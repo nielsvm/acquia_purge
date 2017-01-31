@@ -36,18 +36,9 @@ function hook_acquia_purge_domains_alter(array &$domains) {
 }
 
 /**
- * React after paths failed purging and have been released back to the queue.
+ * DEPRECATED: React after paths paths purged failed.
  *
- * @param string[] $paths
- *   Non-associative array of string values representing the failed paths.
- *
- * @warning
- *   Called implementations run within the lock that Acquia Purge processors
- *   claimed. It is important that your code is swift and does not break
- *   execution flow (e.g. die() or exit()) since that would keep the lock
- *   claimed until it expires.
- *
- * @see AcquiaPurgeService::process()
+ * @deprecated
  */
 function hook_acquia_purge_purge_failure(array $paths) {
   foreach ($paths as $path) {
@@ -56,23 +47,29 @@ function hook_acquia_purge_purge_failure(array $paths) {
 }
 
 /**
- * React after paths paths purged successfully and got deleted from the queue.
+ * DEPRECATED: React after paths paths purged successfully.
  *
- * @param string[] $paths
- *   Non-associative array of string values representing the purged paths.
- *
- * @warning
- *   Called implementations run within the lock that Acquia Purge processors
- *   claimed. It is important that your code is swift and does not break
- *   execution flow (e.g. die() or exit()) since that would keep the lock
- *   claimed until it expires.
- *
- * @see AcquiaPurgeService::process()
+ * @deprecated
  */
 function hook_acquia_purge_purge_success(array $paths) {
   foreach ($paths as $path) {
     drupal_set_message(t('"@path"', array('@path' => $path)));
   }
+}
+
+/**
+ * Register executor backends to run after Acquia Purge's core executors.
+ *
+ * @param string[] $paths
+ *   List of paths to files declaring AcquiaPurgeExecutorInterface derivatives.
+ *
+ * @see _acquia_purge_load()
+ * @see AcquiaPurgeExecutorsService::getRegisteredBackends()
+ * @see AcquiaPurgeExecutorBase
+ * @see AcquiaPurgeExecutorInterface
+ */
+function hook_acquia_purge_executors(&$paths) {
+  $paths[] = drupal_get_path('module', 'mymodule') . '/myExecutorBackend.php';
 }
 
 /**

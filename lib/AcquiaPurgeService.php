@@ -22,11 +22,25 @@ class AcquiaPurgeService {
   public $modulePath;
 
   /**
+   * Drupal's base path (or the one Acquia Purge is told to clear).
+   *
+   * @var string
+   */
+  private $basePath;
+
+  /**
    * Deduplication lists.
    *
    * @var array[]
    */
   protected $deduplicateLists = array();
+
+  /**
+   * The loaded AcquiaPurgeExecutorsService object.
+   *
+   * @var AcquiaPurgeExecutorsService
+   */
+  protected $executors = NULL;
 
   /**
    * Purged URLs for UI visualization.
@@ -68,6 +82,12 @@ class AcquiaPurgeService {
    */
   public function __construct() {
     $this->modulePath = drupal_get_path('module', 'acquia_purge');
+
+    // Set and normalize the base path so that it doesn't cause any trouble.
+    $this->basePath = _acquia_purge_variable('acquia_purge_base_path');
+    if ($this->basePath !== '/') {
+      $this->basePath = '/' . trim(trim($this->basePath, '//'), '/') . '/';
+    }
   }
 
   /**
@@ -209,6 +229,20 @@ class AcquiaPurgeService {
   }
 
   /**
+   * Retrieve the AcquiaPurgeExecutorsService object.
+   *
+   * @return AcquiaPurgeExecutorsService
+   *   The executors service.
+   */
+  protected function executors() {
+    if (is_null($this->executors)) {
+      $class = _acquia_purge_load('_acquia_purge_executors');
+      $this->executors = new $class($this);
+    }
+    return $this->executors;
+  }
+
+  /**
    * Maintains a runtime list of purged URLs for UI visualization.
    *
    * @param string $url
@@ -232,7 +266,7 @@ class AcquiaPurgeService {
    */
   public function hostingInfo() {
     if (is_null($this->hostingInfo)) {
-      $class = _acquia_purge_load('hostinginfo');
+      $class = _acquia_purge_load('_acquia_purge_hosting_info');
       $this->hostingInfo = new $class();
     }
     return $this->hostingInfo;
@@ -293,20 +327,11 @@ class AcquiaPurgeService {
   /**
    * Process as many items from the queue as the runtime capacity allows.
    *
-   * @param string $callback
-   *   (optional) A PHP callable that processes one queue item, which will get
-   *   called with call_user_func_array(). The callback MUST return TRUE on
-   *   success and FALSE when it failed so queue items can get released/deleted.
-   *
-   *   The $callback is committed to processing the item. Crashes during the
-   *   callback's execution, will result in a claimed queue item not getting
-   *   processed until it expired.
-   *
    * @return bool
    *   Returns TRUE when it processed items, FALSE when the capacity limit has
    *   been reached or when the queue is empty and there's nothing left to do.
    */
-  public function process($callback = '_acquia_purge_purge') {
+  public function process() {
 
     // Do not even attempt to process when the total counter is zero.
     if ($this->queue()->total()->get() === 0) {
@@ -319,46 +344,88 @@ class AcquiaPurgeService {
       return FALSE;
     }
 
+    // Ask the diagnostic subsystem to identify ACQUIA_PURGE_SEVLEVEL_ERROR
+    // level severities, which mandate processing to stop and log the problem.
+    if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
+      _acquia_purge_get_diagnosis_logged($e);
+      return FALSE;
+    }
+
     // Claim a number of items we can maximally process during request lifetime.
-    if (!($claims = $this->queue()->claimItemMultiple($maxitems))) {
+    if (!($queue_items = $this->queue()->claimItemMultiple($maxitems))) {
       $this->state()->wipe();
       return FALSE;
     }
 
-    // Process the claims and let the queue delete/release them.
-    $deletes = $releases = array();
-    foreach ($claims as $claim) {
-      if ($this->deduplicate($this->queueItemPath($claim), 'purged')) {
-        $deletes[] = $claim;
+    // Setup the $succeeded and $failed lists and fill $invalidations. Make sure
+    // that already processed paths are immediately dismissed.
+    $succeeded = $failed = $invalidations = array();
+    foreach ($queue_items as $i => $item) {
+      if ($this->deduplicate($item->getPath(), 'purged')) {
+        $succeeded[] = $item;
+        unset($queue_items[$i]);
         continue;
       }
-      if (call_user_func_array($callback, $claim->data)) {
-        $this->deduplicate($this->queueItemPath($claim), 'purged');
-        $deletes[] = $claim;
-      }
-      else {
-        $releases[] = $claim;
+      foreach ($this->hostingInfo()->getSchemes() as $s) {
+        foreach ($this->hostingInfo()->getDomains() as $d) {
+          $invalidations[] = $item->getInvalidation($s, $d, $this->basePath);
+        }
       }
     }
-    $this->queue()->deleteItemMultiple($deletes);
-    $this->queue()->releaseItemMultiple($releases);
+
+    // Iterate each executor and feed the invalidations to all of them.
+    foreach ($this->executors() as $executor) {
+      $executor_id = $executor->getId();
+      foreach ($invalidations as $i) {
+        $i->setStatusContext($executor_id);
+      }
+      $executor->invalidate($invalidations);
+    }
+
+    // Put each and every invalidation back into general context.
+    foreach ($invalidations as $i) {
+      $i->setStatusContext(NULL);
+      if ($i->getStatusBoolean() === TRUE) {
+        $this->history($i->getUri());
+      }
+    }
+
+    // In reality, $invalidation::setStatus() has kept the statuses on the queue
+    // item, so we can now use ::getStatusBoolean() to delete/release items.
+    foreach ($queue_items as $item) {
+      if ($item->getStatusBoolean() === TRUE) {
+        $this->deduplicate($item->getPath(), 'purged');
+        $succeeded[] = $item;
+      }
+      else {
+        $failed[] = $item;
+      }
+    }
+    $this->queue()->deleteItemMultiple($succeeded);
+    $this->queue()->releaseItemMultiple($failed);
 
     // Adjust the remaining capacity downwards for future ::process() calls.
-    _acquia_purge_get_capacity(count($deletes) + count($releases));
+    _acquia_purge_get_capacity(count($succeeded) + count($failed));
 
     // When the bottom of the queue has been reached, reset all state data.
     if ($this->queue()->numberOfItems() === 0) {
       $this->state()->wipe();
     }
 
-    // Invoke hook_acquia_purge_purge_failure()/success() implementations.
-    if (module_implements('acquia_purge_purge_failure') && count($releases)) {
-      $paths = $this->queueItemPaths($releases);
-      module_invoke_all('acquia_purge_purge_failure', $paths);
+    // Invoke deprecated hook_acquia_purge_purge_(failure|success) hooks!
+    if (count($failed)) {
+      foreach (module_implements('acquia_purge_purge_failure') as $module) {
+        $function = $module . '_acquia_purge_purge_failure';
+        _acquia_purge_deprecated('hook_acquia_purge_executors()', $function);
+        $function($this->queueItemPaths($failed));
+      }
     }
-    if (module_implements('acquia_purge_purge_success') && count($deletes)) {
-      $paths = $this->queueItemPaths($deletes);
-      module_invoke_all('acquia_purge_purge_success', $paths);
+    if (count($succeeded)) {
+      foreach (module_implements('acquia_purge_purge_success') as $module) {
+        $function = $module . '_acquia_purge_purge_success';
+        _acquia_purge_deprecated('hook_acquia_purge_executors()', $function);
+        $function($this->queueItemPaths($succeeded));
+      }
     }
 
     return TRUE;
@@ -372,7 +439,7 @@ class AcquiaPurgeService {
    */
   public function processors() {
     if (is_null($this->processors)) {
-      $class = _acquia_purge_load('processor');
+      $class = _acquia_purge_load('_acquia_purge_processors');
       $this->processors = new $class($this);
     }
     return $this->processors;
@@ -391,12 +458,13 @@ class AcquiaPurgeService {
       $state = $this->state();
 
       // Load the configured smart or normal backend.
+      _acquia_purge_load('_acquia_purge_queue_interface');
       if (_acquia_purge_variable('acquia_purge_smartqueue')) {
-        $class = _acquia_purge_load('queue_smart');
+        $class = _acquia_purge_load('_acquia_purge_queue_smart');
         $this->queue = new $class($state);
       }
       else {
-        $class = _acquia_purge_load('queue_efficient');
+        $class = _acquia_purge_load('_acquia_purge_queue_efficient');
         $this->queue = new $class($state);
       }
     }
@@ -404,20 +472,13 @@ class AcquiaPurgeService {
   }
 
   /**
-   * Filter out the HTTP path from the given queue item object.
+   * DEPRECATED: Filter out the HTTP path from the given queue item object.
    *
-   * @param object $item
-   *   Queue item object as defined in AcquiaPurgeQueueInterface::claimItem(),
-   *   with at least the following properties:
-   *   - data: the same as what what passed into createItem().
-   *   - item_id: the unique ID returned from createItem().
-   *   - created: timestamp when the item was put into the queue.
-   *
-   * @return string
-   *   The HTTP path that has to be purged.
+   * @deprecated
    */
   protected function queueItemPath($item) {
-    return $item->data[0];
+    _acquia_purge_deprecated('$queue_item->getPath()');
+    return $item->getPath();
   }
 
   /**
@@ -436,7 +497,7 @@ class AcquiaPurgeService {
   protected function queueItemPaths(array $items) {
     $paths = array();
     foreach ($items as $item) {
-      $paths[] = $this->queueItemPath($item);
+      $paths[] = $item->getPath();
     }
     return $paths;
   }
@@ -451,15 +512,17 @@ class AcquiaPurgeService {
 
     // Initialize the state storage backend.
     if (is_null($this->state)) {
+      _acquia_purge_load('_acquia_purge_state_storage_interface');
+      _acquia_purge_load('_acquia_purge_state_storage_base');
       if (_acquia_purge_are_we_using_memcached()) {
-        $class = _acquia_purge_load('state_memcached');
+        $class = _acquia_purge_load('_acquia_purge_state_storage_memcache');
         $this->state = new $class(
           ACQUIA_PURGE_STATE_MEMKEY,
           ACQUIA_PURGE_STATE_MEMBIN
         );
       }
       else {
-        $class = _acquia_purge_load('state_disk');
+        $class = _acquia_purge_load('_acquia_purge_state_storage_disk');
         $this->state = new $class(ACQUIA_PURGE_STATE_FILE);
       }
     }

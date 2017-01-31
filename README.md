@@ -19,6 +19,7 @@ technical configuration.
 * Turn-key installation for simple content sites.
 * Wipes pages based on detected changes by the [expire module](http://www.drupal.org/project/expire).
 * Integration with Rules allowing to wipe pages like ``news``, ``news/?page=0`` and ``contact``.
+* NEW invalidate using wildcards like ``news/*``.
 * Transparently wipes pages from Drupal's page cache.
 * Detects your Acquia Cloud domain names allowing manual overriding.
 * Support for both Domain Access and multi-site setups.

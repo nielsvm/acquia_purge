@@ -2,20 +2,20 @@
 
 /**
  * @file
- * Contains AcquiaPurgeCronProcessor.
+ * Contains AcquiaPurgeProcessorCron.
  */
 
 /**
  * Processes the queue during hook_cron().
  */
-class AcquiaPurgeCronProcessor extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
+class AcquiaPurgeProcessorCron extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
 
   /**
    * {@inheritdoc}
    */
   public static function isEnabled() {
 
-    // Don't load AcquiaPurgeCronProcessor when AcquiaPurgeRuntimeProcessor is
+    // Don't load AcquiaPurgeProcessorCron when AcquiaPurgeProcessorRuntime is
     // enabled as well, since this can lead to double processing during cron.
     // Although running AcquiaPurgeService::process() twice during the same
     // request won't harm because of the built-in capacity calculation, it would

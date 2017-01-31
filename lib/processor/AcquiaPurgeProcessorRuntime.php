@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains AcquiaPurgeRuntimeProcessor.
+ * Contains AcquiaPurgeProcessorRuntime.
  */
 
 /**
  * Processes the queue at the end of EVERY request.
  */
-class AcquiaPurgeRuntimeProcessor extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
+class AcquiaPurgeProcessorRuntime extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
 
   /**
    * Path to the script client.
@@ -76,7 +76,7 @@ class AcquiaPurgeRuntimeProcessor extends AcquiaPurgeProcessorBase implements Ac
   }
 
   /**
-   * Destruct a AcquiaPurgeRuntimeProcessor instance.
+   * Destruct a AcquiaPurgeProcessorRuntime instance.
    */
   public function __destruct() {
     $this->processQueueChunk();

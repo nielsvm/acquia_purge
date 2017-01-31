@@ -407,180 +407,6 @@ function _acquia_purge_are_we_using_memcached() {
 }
 
 /**
- * Execute a set of HTTP requests efficiently through cUrl.
- *
- * @param string $requests
- *   Unassociative array (list) of simple Stdclass objects with the following
- *   properties: scheme, method, uri, uri_real (optional).
- *
- * @return array
- *   The given requests array with added properties that describe the result of
- *   the request: 'result', 'error_curl', 'error_http', 'error_debug'.
- */
-function _acquia_purge_curl($requests) {
-  $single_mode = (count($requests) === 1);
-  $results = array();
-
-  // Initialize the cURL multi handler.
-  if (!$single_mode) {
-    static $curl_multi;
-    if (is_null($curl_multi)) {
-      $curl_multi = curl_multi_init();
-    }
-  }
-
-  // Validate the incoming objects, to prevent coding errors.
-  foreach ($requests as $r) {
-    if (!isset($r->scheme, $r->uri, $r->method)) {
-      throw new Exception("Not all properties of (scheme, uri, method) exist!");
-    }
-  }
-
-  // Enter our event loop and keep on requesting until $unprocessed is empty.
-  $unprocessed = count($requests);
-  while ($unprocessed > 0) {
-
-    // Group requests per sets that we can run in parallel.
-    for ($i = 0; $i < ACQUIA_PURGE_PARALLEL_REQUESTS; $i++) {
-      if ($rqst = array_shift($requests)) {
-        $rqst->curl = curl_init();
-
-        // Instantiate the cURL resource and configure its runtime parameters.
-        if (isset($rqst->uri_real)) {
-          curl_setopt($rqst->curl, CURLOPT_URL, $rqst->uri_real);
-        }
-        else {
-          curl_setopt($rqst->curl, CURLOPT_URL, $rqst->uri);
-        }
-        curl_setopt($rqst->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
-        curl_setopt($rqst->curl, CURLOPT_HTTPHEADER, $rqst->headers);
-        curl_setopt($rqst->curl, CURLOPT_CUSTOMREQUEST, $rqst->method);
-        curl_setopt($rqst->curl, CURLOPT_FAILONERROR, TRUE);
-        curl_setopt($rqst->curl, CURLOPT_RETURNTRANSFER, TRUE);
-
-        // For SSL purging, we disable SSL host and peer verification. Although
-        // this triggers red flags to the security concerned user, this avoids
-        // purges to fail on sites with self-signed certificates. All we request
-        // the remote balancer is to wipe items from its cache after all.
-        if ($rqst->scheme === 'https') {
-          curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYHOST, FALSE);
-          curl_setopt($rqst->curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-        }
-
-        // Add our handle to the multiple cURL handle.
-        if (!$single_mode) {
-          curl_multi_add_handle($curl_multi, $rqst->curl);
-        }
-
-        // Add the shifted request to the results array and change the counter.
-        $results[] = $rqst;
-        $unprocessed--;
-      }
-    }
-
-    // Execute the created handles in parallel.
-    if (!$single_mode) {
-      $active = NULL;
-      do {
-        $mrc = curl_multi_exec($curl_multi, $active);
-      } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-      while ($active && $mrc == CURLM_OK) {
-        if (curl_multi_select($curl_multi) != -1) {
-          do {
-            $mrc = curl_multi_exec($curl_multi, $active);
-          } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-        }
-      }
-    }
-
-    // In single mode there's only one request to do, use curl_exec().
-    else {
-      curl_exec($results[0]->curl);
-      $single_info = array('result' => curl_errno($results[0]->curl));
-    }
-
-    // Iterate the set of results and fetch cURL result and resultcodes. Only
-    // process those with the 'curl' property as the property will be removed.
-    foreach ($results as $i => $rqst) {
-      if (!isset($rqst->curl)) {
-        continue;
-      }
-      $info = $single_mode ? $single_info : curl_multi_info_read($curl_multi);
-      $results[$i]->result = ($info['result'] == CURLE_OK) ? TRUE : FALSE;
-      $results[$i]->error_curl = $info['result'];
-      $results[$i]->error_http = curl_getinfo($rqst->curl, CURLINFO_HTTP_CODE);
-
-      // Collect debugging information if necessary.
-      $results[$i]->error_debug = '';
-      if (!$results[$i]->result) {
-        $debug = curl_getinfo($rqst->curl);
-        $debug['headers'] = implode('|', $rqst->headers);
-        unset($debug['certinfo']);
-        $results[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
-      }
-
-      // Remove the handle if parallel processing occurred.
-      if (!$single_mode) {
-        curl_multi_remove_handle($curl_multi, $rqst->curl);
-      }
-
-      // Close the resource and delete its property.
-      curl_close($rqst->curl);
-      unset($rqst->curl);
-    }
-  }
-
-  return $results;
-}
-
-/**
- * Turn a PHP variable into a string with data type information for debugging.
- *
- * @param mixed $symbols
- *   Arbitrary PHP variable, preferably a associative array.
- *
- * @return string
- *   A one-line comma separated string with data types as var_dump() generates.
- */
-function _acquia_purge_export_debug_symbols($symbols) {
-
-  // Capture a string using PHPs very own var_dump() using output buffering.
-  ob_start();
-  var_dump($symbols);
-  $symbols = ob_get_clean();
-
-  // Clean up and reduce the output footprint for both normal and xdebug output.
-  if (extension_loaded('xdebug')) {
-    $symbols = trim(html_entity_decode(strip_tags($symbols)));
-    $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
-    $symbols = str_replace("  '", '', $symbols);
-    $symbols = str_replace("' =>", ':', $symbols);
-    $symbols = implode(', ', explode("\n", $symbols));
-  }
-  else {
-    $symbols = strip_tags($symbols);
-    $symbols = drupal_substr($symbols, strpos($symbols, "\n") + 1);
-    $symbols = str_replace('  ["', '', $symbols);
-    $symbols = str_replace("\"]=>\n ", ':', $symbols);
-    $symbols = rtrim($symbols, "}\n");
-    $symbols = implode(', ', explode("\n", $symbols));
-  }
-
-  // To reduce bandwidth and storage needs we shorten data type indicators.
-  $symbols = str_replace(' string', 'S', $symbols);
-  $symbols = str_replace(' int', 'I', $symbols);
-  $symbols = str_replace(' float', 'F', $symbols);
-  $symbols = str_replace(' boolean', 'B', $symbols);
-  $symbols = str_replace(' bool', 'B', $symbols);
-  $symbols = str_replace(' null', 'NLL', $symbols);
-  $symbols = str_replace(' NULL', 'NLL', $symbols);
-  $symbols = str_replace('length=', 'l=', $symbols);
-
-  // Return the resulting string.
-  return $symbols;
-}
-
-/**
  * Calculate how many items can be purged during the execution of this script.
  *
  * @param int $subtract
@@ -940,9 +766,6 @@ function _acquia_purge_input_validate($path) {
   if (preg_match('/\s/', $path)) {
     return _acquia_purge_input_validate_msgs('space');
   }
-  if (stristr($path, '*')) {
-    return _acquia_purge_input_validate_msgs('wildcard');
-  }
   if (in_array($path, $history)) {
     return _acquia_purge_input_validate_msgs('double');
   }
@@ -970,7 +793,6 @@ function _acquia_purge_input_validate_msgs($msg) {
     $messages['space'] = t('The path cannot contain a space!');
     $messages['double'] = t('You have already listed this path!');
     $messages['nostring'] = t('The path is not a string!');
-    $messages['wildcard'] = t('You cannot purge paths with wildcard signs (*), unfortunately this is not supported.');
     $messages['url'] = t('You provided a URL which is not compatible with the way Acquia Purge works, as it constructs full URLs for its configured domains.');
     $messages['empty'] = t('The path cannot be empty, if you intended to purge the frontpage of your site, use "/" or "!front".',
       array(
@@ -984,77 +806,73 @@ function _acquia_purge_input_validate_msgs($msg) {
 /**
  * Load code on which Acquia Purge depends.
  *
- * This function is a complex mix of a self-built registry, a class loader and a
- * service container. It allows us to load our shipped classes with the full
- * ability for third-party code to smartly overload them (via variables). This
- * code doesn't conflict with core, nothing runs twice and we cache what we can.
+ * This function is a complex code loader and dependency injection container for
+ * Acquia Purge's object oriented core, which got introduced in 7.x-1.3. From
+ * files listed in acquia_purge.info, a "service name" is derived that is used
+ * as primary $dependency value throughout the Acquia Purge code.
  *
- * Although Drupal takes care of code loading with its registry, we aren't able
- * to rely on it. Since we introduced a OOP core in 7.x-1.3, upgrading users can
- * not be exposed to a situation where their just-upgraded module calls the new
- * stack and get 'class not found' errors - this all prevents that.
+ * This "dependency name" is generated by _acquia_purge_registry() and gets then
+ * fed to _acquia_purge_variable(). The latter comes up with the default class
+ * name or a file path when the dependency name is overridden using the variable
+ * system. This allows all classes to be swapped from settings.php like this:
+ *   - $conf['_acquia_purge_service'] = "sites/all/modules/custommodule/s.php";
+ *   - $conf['_acquia_purge_hosting_info'] = "sites.../myhostinginfo.php";
  *
- * @param string $dependency
- *   - Relative or absolute paths (must contain '.' so that they're recognized).
- *   - Services defined in _acquia_purge_variable(), such as "hostinginfo",
- *     "processor_runtime" or "queue_smart".
+ * In order to find all default services and the classes they point to, run:
+ *   $ drush php-eval "print_r(_acquia_purge_registry()['services']);"
+ *
+ * The name of the derived file is assumed to also be the name of the class it
+ * contains, so if the "_acquia_purge_executors" service is pointed to the
+ * path "sites/all/modules/my/MyExecutor.php", the returned $class value is
+ * going to be "MyExecutor". Acquia Purge will instantiate that class by its
+ * derived name, so make sure to not just copy a file but rename the class!
+ *
+ * @param string|string[] $dependency
+ *   - string[]: Unassociative array of dependencies, the last sets the class.
+ *   - string: a relative or absolute file path (must contain '.' character).
+ *   - string: dependency name derived from acquia_purge.info, see the drush
+ *             command hereabove to find the possible values.
  *
  * @return string
- *   The name of the class the requested service or file declared.
- * @see acquia_purge.info
+ *   The name of the class defined in the requested dependency.
+ *
+ * @see _acquia_purge_registry
  */
 function _acquia_purge_load($dependency) {
-  $dependency_is_a_service = !(strpos($dependency, '.') !== FALSE);
 
-  // Initialize $path_module.
-  static $path_module;
+  // When $dependency is an array, load all items and return the last class.
+  if (is_array($dependency)) {
+    foreach ($dependency as $subdependency) {
+      $class = _acquia_purge_load($subdependency);
+    }
+    return $class;
+  }
+
+  // Initialize statically cached variables.
+  static $path_module, $loaded;
   if (is_null($path_module)) {
     require_once DRUPAL_ROOT . '/includes/common.inc';
     $path_module = drupal_get_path('module', 'acquia_purge');
   }
-
-  // Initialize $loaded, which indexes the files we've already loaded.
-  static $loaded;
   if (is_null($loaded)) {
     $loaded = array();
   }
 
-  // Initialize $apcode. This is a small cached registry containing all the
-  // paths (as defined in acquia_purge.info) and the classes they define.
-  static $apcode;
-  if (is_null($apcode)) {
-    $cache_key = __FUNCTION__ . '_v2';
-    if ($cache = cache_get($cache_key)) {
-      $apcode = $cache->data;
-    }
-    else {
-      $info_path = $path_module . '/acquia_purge.info';
-      $info = drupal_parse_info_file($info_path);
-      $apcode = array(
-        'classes' => array(),
-        'paths' => array(),
-      );
-      foreach ($info['files'] as $path) {
-        $class = str_replace('.php', '', basename($path));
-        $apcode['classes'][$class] = count($apcode['paths']);
-        $apcode['paths'][] = $path;
-      }
-      cache_set($cache_key, $apcode);
-    }
-  }
+  // Retrieve the code registry.
+  $registry = _acquia_purge_registry();
 
   // SERVICES: lookup the actual class and file and recurse.
+  $dependency_is_a_service = !(strpos($dependency, '.') !== FALSE);
   if ($dependency_is_a_service) {
-    $variable = '_acquia_purge_' . $dependency;
-    $path = _acquia_purge_variable('_acquia_purge_' . $dependency);
-    if (!(strpos($path, '.') !== FALSE)) {
-      $path_index = $apcode['classes'][$path];
-      $path = $apcode['paths'][$path_index];
+    $class_or_path = _acquia_purge_variable($dependency);
+    if (!(strpos($class_or_path, '.') !== FALSE)) {
+      $path_index = $registry['classes'][$class_or_path];
+      $class_or_path = $registry['paths'][$path_index];
     }
-    if (!(strpos($path, '.') !== FALSE)) {
+    if (!(strpos($class_or_path, '.') !== FALSE)) {
       throw new LogicException("$variable doesn't point to a class known to AP or a file on disk.");
     }
-    return _acquia_purge_load($path);
+    return _acquia_purge_load($class_or_path);
   }
 
   // PATHS WITH lib/: extend path and preload dependencies by recursing.
@@ -1064,14 +882,14 @@ function _acquia_purge_load($dependency) {
     // The files in acquia_purge.info are ordered by dependency order, so we
     // always load files defined prior to our dependency.
     $load_up_to_index = FALSE;
-    foreach ($apcode['paths'] as $index => $path) {
+    foreach ($registry['paths'] as $index => $path) {
       $path = $path_module . '/' . $path;
       if (strpos($dependency, $path) === 0) {
         $load_up_to_index = $index;
       }
     }
     if ($load_up_to_index) {
-      foreach ($apcode['paths'] as $index => $path) {
+      foreach ($registry['paths'] as $index => $path) {
         $path = $path_module . '/' . $path;
         if (in_array($path, $loaded)) {
           continue;
@@ -1148,152 +966,62 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
 }
 
 /**
- * Purge a single path on all domains and load balancers.
+ * Retrieve the Acquia Purge code registry.
  *
- * @param string $path
- *   The Drupal path (for example: '<front>', 'user/1' or a alias).
+ * Although Drupal 7 has its own code registry, we can't rely on it without
+ * taking the risk of breaking upgrading sites. Since we introduced an object
+ * oriented core in 7.x-1.3, all the legacy code got decoupled into many
+ * different classes.
  *
- * @warning
- *   This is the core HTTP purge implementation for a single path item, and is
- *   NOT TO BE CALLED DIRECTLY! Instead AcquiaPurgeService has to be utilized
- *   which takes care of queuing, statistics, capacity calculation and several
- *   other safety checks and balances. This is a example of how to do this:
- *   $queue = _acquia_purge_service();
- *   $queue->addPaths(array('path/1', 'path/2', 'path3'));
- *   $queue->process();
+ * The registry is simple and has low overhead. It parses acquia_purge.info once
+ * the parsed information is stored using cache_set(). Everytime changes are
+ * made to acquia_purge.info, the '_v<N>' cache key is manually changed to let
+ * upgrading users automatically rebuild it.
  *
- * @return true|false
- *   Boolean TRUE/FALSE indicating success or failure of the attempt.
+ * @return array[]
+ *   Acquia Purge code registry array, with the following keys:
+ *     - 'classes': assoc. array with class names as key, path-array as value.
+ *     - 'services': assoc. array with service names as key, classes as value.
+ *     - 'paths': array with path names, key's are referred to from 'classes'.
+ *
+ * @see acquia_purge.info
+ * @see _acquia_purge_load
  */
-function _acquia_purge_purge($path) {
-  $service = _acquia_purge_service();
-  $hostingInfo = $service->hostingInfo();
-
-  // Ask our built-in diagnostics system to preliminary find issues that are so
-  // risky we can expect problems. Everything with ACQUIA_PURGE_SEVLEVEL_ERROR
-  // will cause purging to cease and log messages to be written. Because we
-  // return FALSE, the queued items will be purged later in better weather.
-  if (count($err = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
-    _acquia_purge_get_diagnosis_logged($err);
-    return FALSE;
-  }
-
-  // Fetch and statically store the base path.
-  static $base_path;
-  if (is_null($base_path)) {
-    $base_path = _acquia_purge_variable('acquia_purge_base_path');
-  }
-
-  // Because a single path can exist on http://, https://, on various domain
-  // names and could be cached on any of the known load balancers. Therefore we
-  // define a list of HTTP requests that we are going to fire in a moment.
-  $requests = array();
-  $balancer_token = $hostingInfo->getBalancerToken();
-  foreach ($hostingInfo->getBalancerAddresses() as $balancer_ip) {
-    foreach ($hostingInfo->getDomains() as $domain) {
-      foreach ($hostingInfo->getSchemes() as $scheme) {
-        $rqst = new stdClass();
-        $rqst->scheme = $scheme;
-        $rqst->method = 'PURGE';
-        $rqst->balancer = $balancer_ip;
-        $rqst->domain = $domain;
-        $rqst->path = str_replace('//', '/', $base_path . $path);
-        $rqst->uri = $rqst->scheme . '://' . $rqst->domain . $rqst->path;
-        $rqst->uri_real = $rqst->scheme . '://' . $rqst->balancer . $rqst->path;
-        $rqst->headers = array(
-          'Host: ' . $rqst->domain,
-          'Accept-Encoding: gzip',
-          'X-Acquia-Purge: ' . $balancer_token,
-        );
-        $requests[] = $rqst;
-      }
-    }
-  }
-
-  // Before we issue these purges against the load balancers we ensure that any
-  // of these URLs are not left cached in Drupal's ordinary page cache.
-  $already_cleared = array();
-  foreach ($requests as $rqst) {
-    if (!in_array($rqst->uri, $already_cleared)) {
-      cache_clear_all($rqst->uri, 'cache_page');
-      $already_cleared[] = $rqst->uri;
-    }
-  }
-
-  // Execute the prepared requests efficiently and log their results.
-  $overall_success = TRUE;
-  foreach (_acquia_purge_curl($requests) as $rqst) {
-
-    // HTTP response codes 404 and 200 should be evaluated as successful. A 404
-    // simply means "object not in cache" and 200's confirm that it got deleted.
-    if (in_array($rqst->error_http, array(404, 200))) {
-      $rqst->result = TRUE;
-    }
-
-    // HTTP response codes 403 (forbidden) and 405 (not allowed) should always
-    // be evaluated as failures. In addition to just that, these behaviors are
-    // also highly suspcious as they shouldn't happen with Acquia's default VCL,
-    // so we're also registering them with ::vclOddities() for diagnostics.
-    if (in_array($rqst->error_http, array(403, 405))) {
-      $service->vclOddities((string) $rqst->error_http);
-      $rqst->result = FALSE;
-    }
-
-    if ($rqst->result == TRUE) {
-      if (_acquia_purge_variable('acquia_purge_log_success') === TRUE) {
-        watchdog(
-          'acquia_purge',
-          "Purged '%url' from load balancer %balancer.",
-          array('%url' => $rqst->uri, '%balancer' => $rqst->balancer),
-          WATCHDOG_INFO);
-      }
-      $service->history($rqst->uri);
+function _acquia_purge_registry() {
+  static $registry;
+  if (is_null($registry)) {
+    $cache_key = __FUNCTION__ . '_v1';
+    if ($cache = cache_get($cache_key)) {
+      $registry = $cache->data;
     }
     else {
-      if ($overall_success) {
-        $overall_success = FALSE;
+      // Parse the module's .info file to retrieve all registered files.
+      require_once DRUPAL_ROOT . '/includes/common.inc';
+      $path = drupal_get_path('module', 'acquia_purge') . '/acquia_purge.info';
+      $info = drupal_parse_info_file($path);
+      // Begin the registry's datastructure.
+      $registry = array(
+        'classes' => array(),
+        'services' => array(),
+        'paths' => array(),
+      );
+      // Add each files[] row in the .info file, to the $registry variable.
+      foreach ($info['files'] as $path) {
+        // Add the class with the number of paths so far as orderable ID.
+        $class = str_replace('.php', '', basename($path));
+        $registry['classes'][$class] = count($registry['paths']);
+        // Add the path to the second listing.
+        $registry['paths'][] = $path;
+        // Generate a service name based on the class by applying a few rules.
+        $service = str_replace('AcquiaPurge', '', $class);
+        $service = preg_replace('/(?<!^)[A-Z]/', '_$0', $service);
+        $service = str_replace('_service', '', drupal_strtolower($service));
+        $registry['services']['_acquia_purge_' . $service] = $class;
       }
-
-      // Write the failure to watchdog and be as descriptive as we can.
-      switch ($rqst->error_curl) {
-        case CURLE_COULDNT_CONNECT:
-          $msg = "Cannot connect to %bal:80, '%path' goes back to queue!";
-          break;
-
-        case CURLE_COULDNT_RESOLVE_HOST:
-          $msg = "Cannot resolve host %bal, '%path' goes back to queue!";
-          break;
-
-        case CURLE_OPERATION_TIMEOUTED:
-          $msg = "Connecting to %bal exceeded %timeout seconds, '%path'"
-            . ' goes back to queue!';
-          break;
-
-        case CURLE_URL_MALFORMAT:
-          $msg = "Cannot purge malformed URL '%uri', '%path' goes back to"
-            . ' queue! DEBUG: %debug';
-          break;
-
-        default:
-          $msg = "Failed purging '%uri' from %bal, '%path' goes back to queue!"
-            . ' CURL: %curl; DEBUG: %debug';
-          break;
-      }
-      watchdog('acquia_purge', $msg,
-        array(
-          '%uri' => $rqst->uri,
-          '%bal' => $rqst->balancer,
-          '%path' => $rqst->path,
-          '%curl' => (string) curl_strerror($rqst->error_curl),
-          '%debug' => $rqst->error_debug,
-          '%timeout' => ACQUIA_PURGE_REQUEST_TIMEOUT,
-        ), WATCHDOG_ERROR);
+      cache_set($cache_key, $registry);
     }
   }
-
-  // If one the many HTTP requests failed we treat the full path as a failure,
-  // by sending back FALSE the item will remain in the queue. Failsafe style.
-  return $overall_success;
+  return $registry;
 }
 
 /**
@@ -1305,7 +1033,7 @@ function _acquia_purge_purge($path) {
 function _acquia_purge_service() {
   static $service;
   if (is_null($service)) {
-    $class = _acquia_purge_load('service');
+    $class = _acquia_purge_load('_acquia_purge_service');
     $service = new $class();
   }
   return $service;
@@ -1351,22 +1079,12 @@ function _acquia_purge_variable($name) {
       'acquia_purge_silentmode'   => FALSE,
       'acquia_purge_allriskmode'  => FALSE,
       'acquia_purge_smartqueue'   => FALSE,
-      // Define DIC-like "service" variables that third-party code can override
-      // to replace the code that _acquia_purge_load() loads. Override with a
-      // relative path, which must contain the class name in the path.
-      '_acquia_purge_service' => 'AcquiaPurgeService',
-      '_acquia_purge_hostinginfo' => 'AcquiaPurgeHostingInfo',
-      '_acquia_purge_processor' => 'AcquiaPurgeProcessorsService',
-      '_acquia_purge_processor_ajax' => 'AcquiaPurgeAjaxProcessor',
-      '_acquia_purge_processor_cron' => 'AcquiaPurgeCronProcessor',
-      '_acquia_purge_processor_runtime' => 'AcquiaPurgeRuntimeProcessor',
-      '_acquia_purge_state_item' => 'AcquiaPurgeStateItem',
-      '_acquia_purge_state_counter' => 'AcquiaPurgeStateCounter',
-      '_acquia_purge_state_disk' => 'AcquiaPurgeDiskStateStorage',
-      '_acquia_purge_state_memcached' => 'AcquiaPurgeMemcachedStateStorage',
-      '_acquia_purge_queue_efficient' => 'AcquiaPurgeEfficientQueue',
-      '_acquia_purge_queue_smart' => 'AcquiaPurgeSmartQueue',
     );
+
+    // Add all code registry services so that these can be overloaded.
+    foreach (_acquia_purge_registry()['services'] as $service => $dfltclass) {
+      $defaults[$service] = $dfltclass;
+    }
   }
 
   // Be explicit about requested variables we don't know about.

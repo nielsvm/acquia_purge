@@ -17,11 +17,15 @@
  *
  * @param string $new
  *   Suggested code replacement.
+ * @param string|null $caller
+ *   Caller that is deprecated, leave NULL for automatic backtrace lookup.
  */
-function _acquia_purge_deprecated($new) {
+function _acquia_purge_deprecated($new, $caller = NULL) {
   $msg = "!old() is deprecated, port your code to !new immediately!";
   $backtrace = debug_backtrace();
-  $caller = $backtrace[1]['function'];
+  if ($caller == NULL) {
+    $caller = $backtrace[1]['function'];
+  }
   $replacements = array('!old' => $caller, '!new' => $new);
   watchdog('acquia_purge', $msg, $replacements, WATCHDOG_WARNING);
 }
@@ -34,6 +38,16 @@ function _acquia_purge_deprecated($new) {
 function _acquia_purge_are_we_on_acquiacloud() {
   _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->isThisAcquiaCloud()');
   return _acquia_purge_service()->hostingInfo()->isThisAcquiaCloud();
+}
+
+/**
+ * DEPRECATED: Turn a PHP variable into a string for debugging.
+ *
+ * @deprecated
+ */
+function _acquia_purge_export_debug_symbols($symbols) {
+  _acquia_purge_deprecated('AcquiaPurgeExecutorBase::exportDebugSymbols()');
+  return '';
 }
 
 /**
@@ -112,13 +126,21 @@ function _acquia_purge_get_site_group() {
 }
 
 /**
+ * DEPRECATED: Purge a single path on all domains and load balancers.
+ *
+ * @deprecated
+ */
+function _acquia_purge_purge($path) {
+  _acquia_purge_deprecated('AcquiaPurgeExecutorAh->invalidate()');
+}
+
+/**
  * DEPRECATED: Process the HTTP requests for a single purge.
  *
  * @deprecated
  */
 function _acquia_purge_purge_requests($requests) {
-  _acquia_purge_deprecated('_acquia_purge_curl()');
-  return _acquia_purge_curl($requests);
+  _acquia_purge_deprecated('AcquiaPurgeExecutorInterface::requestsExecute()');
 }
 
 /**
@@ -127,10 +149,10 @@ function _acquia_purge_purge_requests($requests) {
  * @deprecated
  */
 function _acquia_purge_ui_path_blacklisted() {
-  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::isPathBlacklisted()');
+  _acquia_purge_deprecated('AcquiaPurgeProcessorAjax::isPathBlacklisted()');
   return _acquia_purge_service()
     ->processors()
-    ->get('AcquiaPurgeAjaxProcessor')
+    ->get('AcquiaPurgeProcessorAjax')
     ->isPathBlacklisted();
 }
 
@@ -140,9 +162,9 @@ function _acquia_purge_ui_path_blacklisted() {
  * @deprecated
  */
 function _acquia_purge_ui_trigger_purge() {
-  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::initializeClientSideProcessor()');
+  _acquia_purge_deprecated('AcquiaPurgeProcessorAjax::initializeClientSideProcessor()');
   // Call onInit, which will call initializeClientSideProcessor when it should.
-  _acquia_purge_service()->processors()->get('AcquiaPurgeAjaxProcessor')->onInit();
+  _acquia_purge_service()->processors()->get('AcquiaPurgeProcessorAjax')->onInit();
 }
 
 /**
@@ -206,10 +228,10 @@ function _acquia_purge_queue_history($url = NULL) {
  * @deprecated
  */
 function _acquia_purge_queue_is_user_purging() {
-  _acquia_purge_deprecated('AcquiaPurgeAjaxProcessor::isUserOwningTheQueue()');
+  _acquia_purge_deprecated('AcquiaPurgeProcessorAjax::isUserOwningTheQueue()');
   // Since ::isUserOwningTheQueue is static, call it through a small loophole.
   $service = _acquia_purge_service();
-  $ajaxprocessor = $service->processors()->get('AcquiaPurgeAjaxProcessor');
+  $ajaxprocessor = $service->processors()->get('AcquiaPurgeProcessorAjax');
   return $ajaxprocessor::isUserOwningTheQueue($service);
 }
 
@@ -234,11 +256,16 @@ function _acquia_purge_queue_lock($acquire = TRUE) {
  * @deprecated
  */
 function _acquia_purge_queue_pop($processor = NULL) {
-  _acquia_purge_deprecated('_acquia_purge_service()->process()');
-  if (is_null($processor)) {
-    $processor = '_acquia_purge_purge';
+  if (!is_null($processor)) {
+    _acquia_purge_deprecated(
+      '_acquia_purge_service()->process()',
+      '_acquia_purge_queue_pop($processor)'
+    );
   }
-  return _acquia_purge_service()->process($processor);
+  else {
+    _acquia_purge_deprecated('_acquia_purge_service()->process()');
+  }
+  return _acquia_purge_service()->process();
 }
 
 /**

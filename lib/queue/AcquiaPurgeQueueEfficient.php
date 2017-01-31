@@ -12,7 +12,14 @@
  * attempt to reduce database communication as much as possible. By bundling
  * items into single queries, total queries and roundtrips reduce drastically!
  */
-class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueInterface {
+class AcquiaPurgeQueueEfficient extends SystemQueue implements AcquiaPurgeQueueInterface {
+
+  /**
+   * The queue item class to spawn queue items with.
+   *
+   * @var string
+   */
+  protected $class_queue_item;
 
   /**
    * The state storage which holds the counter state items.
@@ -22,13 +29,19 @@ class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueI
   protected $state;
 
   /**
-   * Construct a AcquiaPurgeEfficientQueue instance.
+   * Construct a AcquiaPurgeQueueEfficient instance.
    *
    * @param AcquiaPurgeStateStorageInterface $state
    *   The state storage required for the queue counters.
    */
   public function __construct(AcquiaPurgeStateStorageInterface $state) {
     $this->state = $state;
+    $this->class_queue_item = _acquia_purge_load(
+    array(
+      '_acquia_purge_queue_item_interface',
+      '_acquia_purge_queue_item'
+    )
+  );
     parent::__construct('acquia_purge');
   }
 
@@ -74,9 +87,12 @@ class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueI
         ORDER BY created, item_id
         ASC', 0, 1, $conditions)->fetchObject();
       if ($item) {
-        $item->item_id = (int) $item->item_id;
-        $item->expire = (int) $item->expire;
-        $item->created = (int) $item->created;
+        $item = new $this->class_queue_item(
+          (int) $item->created,
+          unserialize($item->data),
+          (int) $item->expire,
+          (int) $item->item_id
+        );
 
         // Try to update the item. Only one thread can succeed in UPDATEing the
         // same row. We cannot rely on REQUEST_TIME because items might be
@@ -92,7 +108,6 @@ class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueI
 
         // If there are affected rows, this update succeeded.
         if ($update->execute()) {
-          $item->data = unserialize($item->data);
           return $item;
         }
       }
@@ -118,12 +133,13 @@ class AcquiaPurgeEfficientQueue extends SystemQueue implements AcquiaPurgeQueueI
 
     // Iterate all returned items and unpack them.
     while ($item = $items->fetchObject()) {
-      $item_ids[] = $item->item_id;
-      $item->item_id = (int) $item->item_id;
-      $item->expire = (int) $item->expire;
-      $item->created = (int) $item->created;
-      $item->data = unserialize($item->data);
-      $returned_items[] = $item;
+      $item_ids[] = (int) $item->item_id;
+      $returned_items[] = new $this->class_queue_item(
+        (int) $item->created,
+        unserialize($item->data),
+        (int) $item->expire,
+        (int) $item->item_id
+      );
     }
 
     // Update the items (marking them claimed) in one query.

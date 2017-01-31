@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains AcquiaPurgeAjaxProcessor.
+ * Contains AcquiaPurgeProcessorAjax.
  */
 
 /**
  * Process the queue using a AJAX client-side UI.
  */
-class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
+class AcquiaPurgeProcessorAjax extends AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface {
 
   /**
    * Path blacklist from where the processor UI should stay away.
@@ -50,7 +50,7 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
    *
    * @var string
    */
-  protected $jsClient = '/lib/processor/backend/AcquiaPurgeAjaxProcessor.js';
+  protected $jsClient = '/lib/processor/AcquiaPurgeProcessorAjax.js';
 
   /**
    * {@inheritdoc}
@@ -111,9 +111,9 @@ class AcquiaPurgeAjaxProcessor extends AcquiaPurgeProcessorBase implements Acqui
   public function onMenu(&$items) {
     $items['acquia_purge_ajax_processor'] = array(
       'title' => 'Acquia Purge AJAX processor',
-      'page callback' => 'AcquiaPurgeAjaxProcessor::pathCallback',
+      'page callback' => 'AcquiaPurgeProcessorAjax::pathCallback',
       'access callback' => 'user_is_logged_in',
-      'file' => 'lib/processor/backend/AcquiaPurgeAjaxProcessor.php',
+      'file' => 'lib/processor/AcquiaPurgeProcessorAjax.php',
       'type' => MENU_CALLBACK,
     );
   }

@@ -106,8 +106,8 @@ function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t(
         'Acquia Purge received HTTP 403 (forbidden) responses from one of your'
-      . ' load balancers, this is abnormal behavior! This suggests that you are'
-      . ' running a customized VCL configuration which likely hinders the'
+      . ' load balancers, this is abnormal behavior! This could suggest that'
+      . ' your site runs behind a customized VCL file which likely hinders the'
       . ' proper functioning of this module. Please contact Acquia support with'
       . ' this message to get further guidance on how to resolve the problem.'
     );

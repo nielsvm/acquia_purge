@@ -42,7 +42,8 @@ abstract class AcquiaPurgeStateStorageBase implements AcquiaPurgeStateStorageInt
    */
   public function __construct($buffer) {
     $loaded_items = 0;
-    $class = _acquia_purge_load('state_item');
+    _acquia_purge_load('_acquia_purge_state_item_interface');
+    $class = _acquia_purge_load('_acquia_purge_state_item');
     if (is_array($buffer) && count($buffer)) {
       foreach ($buffer as $key => $value) {
         if (!is_string($key)) {
@@ -73,7 +74,8 @@ abstract class AcquiaPurgeStateStorageBase implements AcquiaPurgeStateStorageInt
    */
   public function get($key, $default = NULL) {
     if (!isset($this->items[$key])) {
-      $class = _acquia_purge_load('state_item');
+      _acquia_purge_load('_acquia_purge_state_item_interface');
+      $class = _acquia_purge_load('_acquia_purge_state_item');
       $this->items[$key] = new $class($this, $key, $default);
     }
     return $this->items[$key];
@@ -83,7 +85,8 @@ abstract class AcquiaPurgeStateStorageBase implements AcquiaPurgeStateStorageInt
    * {@inheritdoc}
    */
   public function getCounter($key) {
-    $class = _acquia_purge_load('state_counter');
+    _acquia_purge_load('_acquia_purge_state_counter_interface');
+    $class = _acquia_purge_load('_acquia_purge_state_counter');
     if (isset($this->items[$key])) {
       if (!($this->items[$key] instanceof AcquiaPurgeStateCounterInterface)) {
         $this->items[$key] = new $class(
