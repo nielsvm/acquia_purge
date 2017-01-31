@@ -69,4 +69,16 @@ interface AcquiaPurgeInvalidationInterface extends AcquiaPurgeQueueStatusInterfa
    */
   public function hasWildcard();
 
+  /**
+   * Set a string suffix to the ::setStatusContext() context to enable setting
+   * multiple statuses within a single executor's ::invalidate() call for a
+   * single invalidation object.
+   *
+   * @param string|null $id
+   *   Unique string suffix to be appended to the executors operating context.
+   *
+   * @see AcquiaPurgeQueueStatusInterface::setStatusContext()
+   */
+  public function setStatusContextSuffix($suffix);
+
 }
