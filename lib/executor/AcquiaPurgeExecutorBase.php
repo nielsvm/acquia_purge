@@ -204,6 +204,7 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
         $processed[$i]->error_debug = '';
         if (!$processed[$i]->result) {
           $debug = curl_getinfo($r->curl);
+          $debug['method'] = $r->method;
           $debug['headers'] = implode('|', $r->headers);
           unset($debug['certinfo']);
           $processed[$i]->error_debug = $this->exportDebugSymbols($debug);
