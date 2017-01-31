@@ -58,6 +58,50 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
   }
 
   /**
+   * Turn a PHP variable into a string with data type information for debugging.
+   *
+   * @param mixed $data
+   *   Arbitrary PHP variable, assumed to be an associative array.
+   *
+   * @return string
+   *   A one-line comma separated string with data types as var_dump() generates.
+   */
+  protected function exportDebugSymbols($data) {
+    // Capture a string using PHPs very own var_dump() using output buffering.
+    ob_start();
+    var_dump($data);
+    $data = ob_get_clean();
+
+    // Clean up and reduce the output footprint for both normal and xdebug output.
+    if (extension_loaded('xdebug')) {
+      $data = trim(html_entity_decode(strip_tags($data)));
+      $data = drupal_substr($data, strpos($data, "\n") + 1);
+      $data = str_replace("  '", '', $data);
+      $data = str_replace("' =>", ':', $data);
+      $data = implode(', ', explode("\n", $data));
+    }
+    else {
+      $data = strip_tags($data);
+      $data = drupal_substr($data, strpos($data, "\n") + 1);
+      $data = str_replace('  ["', '', $data);
+      $data = str_replace("\"]=>\n ", ':', $data);
+      $data = rtrim($data, "}\n");
+      $data = implode(', ', explode("\n", $data));
+    }
+
+    // To reduce bandwidth and storage needs we shorten data type indicators.
+    $data = str_replace(' string', 'S', $data);
+    $data = str_replace(' int', 'I', $data);
+    $data = str_replace(' float', 'F', $data);
+    $data = str_replace(' boolean', 'B', $data);
+    $data = str_replace(' bool', 'B', $data);
+    $data = str_replace(' null', 'NLL', $data);
+    $data = str_replace(' NULL', 'NLL', $data);
+    $data = str_replace('length=', 'l=', $data);
+    return $data;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getId() {
@@ -162,7 +206,7 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
           $debug = curl_getinfo($r->curl);
           $debug['headers'] = implode('|', $r->headers);
           unset($debug['certinfo']);
-          $processed[$i]->error_debug = _acquia_purge_export_debug_symbols($debug);
+          $processed[$i]->error_debug = $this->exportDebugSymbols($debug);
         }
 
         // Remove the handle if parallel processing occurred.

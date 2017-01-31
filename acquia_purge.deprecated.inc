@@ -41,6 +41,16 @@ function _acquia_purge_are_we_on_acquiacloud() {
 }
 
 /**
+ * DEPRECATED: Turn a PHP variable into a string for debugging.
+ *
+ * @deprecated
+ */
+function _acquia_purge_export_debug_symbols($symbols) {
+  _acquia_purge_deprecated('AcquiaPurgeExecutorBase::exportDebugSymbols()');
+  return '';
+}
+
+/**
  * DEPRECATED: Retrieve a variable or state data property.
  *
  * @deprecated
