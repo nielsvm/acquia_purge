@@ -22,6 +22,7 @@ class AcquiaPurgeExecutorPageCache extends AcquiaPurgeExecutorBase implements Ac
    */
   public function invalidate($invalidations) {
     foreach ($invalidations as $invalidation) {
+      cache_clear_all($invalidation->getUri(), 'cache_page');
       $invalidation->setStatusSucceeded();
     }
   }
