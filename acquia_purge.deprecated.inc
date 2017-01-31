@@ -256,11 +256,16 @@ function _acquia_purge_queue_lock($acquire = TRUE) {
  * @deprecated
  */
 function _acquia_purge_queue_pop($processor = NULL) {
-  _acquia_purge_deprecated('_acquia_purge_service()->process()');
-  if (is_null($processor)) {
-    $processor = '_acquia_purge_purge';
+  if (!is_null($processor)) {
+    _acquia_purge_deprecated(
+      '_acquia_purge_service()->process()',
+      '_acquia_purge_queue_pop($processor)'
+    );
   }
-  return _acquia_purge_service()->process($processor);
+  else {
+    _acquia_purge_deprecated('_acquia_purge_service()->process()');
+  }
+  return _acquia_purge_service()->process();
 }
 
 /**
