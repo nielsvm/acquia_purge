@@ -126,6 +126,15 @@ function _acquia_purge_get_site_group() {
 }
 
 /**
+ * DEPRECATED: Purge a single path on all domains and load balancers.
+ *
+ * @deprecated
+ */
+function _acquia_purge_purge($path) {
+  _acquia_purge_deprecated('AcquiaPurgeExecutorAh->invalidate()');
+}
+
+/**
  * DEPRECATED: Process the HTTP requests for a single purge.
  *
  * @deprecated
