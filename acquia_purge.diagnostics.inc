@@ -95,11 +95,11 @@ function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t(
       'The HTTP_X_GEO_COUNTRY variable has been detected, which indicates'
-      . ' that you have GeoIP enabled. If AP appears to function, but your'
-      . " URLs' remain outdated, this is likely the reason why. For the time"
-      . " being, the ideal scenario is to use Maxmind's javascript client"
-      . ' library and redirect your visitors to country-varied pages, see:'
-      . ' https://docs.acquia.com/cloud/configure/geoip'
+      . ' that you have GeoIP enabled. Acquia Purge automatically switched to'
+      . ' issuing BAN-requests. However, this only works behind a Varnish 4'
+      . ' load balancer. When you are seeing HTTP 501 errors in your logs, then'
+      . ' you require upgraded load balancers. Acquia is in the process to'
+      . ' upgrade its entire platform.'
     );
   }
   elseif (in_array('403', $oddities)) {
