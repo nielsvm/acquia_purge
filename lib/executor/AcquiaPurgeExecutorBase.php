@@ -64,41 +64,34 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
    *   Arbitrary PHP variable, assumed to be an associative array.
    *
    * @return string
-   *   A one-line comma separated string with data types as var_dump() generates.
+   *   A one line representation of the data.
    */
   protected function exportDebugSymbols($data) {
-    // Capture a string using PHPs very own var_dump() using output buffering.
-    ob_start();
-    var_dump($data);
-    $data = ob_get_clean();
-
-    // Clean up and reduce the output footprint for both normal and xdebug output.
-    if (extension_loaded('xdebug')) {
-      $data = trim(html_entity_decode(strip_tags($data)));
-      $data = drupal_substr($data, strpos($data, "\n") + 1);
-      $data = str_replace("  '", '', $data);
-      $data = str_replace("' =>", ':', $data);
-      $data = implode(', ', explode("\n", $data));
+    if (is_array($data)) {
+      $i = array();
+      foreach ($data as $k => $v) {
+        $i[] = (is_string($k) ? "$k: " : '') . $this->exportDebugSymbols($v);
+      }
+      return '[' . implode(', ', $i) . ']';
+    }
+    elseif (is_null($data)) {
+      return 'NULL';
+    }
+    elseif (is_int($data)) {
+      return "$data";
+    }
+    elseif (is_float($data)) {
+      return $data . 'f';
+    }
+    elseif (is_bool($data)) {
+      return $data ? 'TRUE' : 'FALSE';
+    }
+    elseif (is_string($data)) {
+      return "'" . $data . "'";
     }
     else {
-      $data = strip_tags($data);
-      $data = drupal_substr($data, strpos($data, "\n") + 1);
-      $data = str_replace('  ["', '', $data);
-      $data = str_replace("\"]=>\n ", ':', $data);
-      $data = rtrim($data, "}\n");
-      $data = implode(', ', explode("\n", $data));
+      return '?';
     }
-
-    // To reduce bandwidth and storage needs we shorten data type indicators.
-    $data = str_replace(' string', 'S', $data);
-    $data = str_replace(' int', 'I', $data);
-    $data = str_replace(' float', 'F', $data);
-    $data = str_replace(' boolean', 'B', $data);
-    $data = str_replace(' bool', 'B', $data);
-    $data = str_replace(' null', 'NLL', $data);
-    $data = str_replace(' NULL', 'NLL', $data);
-    $data = str_replace('length=', 'l=', $data);
-    return $data;
   }
 
   /**
@@ -203,9 +196,8 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
         // Collect debugging information if necessary.
         $processed[$i]->error_debug = '';
         if (!$processed[$i]->result) {
-          $debug = curl_getinfo($r->curl);
-          $debug['method'] = $r->method;
-          $debug['headers'] = implode('|', $r->headers);
+          $debug = array('method' => $r->method, 'headers' => $r->headers);
+          $debug = array_merge($debug, curl_getinfo($r->curl));
           unset($debug['certinfo']);
           $processed[$i]->error_debug = $this->exportDebugSymbols($debug);
         }
