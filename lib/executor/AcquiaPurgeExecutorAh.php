@@ -37,7 +37,7 @@ class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPur
         $r->scheme = $invalidation->getScheme();
         $r->path = $invalidation->getPath();
         $r->uri = $r->scheme . '://' . $r->_balancer_ip . $r->path;
-        $r->method = 'PURGE';
+        $r->method = $invalidation->hasWildcard() ? 'BAN' : 'PURGE';
         $r->headers = array(
           'Host: ' . $r->_host,
           'Accept-Encoding: gzip',
