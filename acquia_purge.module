@@ -699,18 +699,23 @@ function _acquia_purge_input_path_variations(array &$paths, $path = NULL) {
   $paths_new = array();
   foreach ($paths as $path) {
     $path_original = $path;
+    $path_has_wildcard = strpos($path_original, '*') !== FALSE;
     $variations = array();
 
     // Begin all the madness by splitting the path by parameter.
     $path = explode('?', _acquia_purge_input_clean($path));
     $path[0] = rtrim($path[0], '/');
     $add($variations, $path[0]);
-    $add($variations, $path[0] . '/');
+    if (!$path_has_wildcard) {
+      $add($variations, $path[0] . '/');
+    }
     if (module_exists('path')) {
       $add($variations, drupal_get_path_alias($path[0]));
       $add($variations, drupal_get_normal_path($path[0]));
-      $add($variations, drupal_get_path_alias($path[0]) . '/');
-      $add($variations, drupal_get_normal_path($path[0]) . '/');
+      if (!$path_has_wildcard) {
+        $add($variations, drupal_get_path_alias($path[0]) . '/');
+        $add($variations, drupal_get_normal_path($path[0]) . '/');
+      }
     }
     if (isset($path[1])) {
       $add($variations, implode('?', $path));
@@ -720,10 +725,12 @@ function _acquia_purge_input_path_variations(array &$paths, $path = NULL) {
       $add($variations, implode('?', $path));
       $path[0] = drupal_get_normal_path($path_0);
       $add($variations, implode('?', $path));
-      $path[0] = drupal_get_path_alias($path_0) . '/';
-      $add($variations, implode('?', $path));
-      $path[0] = drupal_get_normal_path($path_0) . '/';
-      $add($variations, implode('?', $path));
+      if (!$path_has_wildcard) {
+        $path[0] = drupal_get_path_alias($path_0) . '/';
+        $add($variations, implode('?', $path));
+        $path[0] = drupal_get_normal_path($path_0) . '/';
+        $add($variations, implode('?', $path));
+      }
     }
 
     // Let hook_acquia_purge_variations_alter() implementations edit the list.
