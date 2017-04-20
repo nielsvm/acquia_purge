@@ -144,6 +144,12 @@ exist as of this version and documented below:
 ║                          ║       ║ 'drush ap-forget' to see if that works.   ║
 ║                          ║       ║ $conf['acquia_purge_memcache'] = FALSE;   ║
 ║                          ║       ║                                           ║
+║ acquia_purge_trim_slashes║ TRUE  ║ When set to FALSE, this will cause the    ║
+║                          ║       ║ hook_expire_cache() implementation to stop║
+║                          ║       ║ trimming / characters from URLs coming    ║
+║                          ║       ║ from the expire module.                   ║
+║                          ║       ║ $conf['acquia_purge_trim_slashes'] =FALSE;║
+║                          ║       ║                                           ║
 ║ acquia_purge_passivemode ║ FALSE ║ When set to TRUE, this will cause the     ║
 ║                          ║       ║ hook_expire_cache() implementation to stop║
 ║                          ║       ║ working and effectively allows the module ║

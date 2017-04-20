@@ -228,8 +228,12 @@ function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
 
     // Specifically trim ending slashes on paths originating from expire,
     // see the explanation on https://www.drupal.org/node/2295741.
-    else {
+    elseif (_acquia_purge_variable('acquia_purge_trim_slashes')) {
       $urls[$id] = rtrim($path, '/');
+    }
+
+    else {
+      $urls[$id] = $path;
     }
   }
 
@@ -1075,6 +1079,7 @@ function _acquia_purge_variable($name) {
       'acquia_purge_log_success'  => TRUE,
       'acquia_purge_variations'   => TRUE,
       'acquia_purge_memcache'     => TRUE,
+      'acquia_purge_trim_slashes' => TRUE,
       'acquia_purge_passivemode'  => FALSE,
       'acquia_purge_silentmode'   => FALSE,
       'acquia_purge_allriskmode'  => FALSE,
