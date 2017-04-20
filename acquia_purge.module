@@ -863,6 +863,9 @@ function _acquia_purge_load($dependency) {
   static $path_module, $loaded;
   if (is_null($path_module)) {
     require_once DRUPAL_ROOT . '/includes/common.inc';
+    require_once DRUPAL_ROOT . '/includes/path.inc';
+    require_once DRUPAL_ROOT . '/includes/cache.inc';
+    require_once DRUPAL_ROOT . '/includes/unicode.inc';
     $path_module = DRUPAL_ROOT . '/' . drupal_get_path('module', 'acquia_purge');
   }
   if (is_null($loaded)) {
