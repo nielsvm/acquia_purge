@@ -423,7 +423,7 @@ function theme_acquia_purge_status_report(array $variables) {
   // Require all requirement constants from the installer code.
   include_once DRUPAL_ROOT . '/includes/install.inc';
 
-  foreach ($variables as $requirement) {
+  foreach ($variables['diagnostics'] as $requirement) {
     if (empty($requirement) || !is_array($requirement)) {
       continue;
     }

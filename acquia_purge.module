@@ -265,7 +265,7 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
   // Add a full-blown status report on how Acquia Purge is doing.
   $diagnostics = _acquia_purge_get_diagnosis();
   $form['tabs']['status']['ap_status'] = array(
-    '#markup' => theme('acquia_purge_status_report', $diagnostics),
+    '#markup' => theme('acquia_purge_status_report', array('diagnostics' => $diagnostics)),
     '#type' => 'item',
   );
 }
@@ -342,7 +342,7 @@ function acquia_purge_theme($existing, $type, $theme, $path) {
       'file' => 'acquia_purge.admin.inc',
     ),
     'acquia_purge_status_report' => array(
-      'render element' => 'requirements',
+      'variables' => array('requirements' => array()),
       'file' => 'acquia_purge.admin.inc',
     ),
     'acquia_purge_status_widget' => array(
