@@ -95,7 +95,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
     return array(
       'status' => array(
         '#type' => 'item',
-        '#title' => t("We're sorry, but due a critical error condition it is not possible to use this form. Please contact your administrator."),
+        '#title' => t("We're sorry, but due to a critical error condition it is not possible to use this form. Please contact your administrator."),
         '#markup' => theme(
           'status_report',
           array(
