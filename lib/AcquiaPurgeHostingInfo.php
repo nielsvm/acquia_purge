@@ -96,10 +96,10 @@ class AcquiaPurgeHostingInfo {
     }
 
     // Determine what the protocol schemes are based on settings.
-    if (_acquia_purge_variable('acquia_purge_http') === TRUE) {
+    if (_acquia_purge_variable('acquia_purge_http')) {
       $this->schemes[] = 'http';
     }
-    if (_acquia_purge_variable('acquia_purge_https') === TRUE) {
+    if (_acquia_purge_variable('acquia_purge_https')) {
       $this->schemes[] = 'https';
     }
 

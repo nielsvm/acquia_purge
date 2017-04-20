@@ -205,7 +205,7 @@ class AcquiaPurgeProcessorAjax extends AcquiaPurgeProcessorBase implements Acqui
   protected function isUiVisible() {
 
     // Always hide the processor in case this is requested.
-    if (_acquia_purge_variable('acquia_purge_silentmode') === TRUE) {
+    if (_acquia_purge_variable('acquia_purge_silentmode')) {
       return FALSE;
     }
 

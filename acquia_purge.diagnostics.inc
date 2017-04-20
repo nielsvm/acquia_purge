@@ -508,10 +508,10 @@ function _acquia_purge_get_diagnosis_processing_mode($t, $hostingInfo) {
   );
 
   // Add tests for lateruntime and cron processing modes, when enabled.
-  if (_acquia_purge_variable('acquia_purge_lateruntime') === TRUE) {
+  if (_acquia_purge_variable('acquia_purge_lateruntime')) {
     $test['value'][] = $t('lateruntime');
   }
-  if (_acquia_purge_variable('acquia_purge_cron') === TRUE) {
+  if (_acquia_purge_variable('acquia_purge_cron')) {
     $test['value'][] = $t('cron');
 
     // Raise a warning when it was too long ago since cron ran.
