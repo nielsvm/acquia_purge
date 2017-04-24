@@ -529,7 +529,7 @@ function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
   if (is_null($tests)) {
     $prefix = '_acquia_purge_get_diagnosis_';
     $tests = array();
-    $hostingInfo = _acquia_purge_service()->hostingInfo();
+    $service = _acquia_purge_service();
     $t = get_t();
 
     // Require the file that contains our tests: acquia_purge.diagnostics.inc.
@@ -548,7 +548,7 @@ function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
 
       // Add the test and its resulting data to the tests array.
       $tst = str_replace($prefix, 'acquia_purge_', $function);
-      $tests[$tst] = $function($t, $hostingInfo);
+      $tests[$tst] = $function($t, $service);
 
       // Overwrite or assure data integrity on most of the fields.
       $tests[$tst]['name'] = isset($tests[$tst]['title']) ? $tests[$tst]['title'] : $tst;
