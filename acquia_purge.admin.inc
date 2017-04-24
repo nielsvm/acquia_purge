@@ -436,7 +436,7 @@ function theme_acquia_purge_status_report(array $variables) {
       $output .= '<tr class="' . $severity['class'] . ' merge-up"><td colspan="3" class="status-description">' . $requirement['description'] . '</td></tr>';
     }
     else {
-      $output .= '<tr class="' . $severity['class'] . '"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . drupal_strtolower($requirement['value_plain']) . '</td></tr>';
+      $output .= '<tr class="' . $severity['class'] . '"><td class="status-title"><b>' . $requirement['name'] . '</b></td><td class="status-value">' . $requirement['value_plain'] . '</td></tr>';
     }
   }
 
