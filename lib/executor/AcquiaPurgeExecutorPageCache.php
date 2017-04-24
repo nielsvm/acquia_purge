@@ -13,7 +13,7 @@ class AcquiaPurgeExecutorPageCache extends AcquiaPurgeExecutorBase implements Ac
   /**
    * {@inheritdoc}
    */
-  public static function isEnabled() {
+  public static function isEnabled(AcquiaPurgeService $service) {
     return TRUE;
   }
 

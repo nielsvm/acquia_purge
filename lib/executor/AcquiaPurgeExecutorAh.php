@@ -13,7 +13,7 @@ class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPur
   /**
    * {@inheritdoc}
    */
-  public static function isEnabled() {
+  public static function isEnabled(AcquiaPurgeService $service) {
     return TRUE;
   }
 

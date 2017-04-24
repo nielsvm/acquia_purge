@@ -60,8 +60,11 @@ interface AcquiaPurgeExecutorInterface {
 
   /**
    * Determine if the executor is enabled or not.
+   *
+   * @param AcquiaPurgeService $service
+   *   The Acquia Purge service.
    */
-  public static function isEnabled();
+  public static function isEnabled(AcquiaPurgeService $service);
 
   /**
    * Execute a series of HTTP requests efficiently through cURL's multi handler.
