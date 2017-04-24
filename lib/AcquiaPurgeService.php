@@ -57,6 +57,13 @@ class AcquiaPurgeService {
   protected $hostingInfo = NULL;
 
   /**
+   * The loaded AcquiaPurgeOddities object.
+   *
+   * @var AcquiaPurgeOddities
+   */
+  protected $oddities = NULL;
+
+  /**
    * The loaded AcquiaPurgeProcessorsService object.
    *
    * @var AcquiaPurgeProcessorsService
@@ -339,6 +346,20 @@ class AcquiaPurgeService {
   }
 
   /**
+   * Retrieve the AcquiaPurgeOddities object.
+   *
+   * @return AcquiaPurgeOddities
+   *   The oddities service.
+   */
+  public function oddities() {
+    if (is_null($this->oddities)) {
+      $class = _acquia_purge_load('_acquia_purge_oddities');
+      $this->oddities = new $class($this);
+    }
+    return $this->oddities;
+  }
+
+  /**
    * Process as many items from the queue as the runtime capacity allows.
    *
    * @return bool
@@ -575,28 +596,6 @@ class AcquiaPurgeService {
     }
 
     return is_null($key) ? $info : $info[$key];
-  }
-
-  /**
-   * Keep track of detected issues in the upstream VCL deployed on Acquia Cloud.
-   *
-   * @param null|string $add_oddity
-   *   (optional) When passed, it registers the parameter as detected behavioral
-   *   oddity. For example: 403's are not normal and indicate a custom VCL.
-   *
-   * @return string[]
-   *   The list of known oddities.
-   */
-  public function vclOddities($add_oddity = NULL) {
-    $state_item = $this->state()->get('vcl_oddities', array());
-    if (!is_null($add_oddity)) {
-      $oddities = $state_item->get();
-      if (!in_array($add_oddity, $oddities)) {
-        $oddities[] = $add_oddity;
-        $state_item->set($oddities);
-      }
-    }
-    return $state_item->get();
   }
 
 }

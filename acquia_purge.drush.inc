@@ -248,6 +248,7 @@ function drush_acquia_purge_ap_forget() {
   // Retrieve statistics, clear the queue and log to Drush.
   $remaining = $service->stats('remaining');
   $service->clear();
+  $service->oddities()->wipe();
   drush_log(dt("Removed @remaining items from the queue.",
     array('@remaining' => $remaining)), 'ok');
 }

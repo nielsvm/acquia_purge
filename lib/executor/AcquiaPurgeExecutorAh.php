@@ -54,15 +54,14 @@ class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPur
 
       // Regard HTTP 200 and 404 as successful cache invalidations. Anything
       // else isn't expected to come back from Acquia Cloud's load balancers and
-      // is therefore registered with ::vclOddities() to be able to diagnose
-      // the problem later on.
+      // is therefore registered as oddity to be able to diagnose later.
       if (in_array($request->response_code, array(404, 200))) {
         $request->result = TRUE;
       }
       else {
         $request->result = FALSE;
         if (strlen($response_code = (string) $request->response_code)) {
-          $this->service->vclOddities($response_code);
+          $this->service->oddities()->add($response_code);
         }
       }
 

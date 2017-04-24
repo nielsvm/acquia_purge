@@ -43,6 +43,7 @@ function acquia_purge_install() {
 function acquia_purge_uninstall() {
   drupal_load('module', 'acquia_purge');
   _acquia_purge_service()->clear();
+  _acquia_purge_service()->oddities()->wipe();
 }
 
 /**

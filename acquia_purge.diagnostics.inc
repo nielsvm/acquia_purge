@@ -66,12 +66,11 @@ function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
   // When HTTP_X_GEO_COUNTRY is detected, register it as VCL oddity.
   if (isset($_SERVER['HTTP_X_GEO_COUNTRY'])) {
     if (strlen($_SERVER['HTTP_X_GEO_COUNTRY'])) {
-      $service->vclOddities('geoip');
+      $service->oddities()->add('geoip');
     }
   }
 
   // Evaluate the sanity of the amount of load balancers.
-  $oddities = $service->vclOddities();
   $balancers_c = count($hostingInfo->getBalancerAddresses());
   if (!$balancers_c) {
     $test['value'] = $t('No load balancers detected.');
@@ -91,7 +90,7 @@ function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
       . ' attention to the number of items in the queue table.',
       array('@no' => $balancers_c));
   }
-  elseif (in_array('geoip', $oddities)) {
+  elseif ($service->oddities()->has('geoip')) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t(
       'The HTTP_X_GEO_COUNTRY variable has been detected, which indicates'
@@ -102,7 +101,7 @@ function _acquia_purge_get_diagnosis_balancers($t, $hostingInfo) {
       . ' upgrade its entire platform.'
     );
   }
-  elseif (in_array('403', $oddities)) {
+  elseif ($service->oddities()->has('403')) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t(
         'Acquia Purge received HTTP 403 (forbidden) responses from one of your'
@@ -808,13 +807,12 @@ function _acquia_purge_get_diagnosis_statedata($t, $hostingInfo) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_get_diagnosis_token($t, $hostingInfo) {
-  $oddities = _acquia_purge_service()->vclOddities();
   $test = array(
     'title' => $t('Authentication token'),
     'value' => $hostingInfo->getBalancerToken(),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
-  if (in_array('405', $oddities)) {
+  if (_acquia_purge_service()->oddities()->has('405')) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
     $test['description'] = $t(
       'Acquia Purge received HTTP 405 (not allowed) responses from one of'

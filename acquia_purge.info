@@ -8,6 +8,7 @@ dependencies[] = expire (>=2.0-rc2)
 ; file is ordered according to code composition. See _acquia_purge_load().
 files[] = lib/AcquiaPurgeService.php
 files[] = lib/AcquiaPurgeHostingInfo.php
+files[] = lib/AcquiaPurgeOddities.php
 files[] = lib/processor/AcquiaPurgeProcessorsService.php
 files[] = lib/processor/AcquiaPurgeProcessorInterface.php
 files[] = lib/processor/AcquiaPurgeProcessorBase.php
