@@ -267,6 +267,41 @@ function _acquia_purge_get_diagnosis_domains($t, $hostingInfo) {
 }
 
 /**
+ * Test and report which executors are loaded.
+ *
+ * @param string $t
+ *   Name of the t() function to call.
+ * @param AcquiaPurgeHostingInfo $hostingInfo
+ *   The hosting info object.
+ *
+ * @return array
+ *   Associative array with the following elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
+ */
+function _acquia_purge_get_diagnosis_executors($t, $hostingInfo) {
+  $executors = _acquia_purge_service()->executorIds();
+  foreach ($executors as $n => $id) {
+    $executors[$n] = str_replace('AcquiaPurgeExecutor', '', $id);
+  }
+  $test = array(
+    'value' => implode(', ', $executors),
+    'title' => $t('Execution backends'),
+    'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
+    'description' => $t('The loaded execution engines that will process each'
+      . 'path given to Acquia Purge.'),
+  );
+  if (empty($executors)) {
+    $test['value'] = $t('None');
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
+    $test['description'] = $t("Can't work without loaded executors!");
+  }
+  return $test;
+}
+
+/**
  * Diagnose several of the various settings the expire module provides.
  *
  * @param string $t

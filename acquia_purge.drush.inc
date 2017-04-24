@@ -164,7 +164,7 @@ function _drush_acquia_purge_ap_diagnosis_log(array $test, $longest) {
     str_repeat(' ', $pad_maxlength - strlen($type)),
     drupal_strtoupper($test['name']),
     str_repeat(' ', $longest - strlen($test['name'])),
-    drupal_strtolower($test['value_plain'])
+    $test['value_plain']
   );
 
   // Print descriptions for warnings and errors.

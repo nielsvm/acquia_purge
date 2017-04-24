@@ -229,6 +229,20 @@ class AcquiaPurgeService {
   }
 
   /**
+   * Retrieve IDs of the loaded executor plugins.
+   *
+   * @return string[]
+   *   Non-associative array with plugin IDs.
+   */
+  public function executorIds() {
+    $ids = array();
+    foreach ($this->executors() as $executor) {
+      $ids[] = $executor->getId();
+    }
+    return $ids;
+  }
+
+  /**
    * Retrieve the AcquiaPurgeExecutorsService object.
    *
    * @return AcquiaPurgeExecutorsService
