@@ -32,6 +32,13 @@ class AcquiaPurgeHostingInfo {
   protected $domains = array();
 
   /**
+   * The backend class the page cache operates on.
+   *
+   * @var string
+   */
+  protected $pageCacheBackend = 'DrupalDatabaseCache';
+
+  /**
    * The list of protocol schemes to be purged.
    *
    * @var string[]
@@ -48,21 +55,21 @@ class AcquiaPurgeHostingInfo {
   /**
    * The Acquia site group.
    *
-   * @var bool|string
+   * @var boolean|string
    */
   protected $siteGroup = FALSE;
 
   /**
    * The Acquia site name.
    *
-   * @var bool|string
+   * @var boolean|string
    */
   protected $siteName = FALSE;
 
   /**
   * Whether the current hosting environment is Acquia Cloud or not.
   *
-  * @var bool
+  * @var boolean
   */
   protected $isThisAcquiaCloud = FALSE;
 
@@ -94,6 +101,10 @@ class AcquiaPurgeHostingInfo {
     if ($token_configured = _acquia_purge_variable('acquia_purge_token')) {
       $this->balancerToken = (string) trim($token_configured);
     }
+
+    // Determine what the page cache is operating on.
+    $this->pageCacheBackend = variable_get('cache_default_class', $this->pageCacheBackend);
+    $this->pageCacheBackend = variable_get('cache_class_cache_page', $this->pageCacheBackend);
 
     // Determine what the protocol schemes are based on settings.
     if (_acquia_purge_variable('acquia_purge_http')) {
@@ -356,6 +367,16 @@ class AcquiaPurgeHostingInfo {
   }
 
   /**
+   * Get the backend class the page cache operates on.
+   *
+   * @return string
+   *   Class name, e.g. 'DrupalDatabaseCache', 'DrupalFakeCache' or different.
+   */
+  public function getPageCacheBackend() {
+    return $this->pageCacheBackend;
+  }
+
+  /**
    * Get a list of protocol schemes that will be purged.
    *
    * @return string[]
@@ -378,7 +399,7 @@ class AcquiaPurgeHostingInfo {
   /**
    * Get the Acquia site group.
    *
-   * @return false|string
+   * @return boolean|string
    *   The site group, e.g. 'site' or '' when unavailable.
    */
   public function getSiteGroup() {
@@ -388,7 +409,7 @@ class AcquiaPurgeHostingInfo {
   /**
    * Get the Acquia site name.
    *
-   * @return false|string
+   * @return boolean|string
    *   The site group, e.g. 'sitedev' or '' when unavailable.
    */
   public function getSiteName() {
@@ -396,9 +417,19 @@ class AcquiaPurgeHostingInfo {
   }
 
   /**
+   * Determine whether DrupalFakeCache is powering the page cache or not.
+   *
+   * @return boolean
+   *   True when DrupalFakeCache is active, FALSE otherwise.
+   */
+  public function isPageCacheFake() {
+    return ($this->pageCacheBackend === 'DrupalFakeCache') ? TRUE : FALSE;
+  }
+
+  /**
    * Determine whether the current hosting environment is Acquia Cloud or not.
    *
-   * @return true|false
+   * @return boolean
    *   Boolean expression where 'true' indicates Acquia Cloud or 'false'.
    */
   public function isThisAcquiaCloud() {
