@@ -23,12 +23,17 @@ class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPur
   public function invalidate($invalidations) {
     $hosting_info = $this->service->hostingInfo();
     $balancer_token = $hosting_info->getBalancerToken();
-    $geoip = in_array('geoip', $this->service->vclOddities());
+    $geoip = $this->service->oddities()->has('geoip');
+    $wildcards = $this->service->oddities()->has('wildcards');
 
     // Create a long list of executable HTTP requests.
     $requests = array();
     foreach ($hosting_info->getBalancerAddresses() as $balancer_ip) {
       foreach ($invalidations as $invalidation) {
+        $invalidation_has_wildcard = $invalidation->hasWildcard();
+        $request_must_use_ban = $geoip || $invalidation_has_wildcard;
+
+        // Fetch a new request object and propagate all data.
         $r = $this->getRequest();
         // Set properties not used by ::requestsExecute() but that we use later.
         $r->_invalidation = $invalidation;
@@ -38,13 +43,19 @@ class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPur
         $r->scheme = $invalidation->getScheme();
         $r->path = $invalidation->getPath();
         $r->uri = $r->scheme . '://' . $r->_balancer_ip . $r->path;
-        $r->method = ($geoip || $invalidation->hasWildcard()) ? 'BAN' : 'PURGE';
+        $r->method = $request_must_use_ban ? 'BAN' : 'PURGE';
         $r->headers = array(
           'Host: ' . $r->_host,
           'Accept-Encoding: gzip',
           'X-Acquia-Purge: ' . $balancer_token,
         );
         $requests[] = $r;
+
+        // Register the 'wildcards' oddity when this is the first encountered
+        // wildcard invalidation, this way, diagnostics can act report problems.
+        if ($invalidation_has_wildcard && (!$wildcards)) {
+          $this->service->oddities()->add('wildcards');
+        }
       }
     }
 

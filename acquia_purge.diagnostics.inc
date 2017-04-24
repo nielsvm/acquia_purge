@@ -425,16 +425,17 @@ function _acquia_purge_get_diagnosis_logging($t, $hostingInfo) {
  */
 function _acquia_purge_get_diagnosis_page_cache($t, $hostingInfo) {
   $cache = variable_get('cache', 0);
+  $cache_backend = $hostingInfo->getPageCacheBackend();
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
-    'value' => $cache ? $t('Enabled') : $t('Disabled'),
+    'value' => $cache ? $t('Enabled (@b)', array('@b' => $cache_backend)) : $t('Disabled'),
     'title' => $t('Anonymous page cache'),
   );
 
   // See https://www.drupal.org/node/2330805
   if ((!$cache) && module_exists('authcache')) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_OK;
-    $test['value'] = $t('Disabled because of Authcache');
+    $test['value'] = $t('Disabled (because of Authcache)');
   }
   elseif (!$cache) {
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_ERROR;
@@ -444,6 +445,17 @@ function _acquia_purge_get_diagnosis_page_cache($t, $hostingInfo) {
       . ' pages from its cache to offload traffic from your web servers. The'
       . ' more traffic served from your load balancer, the faster your'
       . ' site will be!');
+  }
+  elseif ($hostingInfo->isPageCacheFake()) {
+    $test['value'] = $t("Enabled (DrupalFakeCache, executor disabled)");
+  }
+  elseif (_acquia_purge_service()->oddities()->has('wildcards')) {
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('Your site invalidated one or more paths with'
+      . ' wildcard characters in them in the past, e.g. "news/*". Because of'
+      . ' this, you are now recommended to configure DrupalFakeCache as'
+      . " documented on https://www.drupal.org/node/797346. If you don't do"
+      . ' this, outdated cached copies will be returned from the page cache.');
   }
   return $test;
 }
