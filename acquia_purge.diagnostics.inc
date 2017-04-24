@@ -810,7 +810,7 @@ function _acquia_purge_get_diagnosis_statedata($t, $hostingInfo) {
 function _acquia_purge_get_diagnosis_token($t, $hostingInfo) {
   $oddities = _acquia_purge_service()->vclOddities();
   $test = array(
-    'title' => $t('Authentication Token'),
+    'title' => $t('Authentication token'),
     'value' => $hostingInfo->getBalancerToken(),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
