@@ -69,6 +69,11 @@ define('ACQUIA_PURGE_SEVLEVEL_WARNING', 1);
 define('ACQUIA_PURGE_SEVLEVEL_ERROR', 2);
 
 /**
+ * Version constant used in cache keys.
+ */
+define('ACQUIA_PURGE_VERSION', '1_4');
+
+/**
  * For the time being, early-load code symbols that got deprecated in 7.x-1.2.
  *
  * It is costly to carry barely used function definitions, yet at the other hand
@@ -1004,7 +1009,7 @@ function _acquia_purge_manualpurge_submit($form, &$form_state) {
 function _acquia_purge_registry() {
   static $registry;
   if (is_null($registry)) {
-    $cache_key = __FUNCTION__ . '_v1';
+    $cache_key = __FUNCTION__ . '_v' . ACQUIA_PURGE_VERSION;
     if ($cache = cache_get($cache_key)) {
       $registry = $cache->data;
     }
