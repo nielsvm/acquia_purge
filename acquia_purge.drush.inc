@@ -298,7 +298,7 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
     }
 
     // Define the batch operation we're going to conduct.
-    $steps = (int) ceil($stats['remaining'] / _acquia_purge_get_capacity());
+    $steps = (int) ceil($stats['remaining'] / $service->capacity()->queueClaimsLimit());
     $batch = array(
       'title' => dt('Purging'),
       'operations' => array(),

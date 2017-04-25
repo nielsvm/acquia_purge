@@ -10,6 +10,7 @@ files[] = lib/AcquiaPurgeService.php
 files[] = lib/AcquiaPurgeHostingInfo.php
 files[] = lib/AcquiaPurgeDiagnostics.php
 files[] = lib/AcquiaPurgeOddities.php
+files[] = lib/AcquiaPurgeCapacity.php
 files[] = lib/processor/AcquiaPurgeProcessorsService.php
 files[] = lib/processor/AcquiaPurgeProcessorInterface.php
 files[] = lib/processor/AcquiaPurgeProcessorBase.php

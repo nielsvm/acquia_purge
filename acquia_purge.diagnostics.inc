@@ -595,8 +595,9 @@ function _acquia_purge_diagnostics_processing_mode($t, $service) {
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
 function _acquia_purge_diagnostics_processing_capacity($t, $service) {
-  $maxitems = _acquia_purge_get_capacity();
-  $factor = _acquia_purge_get_capacity_factor();
+  $capacity = $service->capacity();
+  $maxitems = $capacity->queueClaimsLimit();
+  $factor = $capacity->httpRequestsFactor();
   $test = array(
     'title' => $t('Processing capacity'),
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
@@ -719,7 +720,7 @@ function _acquia_purge_diagnostics_queue_volume($t, $service) {
   $test = array('title' => $t('Queue volume'));
 
   // Define our warning and shutdown thresholds.
-  $factor   = _acquia_purge_get_capacity_factor();
+  $factor   = $service->capacity()->httpRequestsFactor();
   $warning  = ceil(3000 / $factor);
   $shutdown = ceil(10000 / $factor);
 
@@ -870,7 +871,7 @@ function _acquia_purge_diagnostics_status($t, $service) {
   // the factor is, the more tolerant our limit is. Limits for factors 1-14:
   // 20, 20, 27, 64, 125, 216, 343, 512, 729, 1000, 1331, 1728, 2197, 2744
   if (!is_int($errorlimit)) {
-    $factor = _acquia_purge_get_capacity_factor();
+    $factor = $service->capacity()->httpRequestsFactor();
     $errorlimit = ($factor <= 2) ? 20 : ceil(pow($factor, 3));
   }
   if ($stats['bad'] > $errorlimit) {

@@ -128,17 +128,17 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
     while ($unprocessed > 0) {
 
       // Group requests per sets that we can run in parallel.
-      for ($i = 0; $i < ACQUIA_PURGE_PARALLEL_REQUESTS; $i++) {
+      for ($i = 0; $i < AcquiaPurgeCapacity::HTTP_PARALLEL_REQUESTS; $i++) {
         if ($r = array_shift($requests)) {
           $r->curl = curl_init();
 
           // Instantiate the cURL resource and configure its runtime parameters.
           curl_setopt($r->curl, CURLOPT_URL, $r->uri);
-          curl_setopt($r->curl, CURLOPT_TIMEOUT, ACQUIA_PURGE_REQUEST_TIMEOUT);
           curl_setopt($r->curl, CURLOPT_HTTPHEADER, $r->headers);
           curl_setopt($r->curl, CURLOPT_CUSTOMREQUEST, $r->method);
           curl_setopt($r->curl, CURLOPT_FAILONERROR, TRUE);
           curl_setopt($r->curl, CURLOPT_RETURNTRANSFER, TRUE);
+          curl_setopt($r->curl, CURLOPT_TIMEOUT, AcquiaPurgeCapacity::HTTP_REQUEST_TIMEOUT);
 
           // For SSL purging, we disable SSL host and peer verification. This
           // should trigger red flags to the security concerned user, but it
@@ -245,7 +245,7 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
         $vars['%path'] = $r->path;
         $vars['%curl'] = (string) curl_strerror($r->error_curl);
         $vars['%debug'] = $r->error_debug;
-        $vars['%timeout'] = ACQUIA_PURGE_REQUEST_TIMEOUT;
+        $vars['%timeout'] = AcquiaPurgeCapacity::HTTP_REQUEST_TIMEOUT;
         switch ($r->error_curl) {
           case CURLE_COULDNT_CONNECT:
             $msg = "%id: unable to connect to %host, ";

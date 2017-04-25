@@ -43,9 +43,9 @@ class AcquiaPurgeProcessorRuntime extends AcquiaPurgeProcessorBase implements Ac
    * Attempt to process a chunk from the queue.
    *
    * When processing already occurred earlier during this request, it can occur
-   * that this call will not process anything anymore. To prevent resource
-   * shortage, _acquia_purge_get_capacity() maintains global status of how much
-   * items can still be processed, and can return 0 at some point.
+   * that this call will not process anything anymore. AcquiaPurgeCapacity keeps
+   * the number of claimable items per request and can reach 0 when other
+   * processors already called ::process() before.
    *
    * @param bool $log
    *   (optional) Whether diagnostic failure should be logged or not.

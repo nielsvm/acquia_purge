@@ -35,7 +35,7 @@ function _acquia_purge_deprecated($new, $caller = NULL) {
  *
  * @deprecated
  */
- function _acquia_purge_are_we_allowed_to_purge() {
+function _acquia_purge_are_we_allowed_to_purge() {
   _acquia_purge_deprecated('!_acquia_purge_service()->diagnostics()->isSystemBlocked()');
   return !_acquia_purge_service()->diagnostics()->isSystemBlocked();
 }
@@ -93,6 +93,42 @@ function _acquia_purge_get($name, $get_default = FALSE) {
 function _acquia_purge_get_balancers() {
   _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->getBalancerAddresses()');
   return _acquia_purge_service()->hostingInfo()->getBalancerAddresses();
+}
+
+/**
+ * DEPRECATED: Calculate how many items can be purged during the
+ * execution of this script.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_capacity($subtract = NULL) {
+  _acquia_purge_deprecated('_acquia_purge_service()->capacity()->queueClaimsLimit()');
+  $limit = _acquia_purge_service()->capacity()->queueClaimsLimit();
+  if (!is_null($subtract)) {
+    _acquia_purge_service()->capacity()->queueClaimsSubtract($subtract);
+  }
+  return $limit;
+}
+
+/**
+ * DEPRECATED: Calculate the slowdown factor based on configuration.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_capacity_factor() {
+  _acquia_purge_deprecated('_acquia_purge_service()->capacity()->httpRequestsFactor()');
+  return _acquia_purge_service()->capacity()->httpRequestsFactor();
+}
+
+/**
+ * DEPRECATED: Calculate the maximum amount of outgoing HTTP requests we can
+ * make.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_capacity_maxrequests() {
+  _acquia_purge_deprecated('_acquia_purge_service()->capacity()->httpRequestsLimit()');
+  return _acquia_purge_service()->capacity()->httpRequestsLimit();
 }
 
 /**

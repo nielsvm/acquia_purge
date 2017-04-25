@@ -36,6 +36,13 @@ class AcquiaPurgeService {
   protected $deduplicateLists = array();
 
   /**
+   * The loaded AcquiaPurgeCapacity object.
+   *
+   * @var AcquiaPurgeCapacity
+   */
+  protected $capacity = NULL;
+
+  /**
    * The loaded AcquiaPurgeDiagnostics object.
    *
    * @var AcquiaPurgeDiagnostics
@@ -172,6 +179,20 @@ class AcquiaPurgeService {
     }
 
     return $this->stats();
+  }
+
+  /**
+   * Retrieve the capacity tracker service.
+   *
+   * @return AcquiaPurgeCapacity
+   *   The capacity tracker object.
+   */
+  public function capacity() {
+    if (is_null($this->capacity)) {
+      $class = _acquia_purge_load('_acquia_purge_capacity');
+      $this->capacity = new $class($this);
+    }
+    return $this->capacity;
   }
 
   /**
@@ -385,7 +406,7 @@ class AcquiaPurgeService {
     }
 
     // How much can we safely process during this request?
-    $maxitems = _acquia_purge_get_capacity();
+    $maxitems = $this->capacity()->queueClaimsLimit();
     if ($maxitems < 1) {
       return FALSE;
     }
@@ -451,7 +472,7 @@ class AcquiaPurgeService {
     $this->queue()->releaseItemMultiple($failed);
 
     // Adjust the remaining capacity downwards for future ::process() calls.
-    _acquia_purge_get_capacity(count($succeeded) + count($failed));
+    $this->capacity()->queueClaimsSubtract(count($succeeded) + count($failed));
 
     // When the bottom of the queue has been reached, reset all state data.
     if ($this->queue()->numberOfItems() === 0) {
