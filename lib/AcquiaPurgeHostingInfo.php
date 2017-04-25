@@ -147,10 +147,9 @@ class AcquiaPurgeHostingInfo {
   protected function domains() {
 
     // Avoid automatic detection when 'acquia_purge_domains' contains hardcodes.
-    $hardcodes = _acquia_purge_variable('acquia_purge_domains');
-    if (is_array($hardcodes) && count($hardcodes)) {
-      foreach ($hardcodes as $hardcoded_domain) {
-        $this->domains[] = $hardcoded_domain;
+    if ($this->areDomainsHardcoded()) {
+      foreach (_acquia_purge_variable('acquia_purge_domains') as $hardcode) {
+        $this->domains[] = $hardcode;
       }
     }
 
@@ -428,6 +427,17 @@ class AcquiaPurgeHostingInfo {
    */
   public function getSiteName() {
     return $this->siteName;
+  }
+
+  /**
+   * Are the domains manually hardcoded?
+   *
+   * @return bool
+   *   Boolean TRUE if domains are hardcoded, FALSE if automatically discovered.
+   */
+  public function areDomainsHardcoded() {
+    $hardcodes = _acquia_purge_variable('acquia_purge_domains');
+    return is_array($hardcodes) && count($hardcodes);
   }
 
   /**
