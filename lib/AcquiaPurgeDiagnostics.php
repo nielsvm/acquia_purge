@@ -88,7 +88,7 @@ class AcquiaPurgeDiagnostics {
    */
   protected function initializeTestFunctionsList() {
     if (empty($this->functions)) {
-      $cid = 'acquia_purge_diagnostics_v' . ACQUIA_PURGE_VERSION;
+      $cid = ACQUIA_PURGE_CID_PREFIX . '_diagnostics';
       if ($cache = cache_get($cid)) {
         $this->functions = $cache->data['f'];
         $this->includes = $cache->data['i'];
