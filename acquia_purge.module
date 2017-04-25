@@ -6,6 +6,11 @@
  */
 
 /**
+ * The current module version.
+ */
+define('ACQUIA_PURGE_VERSION', '7.x-1.4-DEVELOPMENT');
+
+/**
  * Cache ID prefix string.
  *
  * All calls to cache_get()/cache_set() in this module are prefixed with this
