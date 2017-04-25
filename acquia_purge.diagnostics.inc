@@ -454,7 +454,8 @@ function _acquia_purge_diagnostics_page_cache($t, $service) {
       . ' wildcard characters in them in the past, e.g. "news/*". Because of'
       . ' this, you are now recommended to configure DrupalFakeCache as'
       . " documented on https://www.drupal.org/node/797346. If you don't do"
-      . ' this, outdated cached copies will be returned from the page cache.');
+      . ' this, outdated cached copies will be returned from the page cache'
+      . ' for paths you intended to clear with a wildcard.');
   }
   return $test;
 }
