@@ -36,7 +36,7 @@ abstract class AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface
   protected function processQueueChunk($log = TRUE) {
 
     // Test if the diagnostic tests prohibit purging the queue.
-    if ($err = $this->diagnostics()->isSystemBlocked()) {
+    if ($err = $this->service->diagnostics()->isSystemBlocked()) {
       if ($log) {
         $this->diagnostics()->log($err);
       }
