@@ -17,7 +17,7 @@ class AcquiaPurgeExecutorsService implements \Iterator {
    */
   protected $core_backends = array(
     '_acquia_purge_executor_page_cache',
-    '_acquia_purge_executor_ah',
+    '_acquia_purge_executor_acquia',
   );
 
   /**

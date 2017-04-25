@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Contains AcquiaPurgeExecutorAh.
+ * Contains AcquiaPurgeExecutorAcquia.
  */
 
 /**
  * Executor that clears URLs across all Acquia Cloud load balancers.
  */
-class AcquiaPurgeExecutorAh extends AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
+class AcquiaPurgeExecutorAcquia extends AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
 
   /**
    * {@inheritdoc}

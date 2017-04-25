@@ -207,7 +207,7 @@ function _acquia_purge_get_site_group() {
  * @deprecated
  */
 function _acquia_purge_purge($path) {
-  _acquia_purge_deprecated('AcquiaPurgeExecutorAh->invalidate()');
+  _acquia_purge_deprecated('AcquiaPurgeExecutorAcquia->invalidate()');
 }
 
 /**
