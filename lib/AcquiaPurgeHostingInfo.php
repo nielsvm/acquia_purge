@@ -67,10 +67,17 @@ class AcquiaPurgeHostingInfo {
   protected $siteName = FALSE;
 
   /**
-  * Whether the current hosting environment is Acquia Cloud or not.
-  *
-  * @var boolean
-  */
+   * Whether Drupal's caches are powered by memcache.
+   *
+   * @var boolean
+   */
+  protected $isMemcachedUsed = FALSE;
+
+  /**
+   * Whether the current hosting environment is Acquia Cloud.
+   *
+   * @var boolean
+   */
   protected $isThisAcquiaCloud = FALSE;
 
   /**
@@ -103,8 +110,8 @@ class AcquiaPurgeHostingInfo {
     }
 
     // Determine what the page cache is operating on.
-    $this->pageCacheBackend = variable_get('cache_default_class', $this->pageCacheBackend);
-    $this->pageCacheBackend = variable_get('cache_class_cache_page', $this->pageCacheBackend);
+    $cache = variable_get('cache_default_class', $this->pageCacheBackend);
+    $this->pageCacheBackend = variable_get('cache_class_cache_page', $cache);
 
     // Determine what the protocol schemes are based on settings.
     if (_acquia_purge_variable('acquia_purge_http')) {
@@ -112,6 +119,13 @@ class AcquiaPurgeHostingInfo {
     }
     if (_acquia_purge_variable('acquia_purge_https')) {
       $this->schemes[] = 'https';
+    }
+
+    // Determine whether memcached is powering Drupal's caches or not.
+    if (_acquia_purge_variable('acquia_purge_memcache')) {
+      if (($cache == 'MemCacheDrupal') && function_exists('dmemcache_get')) {
+        $this->isMemcachedUsed = TRUE;
+      }
     }
 
     // Test the gathered information to determine if this is/isn't Acquia Cloud.
@@ -414,6 +428,16 @@ class AcquiaPurgeHostingInfo {
    */
   public function getSiteName() {
     return $this->siteName;
+  }
+
+  /**
+   * Determine if Drupal's caches are powered by memcache.
+   *
+   * @return bool
+   *   Boolean TRUE memcached is in use, FALSE if not.
+   */
+  public function isMemcachedUsed() {
+    return $this->isMemcachedUsed;
   }
 
   /**

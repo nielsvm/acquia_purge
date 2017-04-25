@@ -215,7 +215,7 @@ class AcquiaPurgeService {
    *   TRUE when the path is in the given list, FALSE when not.
    */
   public function deduplicate($path, $list = 'queued', $l = 500) {
-    $memcached_backed_storage = _acquia_purge_are_we_using_memcached();
+    $memcached_backed_storage = $this->hostingInfo()->isMemcachedUsed();
 
     // And then each $list gets its own subsection.
     if (!isset($this->deduplicateLists[$list])) {
@@ -560,7 +560,7 @@ class AcquiaPurgeService {
     if (is_null($this->state)) {
       _acquia_purge_load('_acquia_purge_state_storage_interface');
       _acquia_purge_load('_acquia_purge_state_storage_base');
-      if (_acquia_purge_are_we_using_memcached()) {
+      if ($this->hostingInfo()->isMemcachedUsed()) {
         $class = _acquia_purge_load('_acquia_purge_state_storage_memcache');
         $this->state = new $class(
           ACQUIA_PURGE_STATE_MEMKEY,

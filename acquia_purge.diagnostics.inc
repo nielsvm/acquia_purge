@@ -795,7 +795,7 @@ function _acquia_purge_diagnostics_statedata($t, $service) {
     'value' => ACQUIA_PURGE_STATE_FILE,
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
   );
-  if (_acquia_purge_are_we_using_memcached()) {
+  if ($service->hostingInfo()->isMemcachedUsed()) {
     $test['value'] = 'memcache';
     $test['severity'] = ACQUIA_PURGE_SEVLEVEL_INFO;
   }

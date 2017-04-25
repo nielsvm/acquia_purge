@@ -51,6 +51,16 @@ function _acquia_purge_are_we_on_acquiacloud() {
 }
 
 /**
+ * DEPRECATED: Determine if its safe to use memcached based features.
+ *
+ * @deprecated
+ */
+function _acquia_purge_are_we_using_memcached() {
+  _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->isMemcachedUsed()');
+  return _acquia_purge_service()->hostingInfo()->isMemcachedUsed();
+}
+
+/**
  * DEPRECATED: Turn a PHP variable into a string for debugging.
  *
  * @deprecated

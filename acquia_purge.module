@@ -410,31 +410,6 @@ function acquia_purge_exit() {
 }
 
 /**
- * Determine if its safe to use memcached based features.
- *
- * @return true|false
- *   Boolean TRUE if we can, FALSE if not.
- */
-function _acquia_purge_are_we_using_memcached() {
-  static $answer;
-  if (is_null($answer)) {
-    global $conf;
-    $answer = FALSE;
-
-    if (_acquia_purge_variable('acquia_purge_memcache')) {
-      if (isset($conf['cache_default_class'])) {
-        if ($conf['cache_default_class'] === 'MemCacheDrupal') {
-          if (function_exists('dmemcache_get')) {
-            $answer = TRUE;
-          }
-        }
-      }
-    }
-  }
-  return $answer;
-}
-
-/**
  * Calculate how many items can be purged during the execution of this script.
  *
  * @param int $subtract
