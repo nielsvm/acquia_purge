@@ -837,7 +837,7 @@ function _acquia_purge_variable($name) {
       'acquia_purge_domains'      => FALSE,
       'acquia_purge_sphpskippath' => TRUE,
       'acquia_purge_stripports'   => array(80, 443, 8080),
-      'acquia_purge_cron'         => FALSE,
+      'acquia_purge_cron'         => TRUE,
       'acquia_purge_lateruntime'  => FALSE,
       'acquia_purge_http'         => TRUE,
       'acquia_purge_https'        => FALSE,
