@@ -87,7 +87,7 @@ function acquia_purge_drush_command() {
  */
 function drush_acquia_purge_ap_diagnosis($v = ACQUIA_PURGE_SEVLEVEL_INFO) {
   $oldverbosity = drush_get_context('DRUSH_VERBOSE');
-  $tests = _acquia_purge_get_diagnosis($v);
+  $tests = _acquia_purge_service()->diagnostics()->get($v);
 
   // Define a mapping between install.inc's requirement states and drush_log().
   $severitymap = array(
@@ -210,7 +210,7 @@ function drush_acquia_purge_ap_purge($paths = NULL) {
   }
 
   // Stop invocation if serious error conditions have been found.
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
+  if ($service->diagnostics()->isSystemBlocked()) {
     return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
   }
 
@@ -281,7 +281,7 @@ function drush_acquia_purge_ap_list() {
 function drush_acquia_purge_ap_process(&$context = NULL) {
   $service = _acquia_purge_service();
 
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
+  if ($service->diagnostics()->isSystemBlocked()) {
     drush_set_error(dt('Diagnostic error conditions were found, aborting.'));
     return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
   }

@@ -31,6 +31,16 @@ function _acquia_purge_deprecated($new, $caller = NULL) {
 }
 
 /**
+ * DEPRECATED: Determine if critical error conditions exists disallowing purges.
+ *
+ * @deprecated
+ */
+ function _acquia_purge_are_we_allowed_to_purge() {
+  _acquia_purge_deprecated('!_acquia_purge_service()->diagnostics()->isSystemBlocked()');
+  return !_acquia_purge_service()->diagnostics()->isSystemBlocked();
+}
+
+/**
  * DEPRECATED: Determine whether we are running on Acquia Cloud or not.
  *
  * @deprecated
@@ -73,6 +83,26 @@ function _acquia_purge_get($name, $get_default = FALSE) {
 function _acquia_purge_get_balancers() {
   _acquia_purge_deprecated('_acquia_purge_service()->hostingInfo()->getBalancerAddresses()');
   return _acquia_purge_service()->hostingInfo()->getBalancerAddresses();
+}
+
+/**
+ * DEPRECATED: Perform a set of self-tests against the site.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
+  _acquia_purge_deprecated('_acquia_purge_service()->diagnostics()->get()');
+  return _acquia_purge_service()->diagnostics()->get($verbosity);
+}
+
+/**
+ * DEPRECATED: Log diagnostic test results to watchdog.
+ *
+ * @deprecated
+ */
+function _acquia_purge_get_diagnosis_logged(array $items, $deduplicate = TRUE) {
+  _acquia_purge_deprecated('_acquia_purge_service()->diagnostics()->log()');
+  return _acquia_purge_service()->diagnostics()->log($items, $deduplicate);
 }
 
 /**

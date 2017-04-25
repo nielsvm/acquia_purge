@@ -11,6 +11,40 @@
  */
 
 /**
+ * Register pre-flight diagnostic check functions.
+ *
+ * Each function referred to in these hook implementations, are called before
+ * Acquia Purge starts operating or when "drush ap-diagnosis" is called. These
+ * checks should be as lightweight as possible to prevent performance problems.
+ *
+ * Each function, is called with these parameters:
+ *   - string $t: Name of the t() function to call.
+ *   - AcquiaPurgeService $service: The Acquia Purge service.
+ *
+ * Each function, should return an associative array with these elements:
+ *   - title: The name of the requirement.
+ *   - value: The current value (e.g., version, time, level, etc).
+ *   - description: The description of the requirement/status.
+ *   - severity:
+ *       - ACQUIA_PURGE_SEVLEVEL_INFO
+ *       - ACQUIA_PURGE_SEVLEVEL_OK
+ *       - ACQUIA_PURGE_SEVLEVEL_WARNING
+ *       - ACQUIA_PURGE_SEVLEVEL_ERROR <-- blocks Acquia Purge from executing!
+ *
+ * If you need to load a file before your test functions get called, add this:
+ *   'module_load_include' => array('inc', 'mymodule', 'ap_diagnostics')
+ *
+ * @see acquia_purge.diagnostics.inc
+ */
+function hook_acquia_purge_diagnostics() {
+  return array(
+    'module_load_include' => array('inc', 'mymodule', 'ap_diagnostics'),
+    '_mymodule_ap_diagnostic_apikey',
+    '_mymodule_ap_diagnostic_apirate'
+  );
+}
+
+/**
  * Alter the list of domains Acquia Purge operates on.
  *
  * Modules may implement this hook to influence the domain names Acquia Purge
@@ -22,7 +56,6 @@
  *   Unassociative array with domain names as string values.
  *
  * @see AcquiaPurgeHostingInfo::getDomains()
- * @see _acquia_purge_get_diagnosis_domains()
  */
 function hook_acquia_purge_domains_alter(array &$domains) {
   $blacklist = array('domain_a', 'domain_b');

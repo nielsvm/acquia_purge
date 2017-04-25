@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Self-test diagnostic test functions for _acquia_purge_get_diagnosis().
+ * Diagnostic self-tests and reports that aim to prevent runtime misery.
  */
 
 /**
@@ -20,7 +20,7 @@
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_acquiacloud($t, $service) {
+function _acquia_purge_diagnostics_acquiacloud($t, $service) {
   $test = array('title' => $t('Hosting environment'));
   if ($service->hostingInfo()->isThisAcquiaCloud()) {
     $test['value'] = $t('Acquia Cloud (@name.@env)',
@@ -56,7 +56,7 @@ function _acquia_purge_get_diagnosis_acquiacloud($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_balancers($t, $service) {
+function _acquia_purge_diagnostics_balancers($t, $service) {
   $test = array(
     'value' => implode(', ', $service->hostingInfo()->getBalancerAddresses()),
     'title' => $t('Load balancers'),
@@ -131,7 +131,7 @@ function _acquia_purge_get_diagnosis_balancers($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_conflicts($t, $service) {
+function _acquia_purge_diagnostics_conflicts($t, $service) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('None'),
@@ -183,7 +183,7 @@ function _acquia_purge_get_diagnosis_conflicts($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_domains($t, $service) {
+function _acquia_purge_diagnostics_domains($t, $service) {
   $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
   $domains_link = drupal_get_path('module', 'acquia_purge') . '/DOMAINS.md';
   $domains_link = url($domains_link);
@@ -279,7 +279,7 @@ function _acquia_purge_get_diagnosis_domains($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_executors($t, $service) {
+function _acquia_purge_diagnostics_executors($t, $service) {
   $executors = $service->executorIds();
   foreach ($executors as $n => $id) {
     $executors[$n] = str_replace('AcquiaPurgeExecutor', '', $id);
@@ -314,7 +314,7 @@ function _acquia_purge_get_diagnosis_executors($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_expire($t, $service) {
+function _acquia_purge_diagnostics_expire($t, $service) {
   $test = array('title' => $t('Cache expiration'));
 
   // If the module is disabled, Acquia Purge will still work as API, but warn!
@@ -394,7 +394,7 @@ function _acquia_purge_get_diagnosis_expire($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_logging($t, $service) {
+function _acquia_purge_diagnostics_logging($t, $service) {
   $test = array(
     'severity' => ACQUIA_PURGE_SEVLEVEL_OK,
     'value' => $t('successes and failures'),
@@ -422,7 +422,7 @@ function _acquia_purge_get_diagnosis_logging($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_page_cache($t, $service) {
+function _acquia_purge_diagnostics_page_cache($t, $service) {
   $cache = variable_get('cache', 0);
   $cache_backend = $service->hostingInfo()->getPageCacheBackend();
   $test = array(
@@ -474,7 +474,7 @@ function _acquia_purge_get_diagnosis_page_cache($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_page_cache_age($t, $service) {
+function _acquia_purge_diagnostics_page_cache_age($t, $service) {
   $age = (int) variable_get('page_cache_maximum_age', 0);
   $test = array('title' => $t('Expiration of cached pages'));
 
@@ -545,7 +545,7 @@ function _acquia_purge_get_diagnosis_page_cache_age($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_processing_mode($t, $service) {
+function _acquia_purge_diagnostics_processing_mode($t, $service) {
   $test = array(
     'title' => $t('Processing mode(s)'),
     'value' => array($t('ajax')),
@@ -593,7 +593,7 @@ function _acquia_purge_get_diagnosis_processing_mode($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_processing_capacity($t, $service) {
+function _acquia_purge_diagnostics_processing_capacity($t, $service) {
   $maxitems = _acquia_purge_get_capacity();
   $factor = _acquia_purge_get_capacity_factor();
   $test = array(
@@ -620,7 +620,7 @@ function _acquia_purge_get_diagnosis_processing_capacity($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_protocol_schemes($t, $service) {
+function _acquia_purge_diagnostics_protocol_schemes($t, $service) {
   $schemes = $service->hostingInfo()->getSchemes();
   $test = array(
     'title' => $t('Purged schemes'),
@@ -685,7 +685,7 @@ function _acquia_purge_get_diagnosis_protocol_schemes($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_queue_backend($t, $service) {
+function _acquia_purge_diagnostics_queue_backend($t, $service) {
   $test = array(
     'title' => $t('Queue backend'),
     'value' => t('Database'),
@@ -712,7 +712,7 @@ function _acquia_purge_get_diagnosis_queue_backend($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_queue_volume($t, $service) {
+function _acquia_purge_diagnostics_queue_volume($t, $service) {
   $allriskmode = _acquia_purge_variable('acquia_purge_allriskmode');
   $stats = $service->stats();
   $test = array('title' => $t('Queue volume'));
@@ -789,7 +789,7 @@ function _acquia_purge_get_diagnosis_queue_volume($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_statedata($t, $service) {
+function _acquia_purge_diagnostics_statedata($t, $service) {
   $test = array(
     'title' => $t('State data location'),
     'value' => ACQUIA_PURGE_STATE_FILE,
@@ -817,7 +817,7 @@ function _acquia_purge_get_diagnosis_statedata($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_token($t, $service) {
+function _acquia_purge_diagnostics_token($t, $service) {
   $test = array(
     'title' => $t('Authentication token'),
     'value' => $service->hostingInfo()->getBalancerToken(),
@@ -854,7 +854,7 @@ function _acquia_purge_get_diagnosis_token($t, $service) {
  *   - description: The description of the requirement/status.
  *   - severity: ACQUIA_PURGE_SEVLEVEL_INFO, _OK, _WARNING, _ERROR
  */
-function _acquia_purge_get_diagnosis_status($t, $service) {
+function _acquia_purge_diagnostics_status($t, $service) {
   $passivemode = _acquia_purge_variable('acquia_purge_passivemode');
   $errorlimit = _acquia_purge_variable('acquia_purge_errorlimit');
   $stats = $service->stats();

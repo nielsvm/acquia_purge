@@ -51,7 +51,8 @@ function acquia_purge_uninstall() {
  */
 function acquia_purge_requirements($phase) {
   if ($phase == 'runtime') {
-    $requirements = _acquia_purge_get_diagnosis();
+    $diagnostics = _acquia_purge_service()->diagnostics();
+    $requirements = $diagnostics->get();
 
     // Remove ACQUIA_PURGE_SEVLEVEL_OK results, they'll be too noisy.
     foreach ($requirements as $name => $result) {
@@ -61,7 +62,7 @@ function acquia_purge_requirements($phase) {
     }
 
     // Remove the status test once ERROR level results have been detected.
-    if (!_acquia_purge_are_we_allowed_to_purge()) {
+    if ($diagnostics->isSystemBlocked()) {
       unset($requirements['acquia_purge_status']);
     }
 

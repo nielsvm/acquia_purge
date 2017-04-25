@@ -196,9 +196,10 @@ function acquia_purge_expire_cache($urls, $wildcards, $object_type, $object) {
   // Check for errors once, but refuse operation during the entire request.
   static $error;
   if (is_null($error)) {
-    if (($error = !_acquia_purge_are_we_allowed_to_purge())) {
-      $errors = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
-      _acquia_purge_get_diagnosis_logged($errors);
+    $diagnostics = _acquia_purge_service()->diagnostics();
+    if ($diagnostics->isSystemBlocked()) {
+      $errors = $diagnostics->get(ACQUIA_PURGE_SEVLEVEL_ERROR);
+      $diagnostics->log($errors);
 
       // Only visualize errors when the user has permission and isn't silenced.
       $notsilent = !_acquia_purge_variable('acquia_purge_silentmode');
@@ -268,9 +269,11 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
   }
 
   // Add a full-blown status report on how Acquia Purge is doing.
-  $diagnostics = _acquia_purge_get_diagnosis();
   $form['tabs']['status']['ap_status'] = array(
-    '#markup' => theme('acquia_purge_status_report', array('diagnostics' => $diagnostics)),
+    '#markup' => theme(
+      'acquia_purge_status_report',
+      array('diagnostics' => _acquia_purge_service()->diagnostics()->get())
+    ),
     '#type' => 'item',
   );
 }
@@ -314,7 +317,7 @@ function acquia_purge_block_view($delta = '') {
     if ($_GET['q'] == 'admin/config/development/performance/manualpurge') {
       return array();
     }
-    if (!_acquia_purge_are_we_allowed_to_purge()) {
+    if (_acquia_purge_service()->diagnostics()->isSystemBlocked()) {
       return array();
     }
 
@@ -327,6 +330,36 @@ function acquia_purge_block_view($delta = '') {
   }
 
   return array();
+}
+
+/**
+ * Implements hook_acquia_purge_diagnostics().
+ */
+function acquia_purge_acquia_purge_diagnostics() {
+  return array(
+    '_acquia_purge_diagnostics_acquiacloud',
+    '_acquia_purge_diagnostics_balancers',
+    '_acquia_purge_diagnostics_conflicts',
+    '_acquia_purge_diagnostics_domains',
+    '_acquia_purge_diagnostics_executors',
+    '_acquia_purge_diagnostics_expire',
+    '_acquia_purge_diagnostics_logging',
+    '_acquia_purge_diagnostics_page_cache',
+    '_acquia_purge_diagnostics_page_cache_age',
+    '_acquia_purge_diagnostics_processing_mode',
+    '_acquia_purge_diagnostics_processing_capacity',
+    '_acquia_purge_diagnostics_protocol_schemes',
+    '_acquia_purge_diagnostics_queue_backend',
+    '_acquia_purge_diagnostics_queue_volume',
+    '_acquia_purge_diagnostics_statedata',
+    '_acquia_purge_diagnostics_token',
+    '_acquia_purge_diagnostics_status',
+    'module_load_include' => array(
+      'inc',
+      'acquia_purge',
+      'acquia_purge.diagnostics'
+    ),
+  );
 }
 
 /**
@@ -370,24 +403,6 @@ function acquia_purge_theme($existing, $type, $theme, $path) {
  */
 function acquia_purge_exit() {
   _acquia_purge_service()->processors()->emit('onExit');
-}
-
-/**
- * Determine if critical error conditions exists disallowing purges.
- *
- * @return true|false
- *   Boolean TRUE or FALSE indicating access.
- */
-function _acquia_purge_are_we_allowed_to_purge() {
-  static $allowed_to_purge;
-
-  // Statically store if error conditions exists or not.
-  if (is_null($allowed_to_purge)) {
-    $errors = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
-    $allowed_to_purge = !(count($errors) > 0);
-  }
-
-  return $allowed_to_purge;
 }
 
 /**
@@ -515,121 +530,6 @@ function _acquia_purge_get_capacity_maxrequests() {
     }
   }
   return $max_requests;
-}
-
-/**
- * Perform a series of self-tests against the site and our purging conditions.
- *
- * @param int $verbosity
- *   (optional) The level of diagnostics presented. Test results that match or
- *   are higher than the given level are returned.
- *
- * @return array
- *   Array that complies to the format as seen in hook_requirements().
- */
-function _acquia_purge_get_diagnosis($verbosity = ACQUIA_PURGE_SEVLEVEL_INFO) {
-  static $tests;
-
-  // Initialize $tests and gather test results, cache everything statically.
-  if (is_null($tests)) {
-    $prefix = '_acquia_purge_get_diagnosis_';
-    $tests = array();
-    $service = _acquia_purge_service();
-    $t = get_t();
-
-    // Require the file that contains our tests: acquia_purge.diagnostics.inc.
-    module_load_include('inc', 'acquia_purge', 'acquia_purge.diagnostics');
-
-    // Similar to hooks, functions starting with "_acquia_purge_get_diagnosis_"
-    // will be regarded as individual tests and called to gather results.
-    $functions = get_defined_functions();
-    foreach ($functions['user'] as $function) {
-      if ($function === '_acquia_purge_get_diagnosis_logged') {
-        continue;
-      }
-      elseif (strpos($function, $prefix) !== 0) {
-        continue;
-      }
-
-      // Add the test and its resulting data to the tests array.
-      $tst = str_replace($prefix, 'acquia_purge_', $function);
-      $tests[$tst] = $function($t, $service);
-
-      // Overwrite or assure data integrity on most of the fields.
-      $tests[$tst]['name'] = isset($tests[$tst]['title']) ? $tests[$tst]['title'] : $tst;
-      $tests[$tst]['description'] = isset($tests[$tst]['description']) ? $tests[$tst]['description'] : NULL;
-      $tests[$tst]['description_plain'] = strip_tags($tests[$tst]['description']);
-      $tests[$tst]['severity'] = isset($tests[$tst]['severity']) ? $tests[$tst]['severity'] : ACQUIA_PURGE_SEVLEVEL_INFO;
-      $tests[$tst]['value_plain'] = isset($tests[$tst]['value_plain']) ? $tests[$tst]['value_plain'] : $tests[$tst]['value'];
-      $tests[$tst]['value'] = $t('<b>@title</b><br />@value', array(
-        '@title' => $tests[$tst]['title'],
-        '@value' => $tests[$tst]['value'],
-        )
-      );
-      $tests[$tst]['title'] = $t('Acquia Purge');
-    }
-  }
-
-  // Return test results that match or are higher than the verbosity level.
-  $results = array();
-  foreach ($tests as $name => $result) {
-    if ($result['severity'] >= $verbosity) {
-      $results[$name] = $result;
-    }
-  }
-  return $results;
-}
-
-/**
- * Log diagnostic test results to watchdog.
- *
- * @param array $items
- *   Associative array with test results or an individual test result array.
- * @param bool $deduplicate
- *   Prevent diagnostic messages from ending up in the logs multiple times when
- *   they already have been logged since the last queue wipe.
- *
- * @see _acquia_purge_get_diagnosis()
- */
-function _acquia_purge_get_diagnosis_logged(array $items, $deduplicate = TRUE) {
-  $map = array(
-    ACQUIA_PURGE_SEVLEVEL_INFO    => WATCHDOG_INFO,
-    ACQUIA_PURGE_SEVLEVEL_OK      => WATCHDOG_INFO,
-    ACQUIA_PURGE_SEVLEVEL_WARNING => WATCHDOG_ERROR,
-    ACQUIA_PURGE_SEVLEVEL_ERROR   => WATCHDOG_CRITICAL,
-  );
-
-  // Wrap single a single test result into a workable array.
-  if (isset($items['severity'])) {
-    $items = array($items);
-  }
-
-  // Iterate the items and report them to the watchdog log.
-  foreach ($items as $item) {
-    $description = $item['description_plain'];
-    if (empty($description)) {
-      $description = $item['value_plain'];
-    }
-
-    // If we aren't asked to deduplicate messages, log it straight away.
-    if (!$deduplicate) {
-      watchdog('acquia_purge', $description, array(), $map[$item['severity']]);
-    }
-
-    // Run a duplicate check by hashing and checking state data.
-    else {
-      $logged_errors = _acquia_purge_service()->loggedErrors()->get();
-      $hash = sha1($description);
-      if (in_array($hash, $logged_errors)) {
-        return;
-      }
-
-      // Log the message and add the hash to the deduplication list.
-      watchdog('acquia_purge', $description, array(), $map[$item['severity']]);
-      $logged_errors[] = $hash;
-      _acquia_purge_service()->loggedErrors()->set($logged_errors);
-    }
-  }
 }
 
 /**

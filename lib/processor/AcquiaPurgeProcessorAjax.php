@@ -232,9 +232,8 @@ class AcquiaPurgeProcessorAjax extends AcquiaPurgeProcessorBase implements Acqui
       return drupal_json_output($stats);
     }
     // Test for blocking diagnostic issues and report any if found.
-    if (!_acquia_purge_are_we_allowed_to_purge()) {
-      $err = current(_acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR));
-      _acquia_purge_get_diagnosis_logged($err);
+    if ($err = $service->diagnostics()->isSystemBlocked()) {
+      $diagnostics->log($err);
       $stats['error'] = $err['description'];
       return drupal_json_output($stats);
     }

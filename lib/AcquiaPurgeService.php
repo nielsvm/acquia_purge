@@ -36,6 +36,13 @@ class AcquiaPurgeService {
   protected $deduplicateLists = array();
 
   /**
+   * The loaded AcquiaPurgeDiagnostics object.
+   *
+   * @var AcquiaPurgeDiagnostics
+   */
+  protected $diagnostics = NULL;
+
+  /**
    * The loaded AcquiaPurgeExecutorsService object.
    *
    * @var AcquiaPurgeExecutorsService
@@ -236,6 +243,20 @@ class AcquiaPurgeService {
   }
 
   /**
+   * Retrieve the AcquiaPurgeDiagnostics object.
+   *
+   * @return AcquiaPurgeDiagnostics
+   *   The diagnostics service.
+   */
+  public function diagnostics() {
+    if (is_null($this->diagnostics)) {
+      $class = _acquia_purge_load('_acquia_purge_diagnostics');
+      $this->diagnostics = new $class($this);
+    }
+    return $this->diagnostics;
+  }
+
+  /**
    * Retrieve IDs of the loaded executor plugins.
    *
    * @return string[]
@@ -336,16 +357,6 @@ class AcquiaPurgeService {
   }
 
   /**
-   * Retrieve the 'logged_errors' state item from state storage.
-   *
-   * @return AcquiaPurgeStateItemInterface
-   *   The state item.
-   */
-  public function loggedErrors() {
-    return $this->state()->get('logged_errors', array());
-  }
-
-  /**
    * Retrieve the AcquiaPurgeOddities object.
    *
    * @return AcquiaPurgeOddities
@@ -381,8 +392,8 @@ class AcquiaPurgeService {
 
     // Ask the diagnostic subsystem to identify ACQUIA_PURGE_SEVLEVEL_ERROR
     // level severities, which mandate processing to stop and log the problem.
-    if (count($e = _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR))) {
-      _acquia_purge_get_diagnosis_logged($e);
+    if ($err = $this->diagnostics()->isSystemBlocked()) {
+      $this->diagnostics()->log($err);
       return FALSE;
     }
 

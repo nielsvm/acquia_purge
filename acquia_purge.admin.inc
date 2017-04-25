@@ -87,10 +87,11 @@ function acquia_purge_autocomplete($string) {
  * UX rich form that lets administrative users purge paths manually.
  */
 function acquia_purge_manualpurge_form_full($form, &$form_state) {
-  $hostingInfo = _acquia_purge_service()->hostingInfo();
+  $service = _acquia_purge_service();
+  $diagnostics = $service->diagnostics();
 
   // Do not render the full form if error conditions are found.
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
+  if ($diagnostics->isSystemBlocked()) {
     include_once DRUPAL_ROOT . '/includes/install.inc';
     return array(
       'status' => array(
@@ -99,7 +100,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
         '#markup' => theme(
           'status_report',
           array(
-            'requirements' => _acquia_purge_get_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR),
+            'requirements' => $diagnostics->get(ACQUIA_PURGE_SEVLEVEL_ERROR),
           )
         ),
       ),
@@ -137,7 +138,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
   }
 
   // Build up table rows with domains on the left and examples on the right.
-  $domains = $hostingInfo->getDomains();
+  $domains = $service->hostingInfo()->getDomains();
   $rows = array();
   $rowsc = count($domains);
   if (count($examples) > count($domains)) {
@@ -157,7 +158,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
   );
 
   // Decorate the textfields and prepend URL's as helpful guide.
-  $schemes = $hostingInfo->getSchemes();
+  $schemes = $service->hostingInfo()->getSchemes();
   $base_path = _acquia_purge_variable('acquia_purge_base_path');
   $prefix = sprintf('<b>%s://%s%s</b>', $schemes[0], $domains[0], $base_path);
   foreach ($form['paths']['path'] as $i => $item) {
@@ -173,7 +174,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
  * Bare bones form that lets administrative users purge paths manually.
  */
 function acquia_purge_manualpurge_form_paths($form, &$form_state) {
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
+  if ($this->diagnostics()->isSystemBlocked()) {
     return array();
   }
 
@@ -195,7 +196,7 @@ function acquia_purge_manualpurge_form_paths($form, &$form_state) {
  * Single button form that lets administrative users purge the current page.
  */
 function acquia_purge_manualpurge_form_page($form, &$form_state) {
-  if (!_acquia_purge_are_we_allowed_to_purge()) {
+  if ($this->diagnostics()->isSystemBlocked()) {
     return array();
   }
 
@@ -393,7 +394,7 @@ function theme_acquia_purge_status_bar_widget(array $variables) {
  * Returns HTML for the status report.
  *
  * @param array $variables
- *   Requirements array as returned by _acquia_purge_get_diagnosis().
+ *   Requirements array as returned by AcquiaPurgeDiagnostics::get().
  *
  * @see theme_status_report()
  *
