@@ -66,8 +66,11 @@ This feature is currently experimentally supported by Acquia Purge, but may stil
 #### Single database, more than 6 domains
 Acquia Purge calculates URLs for each domain your site is served on and this is resource-intensive. To prevent your Drupal site from killing itself, the module disables itself when more than 6 domains are configured. You can serve on as many domains as you want, but what we recommend is to ``.htaccess``-redirect everything onto just 1 domain name so that the amount of cached entries are kept to a minimum. This then allows you to set ``$conf['acquia_purge_domains']`` for a single domain and have both high cache efficiency and a low usage footprint on your load balancers.
 
-#### Multiple databases, many domains (multi-site, domain access)
-It actually depends whether this scenario is going to work for you, mainly on how many domains are serving a single database. In all cases, you will likely need to create a single ``settings.php`` file for each connecting database, and set ``$conf['acquia_purge_domains']`` with the domains that database serves. Alternatively, you can utilize reversed parsing of ``sites/sites.php`` but this might be complexer than maintaining configuration overrides. If a single site has more than 6 domain names associated to it, the same advice applies as here above: you will need to redirect traffic onto one (or <6) domains.
+#### Single database, many domains through the "Domain Access" module
+This scenario is not well supported by Acquia Purge for Drupal 7 and you are strongly recommended to reconsider your configuration. Acquia Purge's technical architecture stands a clean fix to this problem in the way and there unfortunately isn't a simple fix to the problem. You can read more about it on https://www.drupal.org/node/2561185#comment-12062633 but the bottom line is that you are recommended to move to Drupal 8 for cache tags based cache invalidation or run with a short TTL without the Acquia Purge module.
+
+#### Multiple databases, many domains through a multi-site setup
+This is possible, well supported and subject to same requirements as single sites have. As documented in DOMAINS.md, you will need to setup ``sites/sites.php`` to aid Acquia Purge's domain detection and above all, test everything carefully!
 
 #### Acquia Cloud Site Factory
-This scenario is a cousin of a multi-site configuration, and is supported as long as the individual ACFS site has less than 6 domain names associated to it. In any case, you will need to hardcode the domain name for the site using ``$conf['acquia_purge_domains']``.
+Similar to the multi-site recommendation here above, make sure to either setup ``sites/sites.php`` or manually override the domains you need to clear.
