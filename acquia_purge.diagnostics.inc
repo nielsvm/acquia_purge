@@ -135,6 +135,18 @@ function _acquia_purge_diagnostics_acquia_purge($t, $service) {
       . ' are recommended to reconsider your architecture.');
   }
 
+  // Detect if the shield module is in use.
+  if (module_exists('shield')) {
+    $test['value'] = $t('Conflicts with: @m', array('@m' => 'Shield'));
+    $test['severity'] = ACQUIA_PURGE_SEVLEVEL_WARNING;
+    $test['description'] = $t('The Shield module is in use on your site and'
+      . ' protects your content with a password. Because Varnish caches these'
+      . ' items differently, the instructions Acquia Purge sends to Varnish'
+      . " will not work. This inconvenience requires you to either disable"
+      . ' Acquia Purge or enable the passivemode setting. Please see'
+      . ' INSTALL.md and https://www.drupal.org/node/2642458 for more info.');
+  }
+
   return $test;
 }
 
