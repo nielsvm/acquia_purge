@@ -90,7 +90,7 @@ domains according to the environment the site is running on:
 ```
 if (isset($_ENV['AH_SITE_ENVIRONMENT'])) {
   switch ($_ENV['AH_SITE_ENVIRONMENT']) {
-    case 'test':
+    case 'dev':
       $sites['dev.fruit.com'] = 'fruit';
       $sites['editorial.dev.fruit.com'] = 'fruit';
       $sites['dev.apples.fruit.com'] = 'apples';
