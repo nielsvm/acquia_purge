@@ -95,6 +95,11 @@ class AcquiaPurgeHostingInfo {
     if (isset($_ENV['AH_SITE_GROUP']) && !empty($_ENV['AH_SITE_GROUP'])) {
       $this->siteGroup = $_ENV['AH_SITE_GROUP'];
     }
+    if (!empty($GLOBALS['gardens_site_settings'])) {
+      $this->siteEnvironment = $GLOBALS['gardens_site_settings']['env'];
+      $this->siteGroup = $GLOBALS['gardens_site_settings']['site'];
+      $this->siteName = $this->siteGroup . '.' . $this->siteEnvironment;
+    }
 
     // Determine the balancer token and IP addresses.
     if (is_array($reverse_proxies = variable_get('reverse_proxies'))) {
