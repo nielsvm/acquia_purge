@@ -806,7 +806,7 @@ function _acquia_purge_diagnostics_page_caching_time_ttl($t, $service) {
   // Determine what "find out more" link we can provide.
   $link = 'http://blog.merge.nl/20120118/how-does-caching-work-drupal';
   if (function_exists('user_access')) {
-    if (user_access('administer site configuration')) {
+    if (function_exists('user_access') && user_access('administer site configuration')) {
       $link = url('admin/config/development/performance');
     }
   }
