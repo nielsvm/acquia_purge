@@ -141,10 +141,10 @@ class Hash {
    *   The path of the site, e.g. 'site/default' or 'site/database_a'.
    *
    * @return string
-   *   Cryptographic hash with a length of 8.
+   *   Cryptographic hash that's long enough to be unique.
    */
   static public function siteIdentifier($site_name, $site_path) {
-    return substr(md5($site_name . $site_path), 0, 8);
+    return SELF::hash($site_name . $site_path, 16);
   }
 
 }
