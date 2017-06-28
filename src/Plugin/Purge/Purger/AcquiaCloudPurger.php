@@ -19,7 +19,7 @@ use Drupal\acquia_purge\HostingInfoInterface;
  *   cooldown_time = 0.2,
  *   description = @Translation("Invalidates Varnish powered load balancers on your Acquia Cloud site."),
  *   multi_instance = FALSE,
- *   types = {"url", "tag"},
+ *   types = {"url", "wildcardurl", "tag"},
  * )
  */
 class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
@@ -407,6 +407,66 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   }
 
   /**
+   * Invalidate URLs that contain the wildcard character "*".
+   *
+   * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::invalidate()
+   * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
+   */
+  public function invalidateWildcardUrls(array $invalidations) {
+    $this->logger->debug(__METHOD__);
+
+    // Set all invalidation states to PROCESSING before we kick off purging.
+    foreach ($invalidations as $invalidation) {
+      $invalidation->setState(InvalidationInterface::PROCESSING);
+    }
+
+    // Define HTTP requests for every URL*BAL that we are going to invalidate.
+    $requests = [];
+    $balancer_token = $this->hostingInfo->getBalancerToken();
+    foreach ($invalidations as $invalidation) {
+      foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
+        $r = Request::create($invalidation->getExpression(), 'BAN');
+        $this->disableTrustedHostsMechanism($r);
+        $r->attributes->set('connect_to', $ip_address);
+        $r->attributes->set('invalidation_id', $invalidation->getId());
+        $r->headers->remove('Accept-Language');
+        $r->headers->remove('Accept-Charset');
+        $r->headers->remove('Accept');
+        $r->headers->set('X-Acquia-Purge', $balancer_token);
+        $r->headers->set('Accept-Encoding', 'gzip');
+        $r->headers->set('User-Agent', 'Acquia Purge');
+        $requests[] = $r;
+      }
+    }
+
+    // Perform the requests, results will be set as attributes onto the objects.
+    $this->executeRequests($requests);
+
+    // Collect all results per invalidation object based on the cUrl data.
+    $results = [];
+    foreach ($requests as $request) {
+      if (!is_null($inv_id = $request->attributes->get('invalidation_id'))) {
+        $results[$inv_id][] = $request->attributes->get('curl_result_ok');
+        if (!$request->attributes->get('curl_result_ok')) {
+          $this->logFailedRequest($request);
+        }
+      }
+    }
+
+    // Triage and set all invalidation states correctly.
+    foreach ($invalidations as $invalidation) {
+      $inv_id = $invalidation->getId();
+      if (isset($results[$inv_id]) && count($results[$inv_id])) {
+        if (!in_array(FALSE, $results[$inv_id])) {
+          $invalidation->setState(InvalidationInterface::SUCCEEDED);
+          continue;
+        }
+      }
+      $invalidation->setState(InvalidationInterface::SUCCEEDED);
+    }
+  }
+
+  /**
    * Write an error to the log for a failed request.
    *
    * Writes messages to the logs after requests passed through ::executeRequests
@@ -459,8 +519,9 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    */
   public function routeTypeToMethod($type) {
     $methods = [
-      'tag'  => 'invalidateTags',
-      'url'  => 'invalidateUrls',
+      'tag'         => 'invalidateTags',
+      'url'         => 'invalidateUrls',
+      'wildcardurl' => 'invalidateWildcardUrls'
     ];
     return isset($methods[$type]) ? $methods[$type] : 'invalidate';
   }
