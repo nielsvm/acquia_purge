@@ -8,6 +8,7 @@ use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
 use Drupal\acquia_purge\HostingInfoInterface;
+use Drupal\acquia_purge\Hash;
 
 /**
  * Acquia Cloud.
@@ -292,19 +293,16 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       }
       return;
     }
-    foreach ($tags as $cache_tag) {
-      $hashes[] = substr(md5($cache_tag), 0, 4);
-    }
-    $tags_string = implode(' ', $hashes);
 
     // Predescribe the requests to make.
     $requests = [];
+    $tags_hashed = implode(' ', Hash::cacheTags($tags));
     $site_identifier = $this->hostingInfo->getSiteIdentifier();
     foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
       $r = Request::create("http://$ip_address/tags", 'BAN');
       $this->disableTrustedHostsMechanism($r);
       $r->headers->set('X-Acquia-Purge', $site_identifier);
-      $r->headers->set('X-Acquia-Purge-Tags', $tags_string);
+      $r->headers->set('X-Acquia-Purge-Tags', $tags_hashed);
       $r->headers->remove('Accept-Language');
       $r->headers->remove('Accept-Charset');
       $r->headers->remove('Accept');
