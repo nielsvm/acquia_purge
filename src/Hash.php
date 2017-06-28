@@ -93,6 +93,24 @@ class Hash {
   ];
 
   /**
+   * Create a hash with the given input and length.
+   *
+   * @param string $input
+   *   The input string to be hashed.
+   * @param int $length
+   *   The length of the hash.
+   *
+   * @return string
+   *   Cryptographic hash with the given length.
+   */
+  static private function hash($input, $length) {
+    // MD5 is the fastest algorithm beyond CRC32 (which is 30% faster, but high
+    // collision risk), so this is the best bet for now. If collisions are going
+    // to be a major problem in the future, we might have to consider a hash DB.
+    return substr(hash('md5', $input), 0, $length);
+  }
+
+  /**
    * Create unique hashes/IDs for a list of cache tag strings.
    *
    * @param string[] $tags
@@ -108,7 +126,7 @@ class Hash {
         $hashes[] = $id;
       }
       else {
-        $hashes[] = substr(md5($tag), 0, 4);
+        $hashes[] = SELF::hash($tag, 4);
       }
     }
     return $hashes;
