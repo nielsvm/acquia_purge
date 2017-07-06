@@ -174,7 +174,7 @@ function acquia_purge_manualpurge_form_full($form, &$form_state) {
  * Bare bones form that lets administrative users purge paths manually.
  */
 function acquia_purge_manualpurge_form_paths($form, &$form_state) {
-  if ($this->diagnostics()->isSystemBlocked()) {
+  if (_acquia_purge_service()->diagnostics()->isSystemBlocked()) {
     return array();
   }
 
@@ -196,7 +196,7 @@ function acquia_purge_manualpurge_form_paths($form, &$form_state) {
  * Single button form that lets administrative users purge the current page.
  */
 function acquia_purge_manualpurge_form_page($form, &$form_state) {
-  if ($this->diagnostics()->isSystemBlocked()) {
+  if (_acquia_purge_service()->diagnostics()->isSystemBlocked()) {
     return array();
   }
 
