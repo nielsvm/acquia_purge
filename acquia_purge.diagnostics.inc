@@ -56,6 +56,9 @@ function _acquia_purge_diagnostics_status($t, $service) {
 
   // Report status if the system is running.
   if ($stats['running']) {
+    if (!function_exists('theme')) {
+      require_once DRUPAL_ROOT . '/includes/theme.inc';
+    }
     $test['description'] = theme('acquia_purge_status_bar_widget', $stats);
     if ($stats['locked']) {
       $test['value'] = $test['value_plain'] = $t('Processing');
