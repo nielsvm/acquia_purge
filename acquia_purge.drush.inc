@@ -281,6 +281,7 @@ function drush_acquia_purge_ap_list() {
 function drush_acquia_purge_ap_process(&$context = NULL) {
   $service = _acquia_purge_service();
 
+  // Block processing in case of diagnostic problems.
   if ($service->diagnostics()->isSystemBlocked()) {
     drush_set_error(dt('Diagnostic error conditions were found, aborting.'));
     return drush_acquia_purge_ap_diagnosis(ACQUIA_PURGE_SEVLEVEL_ERROR);
@@ -290,6 +291,11 @@ function drush_acquia_purge_ap_process(&$context = NULL) {
   // MAIN DRUSH PROCESS.
   //
   if (is_null($context)) {
+
+    // Block at the main thread if there's locking active.
+    if ($service->lockActive()) {
+      drush_set_error(dt('Locked, another process is running!'));
+    }
 
     // Retrieve the statistics and determine if processing is needed.
     $stats = $service->stats();
