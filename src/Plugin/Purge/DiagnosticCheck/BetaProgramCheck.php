@@ -13,17 +13,17 @@ use Drupal\purge\Plugin\Purge\Queue\QueueServiceInterface;
 use Drupal\purge\Plugin\Purge\Queuer\QueuersServiceInterface;
 
 /**
- * Special check for the AP8 Alpha Program (removed later).
+ * Special check for the AP8 Beta Program (removed later).
  *
  * @PurgeDiagnosticCheck(
- *   id = "ap8_alpha_program",
- *   title = @Translation("AP8 Alpha Program"),
+ *   id = "ap8_beta_program",
+ *   title = @Translation("AP8 Beta Program"),
  *   description = @Translation(""),
  *   dependent_queue_plugins = {},
  *   dependent_purger_plugins = {"acquia_purge"}
  * )
  */
-class AlphaProgramCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
+class BetaProgramCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
    * A config object for the system performance configuration.
@@ -66,7 +66,7 @@ class AlphaProgramCheck extends DiagnosticCheckBase implements DiagnosticCheckIn
   protected $settings;
 
   /**
-   * Constructs a AlphaProgramCheck object.
+   * Constructs a BetaProgramCheck object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The factory for configuration objects.
@@ -124,7 +124,7 @@ class AlphaProgramCheck extends DiagnosticCheckBase implements DiagnosticCheckIn
       if (hash('sha256', $secret) == '6f7820107cf8e586a6164802153c9f22d41ebb3aa54c32f17c94be0482c6a0a8') {
 
         // We're enforcing a very strict TTL for statistic gathering. Future
-        // stable releases of AP won't have this, but during the alpha program
+        // stable releases of AP won't have this, but during the beta program
         // it is vital to be able to see the effects in Varnish statistics.
         if ($this->config->get('cache.page.max_age') < 2764800) {
           $this->recommendation = $this->t("Program participants must configure Drupal's page cache maximum age to be one month at mininum!");
@@ -155,13 +155,13 @@ class AlphaProgramCheck extends DiagnosticCheckBase implements DiagnosticCheckIn
           return SELF::SEVERITY_ERROR;
         }
 
-        // Enforce the database queue during the alpha program.
+        // Enforce the database queue during the beta program.
         if (!in_array('database', $this->purgeQueue->getPluginsEnabled())) {
           $this->recommendation = $this->t("Program participants must use the database queue.");
           return SELF::SEVERITY_ERROR;
         }
 
-        $this->value = $this->t("Participating in the AP alpha program!");
+        $this->value = $this->t("Participating in the AP beta program!");
         return SELF::SEVERITY_OK;
       }
     }
