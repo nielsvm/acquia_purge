@@ -260,6 +260,30 @@ function acquia_purge_form_expire_admin_settings_form_alter(&$form, &$form_state
 }
 
 /**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function acquia_purge_form_system_performance_settings_alter(&$form, &$form_state, $form_id) {
+  $form['clear_cache']['clear_acquia_purge'] = array(
+    '#type' => 'submit',
+    '#value' => t('Clear the Acquia Purge queue'),
+    '#weight' => 100,
+    '#submit' => array('acquia_purge_form_system_performance_settings_submit')
+  );
+}
+
+/**
+ * Form submit callback.
+ *
+ * @see acquia_purge_form_system_performance_settings_alter()
+ */
+function acquia_purge_form_system_performance_settings_submit($form, &$form_state) {
+  $service = _acquia_purge_service();
+  drupal_set_message(t("Removed @remaining items from the queue.",
+      array('@remaining' => $service->stats('remaining'))));
+  $service->clear();
+}
+
+/**
  * Implements hook_block_info().
  */
 function acquia_purge_block_info() {
