@@ -233,7 +233,7 @@ class AcquiaPurgeProcessorAjax extends AcquiaPurgeProcessorBase implements Acqui
     }
     // Test for blocking diagnostic issues and report any if found.
     if ($err = $service->diagnostics()->isSystemBlocked()) {
-      $diagnostics->log($err);
+      $service->diagnostics()->log($err);
       $stats['error'] = $err['description'];
       return drupal_json_output($stats);
     }
