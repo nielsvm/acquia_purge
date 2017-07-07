@@ -117,10 +117,7 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
 
     // Initialize the cURL multi handler.
     if (!$single_mode) {
-      static $curl_multi;
-      if (is_null($curl_multi)) {
-        $curl_multi = curl_multi_init();
-      }
+      $curl_multi = curl_multi_init();
     }
 
     // Enter our event loop and keep on requesting until $unprocessed is empty.
@@ -211,6 +208,11 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
         $r->curl = NULL;
       }
     }
+
+    if (!$single_mode) {
+      curl_multi_close($curl_multi);
+    }
+
   }
 
   /**
@@ -271,7 +273,7 @@ abstract class AcquiaPurgeExecutorBase implements AcquiaPurgeExecutorInterface {
           default:
             $msg = "%id: %uri failed, ";
             $msg .= $consequence;
-            $msg .= ' CURL: %curl; DEBUG: %debug';
+            $msg .= ' cURL: %curl; DEBUG: %debug';
             break;
         }
         watchdog('acquia_purge', $msg, $vars, WATCHDOG_ERROR);
