@@ -59,12 +59,6 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
    */
   public function run() {
 
-    // Check if the curl_init() and cousin functions are available.
-    if (!function_exists('curl_init')) {
-      $this->recommendation = $this->t("You don't seem to have cUrl support installed!");
-      return SELF::SEVERITY_ERROR;
-    }
-
     // Block the entire system when this is a third-party platform.
     if (!$this->acquiaPurgeHostingInfo->isThisAcquiaCloud()) {
       $this->recommendation = $this->t("You are not running on Acquia Cloud, this is a mandatory requirement for the Acquia purger.");
