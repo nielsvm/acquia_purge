@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
+use GuzzleHttp\ClientInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
@@ -15,7 +16,7 @@ use Drupal\acquia_purge\Hash;
  *
  * @PurgePurger(
  *   id = "acquia_purge_guzzle",
- *   label = @Translation("Acquia Cloud (temporary purger for Guzzle port)"),
+ *   label = @Translation("Acquia Cloud GUZZLE (temporary plugin!)"),
  *   configform = "",
  *   cooldown_time = 0.2,
  *   description = @Translation("Invalidates Varnish powered load balancers on your Acquia Cloud site."),
@@ -36,6 +37,13 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   const REQUEST_TIMEOUT = 2;
 
   /**
+   * The Guzzle HTTP client.
+   *
+   * @var \GuzzleHttp\Client
+   */
+  protected $client;
+
+  /**
    * @var \Drupal\acquia_purge\HostingInfoInterface
    */
   protected $hostingInfo;
@@ -45,6 +53,8 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    *
    * @param \Drupal\acquia_purge\HostingInfoInterface $acquia_purge_hostinginfo
    *   Technical information accessors for the Acquia Cloud environment.
+   * @param \GuzzleHttp\ClientInterface $http_client
+   *   An HTTP client that can perform remote requests.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -52,8 +62,9 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->client = $http_client;
     $this->hostingInfo = $acquia_purge_hostinginfo;
   }
 
@@ -63,6 +74,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $container->get('acquia_purge.hostinginfo'),
+      $container->get('http_client'),
       $configuration,
       $plugin_id,
       $plugin_definition
