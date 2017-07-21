@@ -30,14 +30,20 @@ use Drupal\acquia_purge\Hash;
 class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
 
   /**
-   * The number of HTTP requests executed in parallel during purging.
+   * Maximum number of requests to send concurrently.
    */
-  const PARALLEL_REQUESTS = 6;
+  const CONCURRENCY = 6;
 
   /**
-   * The number of seconds before a purge attempt times out.
+   * Float describing the number of seconds to wait while trying to connect to
+   * a server.
    */
-  const REQUEST_TIMEOUT = 2;
+  const CONNECT_TIMEOUT = 0.5;
+
+  /**
+   * Float describing the timeout of the request in seconds.
+   */
+  const TIMEOUT = 2.0;
 
   /**
    * The Guzzle HTTP client.
@@ -125,13 +131,13 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   protected function executeRequests(array $requests) {
 
     // Presort the request objects in request groups based on the maximum amount
-    // of requests we can perform in parallel. Max SELF::PARALLEL_REQUESTS each!
+    // of requests we can perform in parallel. Max SELF::CONCURRENCY each!
     $request_groups = [];
     $unprocessed = count($requests);
     reset($requests);
     while ($unprocessed > 0) {
       $group = [];
-      for ($n = 0; $n < SELF::PARALLEL_REQUESTS; $n++) {
+      for ($n = 0; $n < SELF::CONCURRENCY; $n++) {
         if (!is_null($i = key($requests))) {
           $group[] = $requests[$i];
           $unprocessed--;
@@ -150,7 +156,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       // Prepare the cUrl handlers for each Request.
       foreach ($group as $r) {
         $handler = curl_init();
-        curl_setopt($handler, CURLOPT_TIMEOUT, SELF::REQUEST_TIMEOUT);
+        curl_setopt($handler, CURLOPT_TIMEOUT, SELF::TIMEOUT);
         curl_setopt($handler, CURLOPT_CUSTOMREQUEST, $r->getMethod());
         curl_setopt($handler, CURLOPT_FAILONERROR, TRUE);
         curl_setopt($handler, CURLOPT_RETURNTRANSFER, TRUE);
@@ -551,7 +557,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     $msg = 'Failed %method to %uri%urisuffix: ';
     $vars = [
       "%method" => $r->getMethod(),
-      "%timeout" => SELF::REQUEST_TIMEOUT,
+      "%timeout" => SELF::TIMEOUT,
       "%uri" => $r->attributes->get('curl_url'),
       "%urisuffix" => $r->attributes->get('connect_to') ? sprintf(" (host=%s)", $r->getHttpHost()) : '',
       "%curl_total_time" => var_export($r->attributes->get('curl_total_time'), TRUE),
