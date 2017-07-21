@@ -3,6 +3,9 @@
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Promise;
+use GuzzleHttp\Pool;
+use GuzzleHttp\Psr7\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request as symfonyRequest;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
@@ -496,46 +499,38 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       $invalidation->setState(InvalidationInterface::PROCESSING);
     }
 
-    // Make only one HTTP request for each load balancer.
-    $requests = [];
+    // Fetch the site identifier and start with a successive outcome.
     $site_identifier = $this->hostingInfo->getSiteIdentifier();
-    foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-
-
-
-
-      $r = symfonyRequest::create("http://$ip_address/site", 'BAN');
-      $this->disableTrustedHostsMechanism($r);
-      $r->headers->set('X-Acquia-Purge', $site_identifier);
-      $r->headers->remove('Accept-Language');
-      $r->headers->remove('Accept-Charset');
-      $r->headers->remove('Accept');
-      $r->headers->set('Accept-Encoding', 'gzip');
-      $r->headers->set('User-Agent', 'Acquia Purge');
-      $requests[] = $r;
-    }
-
-    // Perform the requests, results will be set as attributes onto the objects.
-    $this->executeRequests($requests);
-
-    // Collect all results per invalidation object based on the cUrl data.
     $overall_success = TRUE;
-    foreach ($requests as $request) {
-      if ($request->attributes->get('curl_http_code') !== 200) {
+
+    // Synchronously request each balancer to wipe out everything for this site.
+    foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
+      try {
+        $this->client->request('BAN', 'http://' . $ip_address . '/site', [
+          'acquia_purge_load_balancer_middleware' => TRUE,
+          'connect_timeout' => SELF::CONNECT_TIMEOUT,
+          'timeout' => SELF::TIMEOUT,
+          'http_errors' => FALSE,
+          'headers' => [
+            'X-Acquia-Purge' => $site_identifier,
+            'Accept-Encoding' => 'gzip',
+            'User-Agent' => 'Acquia Purge',
+          ]
+        ]);
+      }
+      catch (\Exception $e) {
+        $this->logFailedRequest('invalidateEverything()', $e);
         $overall_success = FALSE;
-        $this->logFailedRequest($request);
       }
     }
 
     // Set the object states according to our overall result.
     foreach ($invalidations as $invalidation) {
-      if ($invalidation->getState() === InvalidationInterface::PROCESSING) {
-        if ($overall_success) {
-          $invalidation->setState(InvalidationInterface::SUCCEEDED);
-        }
-        else {
-          $invalidation->setState(InvalidationInterface::FAILED);
-        }
+      if ($overall_success) {
+        $invalidation->setState(InvalidationInterface::SUCCEEDED);
+      }
+      else {
+        $invalidation->setState(InvalidationInterface::FAILED);
       }
     }
   }
