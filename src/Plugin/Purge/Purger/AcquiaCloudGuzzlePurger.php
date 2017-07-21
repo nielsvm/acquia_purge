@@ -4,7 +4,7 @@ namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use GuzzleHttp\ClientInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Request as symfonyRequest;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
@@ -91,7 +91,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    *
    * @return void
    */
-  protected function disableTrustedHostsMechanism(Request $request) {
+  protected function disableTrustedHostsMechanism(symfonyRequest $request) {
     // $trusted_hosts = [];
     // foreach ($request->getTrustedHosts() as $pattern) {
     //   $trusted_hosts[] = ltrim(rtrim($pattern, '#i'), '#');
@@ -311,7 +311,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     $tags_hashed = implode(' ', Hash::cacheTags($tags));
     $site_identifier = $this->hostingInfo->getSiteIdentifier();
     foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-      $r = Request::create("http://$ip_address/tags", 'BAN');
+      $r = symfonyRequest::create("http://$ip_address/tags", 'BAN');
       $this->disableTrustedHostsMechanism($r);
       $r->headers->set('X-Acquia-Purge', $site_identifier);
       $r->headers->set('X-Acquia-Purge-Tags', $tags_hashed);
@@ -368,7 +368,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     $balancer_token = $this->hostingInfo->getBalancerToken();
     foreach ($invalidations as $invalidation) {
       foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-        $r = Request::create($invalidation->getExpression(), 'PURGE');
+        $r = symfonyRequest::create($invalidation->getExpression(), 'PURGE');
         $this->disableTrustedHostsMechanism($r);
         $r->attributes->set('connect_to', $ip_address);
         $r->attributes->set('invalidation_id', $invalidation->getId());
@@ -435,7 +435,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     $balancer_token = $this->hostingInfo->getBalancerToken();
     foreach ($invalidations as $invalidation) {
       foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-        $r = Request::create($invalidation->getExpression(), 'BAN');
+        $r = symfonyRequest::create($invalidation->getExpression(), 'BAN');
         $this->disableTrustedHostsMechanism($r);
         $r->attributes->set('connect_to', $ip_address);
         $r->attributes->set('invalidation_id', $invalidation->getId());
@@ -500,7 +500,11 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     $requests = [];
     $site_identifier = $this->hostingInfo->getSiteIdentifier();
     foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-      $r = Request::create("http://$ip_address/site", 'BAN');
+
+
+
+
+      $r = symfonyRequest::create("http://$ip_address/site", 'BAN');
       $this->disableTrustedHostsMechanism($r);
       $r->headers->set('X-Acquia-Purge', $site_identifier);
       $r->headers->remove('Accept-Language');
