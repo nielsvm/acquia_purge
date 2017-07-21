@@ -340,7 +340,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     foreach ($requests as $request) {
       if ($request->attributes->get('curl_http_code') !== 200) {
         $overall_success = FALSE;
-        $this->logFailedRequest($request);
+        $this->logFailedRequestLegacy($request);
       }
     }
 
@@ -406,7 +406,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
         else {
           $results[$inv_id][] = $request->attributes->get('curl_result_ok');
           if (!$request->attributes->get('curl_result_ok')) {
-            $this->logFailedRequest($request);
+            $this->logFailedRequestLegacy($request);
           }
         }
       }
@@ -467,7 +467,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       if (!is_null($inv_id = $request->attributes->get('invalidation_id'))) {
         $results[$inv_id][] = $request->attributes->get('curl_result_ok');
         if (!$request->attributes->get('curl_result_ok')) {
-          $this->logFailedRequest($request);
+          $this->logFailedRequestLegacy($request);
         }
       }
     }
@@ -544,6 +544,24 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   /**
    * Write an error to the log for a failed request.
    *
+   * @param string $method
+   *   Name of the PHP method responsible for creating the request.
+   * @param \Exception $e
+   *   The exception thrown by Guzzle.
+   */
+  protected function logFailedRequest($method, \Exception $e) {
+    $this->logger()->emergency(
+      "@method: @e",
+      [
+        '@method' => $method,
+        '@e' => $e->getMessage()
+      ]
+    );
+  }
+
+  /**
+   * Write an error to the log for a failed request.
+   *
    * Writes messages to the logs after requests passed through ::executeRequests
    * and didn't pass invalidation-type specific requirements. The messages are
    * as human-readable as possible, with debugging symbols as last resort.
@@ -553,7 +571,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    *
    * @return void
    */
-  protected function logFailedRequest(Request $r) {
+  protected function logFailedRequestLegacy(symfonyRequest $r) {
     $msg = 'Failed %method to %uri%urisuffix: ';
     $vars = [
       "%method" => $r->getMethod(),
