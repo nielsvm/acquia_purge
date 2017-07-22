@@ -367,61 +367,76 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   public function invalidateUrls(array $invalidations) {
     $this->logger->debug(__METHOD__);
 
-    // Set all invalidation states to PROCESSING before we kick off purging.
-    foreach ($invalidations as $invalidation) {
-      $invalidation->setState(InvalidationInterface::PROCESSING);
+    // Change all invalidation objects into the PROCESS state before kickoff.
+    foreach ($invalidations as $inv) {
+      $inv->setState(InvalidationInterface::PROCESSING);
     }
 
-    // Define HTTP requests for every URL*BAL that we are going to invalidate.
-    $requests = [];
-    $balancer_token = $this->hostingInfo->getBalancerToken();
-    foreach ($invalidations as $invalidation) {
-      foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-        $r = symfonyRequest::create($invalidation->getExpression(), 'PURGE');
-        $this->disableTrustedHostsMechanism($r);
-        $r->attributes->set('connect_to', $ip_address);
-        $r->attributes->set('invalidation_id', $invalidation->getId());
-        $r->headers->remove('Accept-Language');
-        $r->headers->remove('Accept-Charset');
-        $r->headers->remove('Accept');
-        $r->headers->set('X-Acquia-Purge', $balancer_token);
-        $r->headers->set('Accept-Encoding', 'gzip');
-        $r->headers->set('User-Agent', 'Acquia Purge');
-        $requests[] = $r;
+    // Generate request objects for each balancer/invalidation combination.
+    $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
+    $token = $this->hostingInfo->getBalancerToken();
+    $requests = function () use ($invalidations, $ipv4_addresses, $token) {
+      foreach ($invalidations as $inv) {
+        foreach ($ipv4_addresses as $ipv4) {
+          yield $inv->getId() => function ($poolopt) use ($inv, $ipv4, $token) {
+            $uri = $inv->getExpression();
+            $host = parse_url($uri, PHP_URL_HOST);
+            $uri = str_replace($host, $ipv4, $uri);
+            $options = [
+              'headers' => [
+                'X-Acquia-Purge' => $token,
+                'Accept-Encoding' => 'gzip',
+                'User-Agent' => 'Acquia Purge',
+                'Host' => $host,
+              ]
+            ];
+            if (is_array($poolopt) && count($poolopt)) {
+              $options = array_merge($poolopt, $options);
+            }
+            return $this->client->requestAsync('PURGE', $uri, $options);
+          };
+        }
       }
-    }
+    };
 
-    // Perform the requests, results will be set as attributes onto the objects.
-    $this->executeRequests($requests);
-
-    // Collect all results per invalidation object based on the cUrl data.
+    // Define a concurrent execution pool and pass the requests generator. The
+    // results array will be propagated with bools grouped by invalidation ID.
     $results = [];
-    foreach ($requests as $request) {
-      if (!is_null($inv_id = $request->attributes->get('invalidation_id'))) {
+    $pool = new Pool($this->client, $requests(), [
+      'concurrency' => SELF::CONCURRENCY,
+      'options' => [
+        'acquia_purge_middleware' => TRUE, // Triggers LoadBalancerMiddleware!
+        'connect_timeout' => SELF::CONNECT_TIMEOUT,
+        'http_errors' => FALSE,
+        'timeout' => SELF::TIMEOUT,
+      ],
+      'fulfilled' => function($response, $inv_id) use (&$results) {
+        $results[$inv_id][] = TRUE;
+      },
+      'rejected' => function($reason, $inv_id) use (&$results) {
+        $results[$inv_id][] = FALSE;
+        $this->logFailedRequest('invalidateUrls', $reason);
+      },
+    ]);
 
-        // URLs not in varnish return 404, that's also seen as a success.
-        if ($request->attributes->get('curl_http_code') === 404) {
-          $results[$inv_id][] = TRUE;
-        }
-        else {
-          $results[$inv_id][] = $request->attributes->get('curl_result_ok');
-          if (!$request->attributes->get('curl_result_ok')) {
-            $this->logFailedRequestLegacy($request);
-          }
-        }
-      }
-    }
+    // Initiate the transfers and create a promise.
+    $promise = $pool->promise();
 
-    // Triage and set all invalidation states correctly.
+    // Force the pool of requests to complete.
+    $promise->wait();
+
+    // Triage the results and set all invalidation states correspondingly.
     foreach ($invalidations as $invalidation) {
       $inv_id = $invalidation->getId();
-      if (isset($results[$inv_id]) && count($results[$inv_id])) {
-        if (!in_array(FALSE, $results[$inv_id])) {
-          $invalidation->setState(InvalidationInterface::SUCCEEDED);
-          continue;
-        }
+      if (!(isset($results[$inv_id]) && count($results[$inv_id]))) {
+        $invalidation->setState(InvalidationInterface::FAILED);
       }
-      $invalidation->setState(InvalidationInterface::SUCCEEDED);
+      if (in_array(FALSE, $results[$inv_id])) {
+        $invalidation->setState(InvalidationInterface::FAILED);
+      }
+      else {
+        $invalidation->setState(InvalidationInterface::SUCCEEDED);
+      }
     }
   }
 
@@ -513,10 +528,10 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
       try {
         $this->client->request('BAN', 'http://' . $ip_address . '/site', [
-          'acquia_purge_load_balancer_middleware' => TRUE,
+          'acquia_purge_middleware' => TRUE,
           'connect_timeout' => SELF::CONNECT_TIMEOUT,
-          'timeout' => SELF::TIMEOUT,
           'http_errors' => FALSE,
+          'timeout' => SELF::TIMEOUT,
           'headers' => [
             'X-Acquia-Purge' => $site_identifier,
             'Accept-Encoding' => 'gzip',
@@ -525,7 +540,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
         ]);
       }
       catch (\Exception $e) {
-        $this->logFailedRequest('invalidateEverything()', $e);
+        $this->logFailedRequest('invalidateEverything', $e);
         $overall_success = FALSE;
       }
     }
@@ -551,7 +566,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    */
   protected function logFailedRequest($method, \Exception $e) {
     $this->logger()->emergency(
-      "@method: @e",
+      "@method(): @e",
       [
         '@method' => $method,
         '@e' => $e->getMessage()

@@ -20,13 +20,13 @@ class LoadBalancerMiddleware {
       return function ($request, array $options) use ($handler) {
 
         // Don't interfere on requests not going to Acquia Load balancers.
-        if (!isset($options['acquia_purge_load_balancer_middleware'])) {
+        if (!isset($options['acquia_purge_middleware'])) {
           return $handler($request, $options);
         }
 
         // Return a handler that throws exceptions on bad responses.
         return $handler($request, $options)->then(
-          function (ResponseInterface $response) use ($request, $handler, $method) {
+          function (ResponseInterface $response) use ($request, $handler, $options) {
             $method = $request->getMethod();
 
             // PURGE requests should return either a 200 or a 404.
@@ -34,7 +34,7 @@ class LoadBalancerMiddleware {
               if (!in_array($response->getStatusCode(), [200, 404])) {
                 throw new FailedInvalidationException(
                   sprintf(
-                    "%s expected 200||404 but got %s!",
+                    "%s expected 200 or 404 but got %s!",
                     $request->getMethod() . ' ' . $request->getUri(),
                     $response->getStatusCode()
                   ),
