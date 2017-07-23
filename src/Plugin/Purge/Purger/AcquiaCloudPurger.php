@@ -423,7 +423,8 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     $balancer_token = $this->hostingInfo->getBalancerToken();
     foreach ($invalidations as $invalidation) {
       foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-        $r = Request::create($invalidation->getExpression(), 'BAN');
+        $uri = str_replace('https://', 'http://', $invalidation->getExpression());
+        $r = Request::create($uri, 'BAN');
         $this->disableTrustedHostsMechanism($r);
         $r->attributes->set('connect_to', $ip_address);
         $r->attributes->set('invalidation_id', $invalidation->getId());
