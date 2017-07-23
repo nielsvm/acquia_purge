@@ -497,57 +497,58 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   public function invalidateWildcardUrls(array $invalidations) {
     $this->logger->debug('::invalidateWildcardUrls() starting');
 
-    // Set all invalidation states to PROCESSING before we kick off purging.
-    foreach ($invalidations as $invalidation) {
-      $invalidation->setState(InvalidationInterface::PROCESSING);
+    // Change all invalidation objects into the PROCESS state before kickoff.
+    foreach ($invalidations as $inv) {
+      $inv->setState(InvalidationInterface::PROCESSING);
     }
 
-    // Define HTTP requests for every URL*BAL that we are going to invalidate.
-    $requests = [];
-    $balancer_token = $this->hostingInfo->getBalancerToken();
-    foreach ($invalidations as $invalidation) {
-      foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-        $r = symfonyRequest::create($invalidation->getExpression(), 'BAN');
-        $this->disableTrustedHostsMechanism($r);
-        $r->attributes->set('connect_to', $ip_address);
-        $r->attributes->set('invalidation_id', $invalidation->getId());
-        $r->headers->remove('Accept-Language');
-        $r->headers->remove('Accept-Charset');
-        $r->headers->remove('Accept');
-        $r->headers->set('X-Acquia-Purge', $balancer_token);
-        $r->headers->set('Accept-Encoding', 'gzip');
-        $r->headers->set('User-Agent', 'Acquia Purge');
-        $requests[] = $r;
-      }
-    }
-
-    // Perform the requests, results will be set as attributes onto the objects.
-    $this->executeRequests($requests);
-
-    // Collect all results per invalidation object based on the cUrl data.
-    $results = [];
-    foreach ($requests as $request) {
-      if (!is_null($inv_id = $request->attributes->get('invalidation_id'))) {
-        $results[$inv_id][] = $request->attributes->get('curl_result_ok');
-        if (!$request->attributes->get('curl_result_ok')) {
-          $this->logFailedRequestLegacy($request);
+    // Generate request objects for each balancer/invalidation combination.
+    $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
+    $token = $this->hostingInfo->getBalancerToken();
+    $requests = function () use ($invalidations, $ipv4_addresses, $token) {
+      foreach ($invalidations as $inv) {
+        foreach ($ipv4_addresses as $ipv4) {
+          yield $inv->getId() => function ($poolopt) use ($inv, $ipv4, $token) {
+            $uri = $inv->getExpression();
+            $host = parse_url($uri, PHP_URL_HOST);
+            $uri = str_replace($host, $ipv4, $uri);
+            $options = [
+              'headers' => [
+                'X-Acquia-Purge' => $token,
+                'Accept-Encoding' => 'gzip',
+                'User-Agent' => 'Acquia Purge',
+                'Host' => $host,
+              ]
+            ];
+            if (is_array($poolopt) && count($poolopt)) {
+              $options = array_merge($poolopt, $options);
+            }
+            return $this->client->requestAsync('BAN', $uri, $options);
+          };
         }
       }
-    }
+    };
 
-    // Triage and set all invalidation states correctly.
+    // Execute the requests generator and retrieve the results.
+    $results = $this->getResultsConcurrently('invalidateWildcardUrls', $requests);
+
+    // Triage the results and set all invalidation states correspondingly.
     foreach ($invalidations as $invalidation) {
       $inv_id = $invalidation->getId();
-      if (isset($results[$inv_id]) && count($results[$inv_id])) {
-        if (!in_array(FALSE, $results[$inv_id])) {
+      if ((!isset($results[$inv_id])) || (!count($results[$inv_id]))) {
+        $invalidation->setState(InvalidationInterface::FAILED);
+      }
+      else {
+        if (in_array(FALSE, $results[$inv_id])) {
+          $invalidation->setState(InvalidationInterface::FAILED);
+        }
+        else {
           $invalidation->setState(InvalidationInterface::SUCCEEDED);
-          continue;
         }
       }
-      $invalidation->setState(InvalidationInterface::SUCCEEDED);
     }
 
-    $this->logger->debug('::invalidateWildcardUrls() finished');
+    $this->logger->debug('::invalidateWildcardUrls(): finished');
   }
 
   /**
