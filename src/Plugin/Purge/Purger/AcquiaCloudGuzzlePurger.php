@@ -576,7 +576,6 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
         $l('REQ HTTP     | ' . $req->getProtocolVersion());
         $l('REQ URI      | ' . $req->getUri()->__toString());
         $l('REQ METHOD   | ' . $req->getMethod());
-        $l('REQ HEADERS  | ' . json_encode($req->getHeaders()));
         foreach ($req->getHeaders() as $h => $v) {
           $l('REQ HEADERS  | ' . $h . ': ' . $req->getHeaderLine($h));
         }
