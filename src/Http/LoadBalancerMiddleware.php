@@ -55,8 +55,21 @@ class LoadBalancerMiddleware {
               }
             }
             elseif ($method == 'BAN') {
+              $path = $req->getRequestTarget();
+              $reply = $rsp->getReasonPhrase();
               if ($status !== 200) {
                 $e("Expected 200 instead!");
+              }
+              elseif (($path == '/site') && ($reply !== 'Site banned.')) {
+                $e("Reply mismatch for /site.");
+              }
+              elseif (($path == '/tags') && ($reply !== 'Tags banned.')) {
+                $e("Reply mismatch for /tags.");
+              }
+              elseif (!in_array($path, ['/site', '/tags'])) {
+                if (!in_array($reply, ['WILDCARD URL banned.', 'URL banned.'])) {
+                  $e("Reply mismatch for (wildcard)URL.");
+                }
               }
             }
             else {
