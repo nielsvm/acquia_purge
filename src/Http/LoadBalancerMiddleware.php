@@ -48,7 +48,7 @@ class LoadBalancerMiddleware {
               . ' the acquia_purge module.');
             }
 
-            // Test response codes per HTTP method.
+            // Test response codes and reply messages per type of invalidation.
             if ($method == 'PURGE') {
               if (!in_array($status, [200, 404])) {
                 $e("Expected 200 or 404 instead!");
