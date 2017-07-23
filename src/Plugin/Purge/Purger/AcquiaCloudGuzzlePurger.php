@@ -282,7 +282,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateTags(array $invalidations) {
-    $this->logger->debug(__METHOD__);
+    $this->logger->debug('::invalidateTags() starting');
 
     // Collect tags and set all states to PROCESSING before we kick off.
     $tags = [];
@@ -357,6 +357,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       }
     }
 
+    $this->logger->debug('::invalidateTags() finished');
   }
 
   /**
@@ -366,7 +367,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateUrls(array $invalidations) {
-    $this->logger->debug(__METHOD__);
+    $this->logger->debug('::invalidateUrls() starting');
 
     // Change all invalidation objects into the PROCESS state before kickoff.
     foreach ($invalidations as $inv) {
@@ -441,6 +442,8 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
         }
       }
     }
+
+    $this->logger->debug('::invalidateUrls(): finished');
   }
 
   /**
@@ -450,7 +453,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateWildcardUrls(array $invalidations) {
-    $this->logger->debug(__METHOD__);
+    $this->logger->debug('::invalidateWildcardUrls() starting');
 
     // Set all invalidation states to PROCESSING before we kick off purging.
     foreach ($invalidations as $invalidation) {
@@ -501,6 +504,8 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       }
       $invalidation->setState(InvalidationInterface::SUCCEEDED);
     }
+
+    $this->logger->debug('::invalidateWildcardUrls() finished');
   }
 
   /**
@@ -516,7 +521,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateEverything(array $invalidations) {
-    $this->logger->debug(__METHOD__);
+    $this->logger->debug('::invalidateEverything() starting');
 
     // Set the 'everything' object(s) into processing mode.
     foreach ($invalidations as $invalidation) {
@@ -557,6 +562,8 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
         $invalidation->setState(InvalidationInterface::FAILED);
       }
     }
+
+    $this->logger->debug('::invalidateEverything() finished');
   }
 
   /**
