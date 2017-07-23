@@ -244,6 +244,67 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   }
 
   /**
+   * Retrieve request options used for all of Acquia Purge's balancer requests.
+   *
+   * @param array[] $extra
+   *   Associative array of options to merge onto the standard ones.
+   *
+   * @return array
+   */
+  protected function getGlobalOptions(array $extra = []) {
+    $opt = [
+      // Disable exceptions for 4XX HTTP responses, those aren't failures to us.
+      'http_errors' => FALSE,
+
+      // Prevent inactive balancers from sucking all runtime up.
+      'connect_timeout' => SELF::CONNECT_TIMEOUT,
+
+      // Prevent unresponsive balancers from making Drupal slow.
+      'timeout' => SELF::TIMEOUT,
+
+      // Trigger \Drupal\acquia_purge\Http\LoadBalancerMiddleware which acts as
+      // honest broker by throwing the right exceptions for our bal requests.
+      'acquia_purge_middleware' => TRUE,
+    ];
+    return array_merge($opt, $extra);
+  }
+
+  /**
+   * Concurrently execute the given requests.
+   *
+   * @param string $caller
+   *   Name of the PHP method that is executing the requests.
+   * @param \Closure $requests
+   *   Generator yielding requests which will be passed to \GuzzleHttp\Pool.
+   */
+  protected function getResultsConcurrently($caller, $requests) {
+    $this->logger->debug('::getResultsConcurrently() starting');
+    $results = [];
+
+    // Create a concurrently executed Pool which collects a boolean per request.
+    $pool = new Pool($this->client, $requests(), [
+      'options' => $this->getGlobalOptions(),
+      'concurrency' => SELF::CONCURRENCY,
+      'fulfilled' => function($response, $result_id) use (&$results) {
+        $results[$result_id][] = TRUE;
+      },
+      'rejected' => function($reason, $result_id) use (&$results, $caller) {
+        $results[$result_id][] = FALSE;
+        $this->logFailedRequest($caller, $reason);
+      },
+    ]);
+
+    // Initiate the transfers and create a promise.
+    $promise = $pool->promise();
+
+    // Force the pool of requests to complete.
+    $promise->wait();
+
+    $this->logger->debug('::getResultsConcurrently() finished');
+    return $results;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getIdealConditionsLimit() {
@@ -401,31 +462,8 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       }
     };
 
-    // Define a concurrent execution pool and pass the requests generator. The
-    // results array will be propagated with bools grouped by invalidation ID.
-    $results = [];
-    $pool = new Pool($this->client, $requests(), [
-      'concurrency' => SELF::CONCURRENCY,
-      'options' => [
-        'acquia_purge_middleware' => TRUE, // Triggers LoadBalancerMiddleware!
-        'connect_timeout' => SELF::CONNECT_TIMEOUT,
-        'http_errors' => FALSE,
-        'timeout' => SELF::TIMEOUT,
-      ],
-      'fulfilled' => function($response, $inv_id) use (&$results) {
-        $results[$inv_id][] = TRUE;
-      },
-      'rejected' => function($reason, $inv_id) use (&$results) {
-        $results[$inv_id][] = FALSE;
-        $this->logFailedRequest('invalidateUrls', $reason);
-      },
-    ]);
-
-    // Initiate the transfers and create a promise.
-    $promise = $pool->promise();
-
-    // Force the pool of requests to complete.
-    $promise->wait();
+    // Execute the requests generator and retrieve the results.
+    $results = $this->getResultsConcurrently('invalidateUrls', $requests);
 
     // Triage the results and set all invalidation states correspondingly.
     foreach ($invalidations as $invalidation) {
@@ -570,7 +608,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * Write an error to the log for a failed request.
    *
    * @param string $caller
-   *   Name of the PHP method responsible for creating the request.
+   *   Name of the PHP method that executed the request.
    * @param \Exception $e
    *   The exception thrown by Guzzle.
    */
