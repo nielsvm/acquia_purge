@@ -38,12 +38,12 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * Float describing the number of seconds to wait while trying to connect to
    * a server.
    */
-  const CONNECT_TIMEOUT = 0.5;
+  const CONNECT_TIMEOUT = 1.5;
 
   /**
    * Float describing the timeout of the request in seconds.
    */
-  const TIMEOUT = 2.0;
+  const TIMEOUT = 3.0;
 
   /**
    * The Guzzle HTTP client.
