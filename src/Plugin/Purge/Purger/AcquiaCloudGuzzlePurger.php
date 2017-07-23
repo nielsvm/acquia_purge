@@ -262,6 +262,10 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       // Prevent unresponsive balancers from making Drupal slow.
       'timeout' => SELF::TIMEOUT,
 
+      // Deliberately disable SSL verification to prevent unsigned certificates
+      // from breaking down a website when purging a https:// URL!
+      'verify' => FALSE,
+
       // Trigger \Drupal\acquia_purge\Http\LoadBalancerMiddleware which acts as
       // honest broker by throwing the right exceptions for our bal requests.
       'acquia_purge_middleware' => TRUE,
