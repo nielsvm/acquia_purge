@@ -276,75 +276,91 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   public function invalidateTags(array $invalidations) {
     $this->debug(__METHOD__);
 
-    // Collect tags and set all states to PROCESSING before we kick off.
-    $tags = [];
-    $hashes = [];
+    // Set invalidation states to PROCESSING. Detect tags with spaces in them,
+    // as space is the only character Drupal core explicitely forbids in tags.
     foreach ($invalidations as $invalidation) {
-      $expression = $invalidation->getExpression();
-
-      // Detect tags with spaces in it. This is the only character Drupal core
-      // forbids explicitely to be used in tags, as we're using it as separator
-      // for multiple tags.
-      if (strpos($expression, ' ') !== FALSE) {
+      $tag = $invalidation->getExpression();
+      if (strpos($tag, ' ') !== FALSE) {
         $invalidation->setState(InvalidationInterface::FAILED);
         $this->logger->error(
-          "The tag '%tag' contains a space, this is forbidden.",
-          [
-            '%tag' => $expression,
-          ]
+          "Tag '%tag' contains a space, this is forbidden.", ['%tag' => $tag]
         );
       }
       else {
         $invalidation->setState(InvalidationInterface::PROCESSING);
-        $tags[] = $expression;
       }
     }
 
-    // Test if we have at least one tag to purge, if not, bail.
-    if (!count($tags)) {
+    // Create grouped sets of 12 so that we can spread out the BAN load.
+    $group = 0;
+    $groups = [];
+    foreach ($invalidations as $invalidation) {
+      if ($invalidation->getState() !== InvalidationInterface::PROCESSING) {
+        continue;
+      }
+      if (!isset($groups[$group])) {
+        $groups[$group] = ['tags' => [], ['objects' => []]];
+      }
+      if (count($groups[$group]['tags']) >= 12) {
+        $group++;
+      }
+      $groups[$group]['objects'][] = $invalidation;
+      $groups[$group]['tags'][] = $invalidation->getExpression();
+    }
+
+    // Test if we have at least one group of tag(s) to purge, if not, bail.
+    if (!count($groups)) {
       foreach ($invalidations as $invalidation) {
         $invalidation->setState(InvalidationInterface::FAILED);
       }
       return;
     }
 
-    // Predescribe the requests to make.
-    $requests = [];
-    $tags_hashed = implode(' ', Hash::cacheTags($tags));
-    $site_identifier = $this->hostingInfo->getSiteIdentifier();
-    foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
-      $r = symfonyRequest::create("http://$ip_address/tags", 'BAN');
-      $this->disableTrustedHostsMechanism($r);
-      $r->headers->set('X-Acquia-Purge', $site_identifier);
-      $r->headers->set('X-Acquia-Purge-Tags', $tags_hashed);
-      $r->headers->remove('Accept-Language');
-      $r->headers->remove('Accept-Charset');
-      $r->headers->remove('Accept');
-      $r->headers->set('Accept-Encoding', 'gzip');
-      $r->headers->set('User-Agent', 'Acquia Purge');
-      $requests[] = $r;
-    }
-
-    // Perform the requests, results will be set as attributes onto the objects.
-    $this->executeRequests($requests);
-
-    // Collect all results per invalidation object based on the cUrl data.
-    $overall_success = TRUE;
-    foreach ($requests as $request) {
-      if ($request->attributes->get('curl_http_code') !== 200) {
-        $overall_success = FALSE;
-        $this->logFailedRequestLegacy($request);
+    // Now create requests for all groups of tags.
+    $site = $this->hostingInfo->getSiteIdentifier();
+    $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
+    $requests = function() use ($groups, $ipv4_addresses, $site) {
+      foreach ($groups as $group_id => $group) {
+        $tags = implode(' ', Hash::cacheTags($group['tags']));
+        foreach ($ipv4_addresses as $ipv4) {
+          yield $group_id => function($poolopt) use ($site, $tags, $ipv4) {
+            $opt = [
+              'headers' => [
+                'X-Acquia-Purge' => $site,
+                'X-Acquia-Purge-Tags' => $tags,
+                'Accept-Encoding' => 'gzip',
+                'User-Agent' => 'Acquia Purge',
+              ]
+            ];
+            if (is_array($poolopt) && count($poolopt)) {
+              $opt = array_merge($poolopt, $opt);
+            }
+            return $this->client->requestAsync('BAN', "http://$ipv4/tags", $opt);
+          };
+        }
       }
-    }
+    };
 
-    // Set the object states according to our overall result.
-    foreach ($invalidations as $invalidation) {
-      if ($invalidation->getState() === InvalidationInterface::PROCESSING) {
-        if ($overall_success) {
-          $invalidation->setState(InvalidationInterface::SUCCEEDED);
+    // Execute the requests generator and retrieve the results.
+    $results = $this->getResultsConcurrently('invalidateTags', $requests);
+
+    // Triage the results and set all invalidation states correspondingly.
+    foreach ($groups as $group_id => $group) {
+      if ((!isset($results[$group_id])) || (!count($results[$group_id]))) {
+        foreach ($group['objects'] as $invalidation) {
+          $invalidation->setState(InvalidationInterface::FAILED);
+        }
+      }
+      else {
+        if (in_array(FALSE, $results[$group_id])) {
+          foreach ($group['objects'] as $invalidation) {
+            $invalidation->setState(InvalidationInterface::FAILED);
+          }
         }
         else {
-          $invalidation->setState(InvalidationInterface::FAILED);
+          foreach ($group['objects'] as $invalidation) {
+            $invalidation->setState(InvalidationInterface::SUCCEEDED);
+          }
         }
       }
     }
@@ -369,14 +385,14 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     // Generate request objects for each balancer/invalidation combination.
     $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
     $token = $this->hostingInfo->getBalancerToken();
-    $requests = function () use ($invalidations, $ipv4_addresses, $token) {
+    $requests = function() use ($invalidations, $ipv4_addresses, $token) {
       foreach ($invalidations as $inv) {
         foreach ($ipv4_addresses as $ipv4) {
-          yield $inv->getId() => function ($poolopt) use ($inv, $ipv4, $token) {
+          yield $inv->getId() => function($poolopt) use ($inv, $ipv4, $token) {
             $uri = $inv->getExpression();
             $host = parse_url($uri, PHP_URL_HOST);
             $uri = str_replace($host, $ipv4, $uri);
-            $options = [
+            $opt = [
               'headers' => [
                 'X-Acquia-Purge' => $token,
                 'Accept-Encoding' => 'gzip',
@@ -385,9 +401,9 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
               ]
             ];
             if (is_array($poolopt) && count($poolopt)) {
-              $options = array_merge($poolopt, $options);
+              $opt = array_merge($poolopt, $opt);
             }
-            return $this->client->requestAsync('PURGE', $uri, $options);
+            return $this->client->requestAsync('PURGE', $uri, $opt);
           };
         }
       }
@@ -432,14 +448,14 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     // Generate request objects for each balancer/invalidation combination.
     $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
     $token = $this->hostingInfo->getBalancerToken();
-    $requests = function () use ($invalidations, $ipv4_addresses, $token) {
+    $requests = function() use ($invalidations, $ipv4_addresses, $token) {
       foreach ($invalidations as $inv) {
         foreach ($ipv4_addresses as $ipv4) {
-          yield $inv->getId() => function ($poolopt) use ($inv, $ipv4, $token) {
+          yield $inv->getId() => function($poolopt) use ($inv, $ipv4, $token) {
             $uri = $inv->getExpression();
             $host = parse_url($uri, PHP_URL_HOST);
             $uri = str_replace($host, $ipv4, $uri);
-            $options = [
+            $opt = [
               'headers' => [
                 'X-Acquia-Purge' => $token,
                 'Accept-Encoding' => 'gzip',
@@ -448,9 +464,9 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
               ]
             ];
             if (is_array($poolopt) && count($poolopt)) {
-              $options = array_merge($poolopt, $options);
+              $opt = array_merge($poolopt, $opt);
             }
-            return $this->client->requestAsync('BAN', $uri, $options);
+            return $this->client->requestAsync('BAN', $uri, $opt);
           };
         }
       }
