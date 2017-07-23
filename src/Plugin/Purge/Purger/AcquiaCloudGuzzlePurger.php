@@ -429,14 +429,16 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     // Triage the results and set all invalidation states correspondingly.
     foreach ($invalidations as $invalidation) {
       $inv_id = $invalidation->getId();
-      if (!(isset($results[$inv_id]) && count($results[$inv_id]))) {
-        $invalidation->setState(InvalidationInterface::FAILED);
-      }
-      if (in_array(FALSE, $results[$inv_id])) {
+      if ((!isset($results[$inv_id])) || (!count($results[$inv_id]))) {
         $invalidation->setState(InvalidationInterface::FAILED);
       }
       else {
-        $invalidation->setState(InvalidationInterface::SUCCEEDED);
+        if (in_array(FALSE, $results[$inv_id])) {
+          $invalidation->setState(InvalidationInterface::FAILED);
+        }
+        else {
+          $invalidation->setState(InvalidationInterface::SUCCEEDED);
+        }
       }
     }
   }
