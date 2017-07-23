@@ -9,6 +9,7 @@ use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request as symfonyRequest;
+use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
@@ -54,6 +55,14 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   protected $client;
 
   /**
+   * Supporting variable for ::debug() which is NULL initially, FALSE when there
+   * is no RfcLogLevel::DEBUG grant for $this->logger() and [] when debugging.
+   *
+   * @var null|bool|string[]
+   */
+  protected $debug = NULL;
+
+  /**
    * @var \Drupal\acquia_purge\HostingInfoInterface
    */
   protected $hostingInfo;
@@ -92,6 +101,58 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   }
 
   /**
+   * Log the caller graph using $this->logger()->debug() messages.
+   *
+   * @param string $caller
+   *   Name of the PHP method that is calling ::debug().
+   */
+  protected function debug($caller) {
+    if (!$this->debuggerEnabled()) {
+      return;
+    }
+
+    // Generate a caller name used both in logging and call counting.
+    $caller = str_replace(
+      $this->getClassName(__CLASS__),
+      '',
+      $this->getClassName($caller)
+    );
+
+    // Define a simple closure to print with prefixed indentation.
+    $log = function($output) {
+      $space = str_repeat('  ', count($this->debug));
+      $this->logger()->debug($space . $output);
+    };
+
+    if (!in_array($caller, $this->debug)) {
+      $this->debug[] = $caller;
+      $log("--> $caller():");
+    }
+    else {
+      unset($this->debug[array_search($caller, $this->debug)]);
+      $log("      (finished)");
+    }
+  }
+
+  /**
+   * Determine whether $this->logger() has a RfcLogLevel::DEBUG grant.
+   *
+   * @return bool
+   */
+  protected function debuggerEnabled() {
+    if (is_null($this->debug)) {
+      if (in_array(RfcLogLevel::DEBUG, $this->logger()->getGrants())) {
+        $this->debug = [];
+      }
+      else {
+        $this->debug = FALSE;
+        return;
+      }
+    }
+    return is_array($this->debug);
+  }
+
+  /**
    * Ensure that the request object has no trusted hosts configured.
    *
    * @param \Symfony\Component\HttpFoundation\Request $request
@@ -102,6 +163,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @return void
    */
   protected function disableTrustedHostsMechanism(symfonyRequest $request) {
+    $this->debug(__METHOD__);
     // $trusted_hosts = [];
     // foreach ($request->getTrustedHosts() as $pattern) {
     //   $trusted_hosts[] = ltrim(rtrim($pattern, '#i'), '#');
@@ -112,6 +174,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     // );
     // $request->setTrustedHosts($trusted_hosts);
     $request->setTrustedHosts([]);
+    $this->debug(__METHOD__);
   }
 
   /**
@@ -130,6 +193,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @return void
    */
   protected function executeRequests(array $requests) {
+    $this->debug(__METHOD__);
 
     // Presort the request objects in request groups based on the maximum amount
     // of requests we can perform in parallel. Max SELF::CONCURRENCY each!
@@ -241,6 +305,26 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
         $r->attributes->remove('curl_handler');
       }
     }
+
+    $this->debug(__METHOD__);
+  }
+
+  /**
+   * Generate a short and readable class name.
+   *
+   * @param string|object $class
+   *   Fully namespaced class or an instantiated object.
+   *
+   * @return string
+   */
+  protected function getClassName($class) {
+    if (is_object($class)) {
+      $class = get_class($class);
+    }
+    if ($pos = strrpos($class, '\\')) {
+      $class = substr($class, $pos + 1);
+    }
+    return $class;
   }
 
   /**
@@ -282,7 +366,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    *   Generator yielding requests which will be passed to \GuzzleHttp\Pool.
    */
   protected function getResultsConcurrently($caller, $requests) {
-    $this->logger->debug('::getResultsConcurrently() starting');
+    $this->debug(__METHOD__);
     $results = [];
 
     // Create a concurrently executed Pool which collects a boolean per request.
@@ -290,9 +374,11 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       'options' => $this->getGlobalOptions(),
       'concurrency' => SELF::CONCURRENCY,
       'fulfilled' => function($response, $result_id) use (&$results) {
+        $this->debug(__METHOD__ . '::fulfilled');
         $results[$result_id][] = TRUE;
       },
       'rejected' => function($reason, $result_id) use (&$results, $caller) {
+        $this->debug(__METHOD__ . '::rejected');
         $results[$result_id][] = FALSE;
         $this->logFailedRequest($caller, $reason);
       },
@@ -304,7 +390,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     // Force the pool of requests to complete.
     $promise->wait();
 
-    $this->logger->debug('::getResultsConcurrently() finished');
+    $this->debug(__METHOD__);
     return $results;
   }
 
@@ -347,7 +433,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateTags(array $invalidations) {
-    $this->logger->debug('::invalidateTags() starting');
+    $this->debug(__METHOD__);
 
     // Collect tags and set all states to PROCESSING before we kick off.
     $tags = [];
@@ -422,7 +508,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       }
     }
 
-    $this->logger->debug('::invalidateTags() finished');
+    $this->debug(__METHOD__);
   }
 
   /**
@@ -432,7 +518,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateUrls(array $invalidations) {
-    $this->logger->debug('::invalidateUrls() starting');
+    $this->debug(__METHOD__);
 
     // Change all invalidation objects into the PROCESS state before kickoff.
     foreach ($invalidations as $inv) {
@@ -485,7 +571,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       }
     }
 
-    $this->logger->debug('::invalidateUrls(): finished');
+    $this->debug(__METHOD__);
   }
 
   /**
@@ -495,7 +581,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateWildcardUrls(array $invalidations) {
-    $this->logger->debug('::invalidateWildcardUrls() starting');
+    $this->debug(__METHOD__);
 
     // Change all invalidation objects into the PROCESS state before kickoff.
     foreach ($invalidations as $inv) {
@@ -548,7 +634,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       }
     }
 
-    $this->logger->debug('::invalidateWildcardUrls(): finished');
+    $this->debug(__METHOD__);
   }
 
   /**
@@ -564,7 +650,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
    */
   public function invalidateEverything(array $invalidations) {
-    $this->logger->debug('::invalidateEverything() starting');
+    $this->debug(__METHOD__);
 
     // Set the 'everything' object(s) into processing mode.
     foreach ($invalidations as $invalidation) {
@@ -606,7 +692,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       }
     }
 
-    $this->logger->debug('::invalidateEverything() finished');
+    $this->debug(__METHOD__);
   }
 
   /**
@@ -618,14 +704,12 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
    *   The exception thrown by Guzzle.
    */
   protected function logFailedRequest($caller, \Exception $e) {
-    $vars = ['@caller' => $caller, '@msg' => $e->getMessage()];
     $msg = "::@caller() -> @class:";
-
-    // Get the short class name of the thrown exception.
-    $vars['@class'] = get_class($e);
-    if ($e_class_pos = strrpos($vars['@class'], '\\')) {
-      $vars['@class'] = substr($vars['@class'], $e_class_pos + 1);
-    }
+    $vars = [
+      '@caller' => $caller,
+      '@class' => $this->getClassName($e),
+      '@msg' => $e->getMessage(),
+    ];
 
     // Add request information when this is present in the exception.
     if ($e instanceof RequestException) {
@@ -636,7 +720,33 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       $vars['@status'] = $e->hasResponse() ? $e->getResponse()->getStatusCode() : '???';
     }
 
+    // Log the normal message to the emergency output stream.
     $this->logger()->emergency("$msg @msg", $vars);
+
+    // In debugging mode, follow the line with quite a bit more info.
+    if ($this->debuggerEnabled()) {
+      $l = function($m) {
+        $this->logger()->debug(" - @debug", ['@debug' => $m]);
+      };
+
+      // Write out the full class name and lots of REQ/RSP data.
+      $l('EXCEPTION    | ' . get_class($e));
+      if ($e instanceof RequestException) {
+        $l('REQ HTTP     | ' . $req->getProtocolVersion());
+        $l('REQ URI      | ' . $req->getUri()->__toString());
+        $l('REQ METHOD   | ' . $req->getMethod());
+        $l('REQ HEADERS  | ' . json_encode($req->getHeaders()));
+        $l('RSP RECEIVED | ' . ($e->hasResponse() ? 'Yes' : 'No'));
+        if ($e->hasResponse() && ($rsp = $e->getResponse())) {
+          $l('RSP HTTP     | ' . $rsp->getProtocolVersion());
+          $l('RSP STATUS   |' . $rsp->getStatusCode());
+          $l('RSP REASON   | ' . $rsp->getReasonPhrase());
+          $l('RSP SUMMARY  | ' . json_encode($e->getResponseBodySummary($rsp)));
+          $l('RSP HEADERS  | ' . json_encode($rsp->getHeaders()));
+        }
+      }
+    }
+
   }
 
   /**
