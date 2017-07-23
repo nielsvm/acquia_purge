@@ -452,7 +452,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
       foreach ($invalidations as $inv) {
         foreach ($ipv4_addresses as $ipv4) {
           yield $inv->getId() => function($poolopt) use ($inv, $ipv4, $token) {
-            $uri = $inv->getExpression();
+            $uri = str_replace('https://', 'http://', $inv->getExpression());
             $host = parse_url($uri, PHP_URL_HOST);
             $uri = str_replace($host, $ipv4, $uri);
             $opt = [
