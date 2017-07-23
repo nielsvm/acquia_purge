@@ -736,13 +736,18 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
         $l('REQ URI      | ' . $req->getUri()->__toString());
         $l('REQ METHOD   | ' . $req->getMethod());
         $l('REQ HEADERS  | ' . json_encode($req->getHeaders()));
-        $l('RSP RECEIVED | ' . ($e->hasResponse() ? 'Yes' : 'No'));
+        foreach ($req->getHeaders() as $h => $v) {
+          $l('REQ HEADERS  | ' . $h . ': ' . $req->getHeaderLine($h));
+        }
+        $l('RSP          | ' . ($e->hasResponse() ? 'YES' : 'No response'));
         if ($e->hasResponse() && ($rsp = $e->getResponse())) {
           $l('RSP HTTP     | ' . $rsp->getProtocolVersion());
           $l('RSP STATUS   |' . $rsp->getStatusCode());
           $l('RSP REASON   | ' . $rsp->getReasonPhrase());
           $l('RSP SUMMARY  | ' . json_encode($e->getResponseBodySummary($rsp)));
-          $l('RSP HEADERS  | ' . json_encode($rsp->getHeaders()));
+          foreach ($rsp->getHeaders() as $h => $v) {
+            $l('RSP HEADERS  | ' . $h . ': ' . $rsp->getHeaderLine($h));
+          }
         }
       }
     }
