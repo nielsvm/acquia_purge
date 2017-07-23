@@ -17,23 +17,22 @@ class LoadBalancerMiddleware {
    */
   public function __invoke() {
     return function (callable $handler) {
-      return function ($request, array $options) use ($handler) {
+      return function ($req, array $options) use ($handler) {
 
         // Don't interfere on requests not going to Acquia Load balancers.
         if (!isset($options['acquia_purge_middleware'])) {
-          return $handler($request, $options);
+          return $handler($req, $options);
         }
 
         // Return a handler that throws exceptions on bad responses.
-        return $handler($request, $options)->then(
-          function (ResponseInterface $response) use ($request, $handler, $options) {
-            $status = $response->getStatusCode();
-            $method = $request->getMethod();
+        return $handler($req, $options)->then(
+          function (ResponseInterface $rsp) use ($req, $handler, $options) {
+            $status = $rsp->getStatusCode();
+            $method = $req->getMethod();
 
             // Define a tiny closure that throws exceptions for us.
-            $e = function($msg) use ($request, $response, $method, $status) {
-              $msg = sprintf("HTTP %d; %s %s; %s", $status, $method, $request->getUri(), $msg);
-              throw new FailedInvalidationException($msg, $request, $response);
+            $e = function($msg) use ($req, $rsp) {
+              throw new FailedInvalidationException($msg, $req, $rsp);
             };
 
             // Flag up suspicious response types.
@@ -64,7 +63,7 @@ class LoadBalancerMiddleware {
               $e("Unsupported HTTP method!");
             }
 
-            return $response;
+            return $rsp;
           }
         );
       };

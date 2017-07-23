@@ -2,6 +2,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise;
 use GuzzleHttp\Pool;
@@ -559,19 +560,31 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
   /**
    * Write an error to the log for a failed request.
    *
-   * @param string $method
+   * @param string $caller
    *   Name of the PHP method responsible for creating the request.
    * @param \Exception $e
    *   The exception thrown by Guzzle.
    */
-  protected function logFailedRequest($method, \Exception $e) {
-    $this->logger()->emergency(
-      "@method(): @e",
-      [
-        '@method' => $method,
-        '@e' => $e->getMessage()
-      ]
-    );
+  protected function logFailedRequest($caller, \Exception $e) {
+    $vars = ['@caller' => $caller, '@msg' => $e->getMessage()];
+    $msg = "::@caller() -> @class:";
+
+    // Get the short class name of the thrown exception.
+    $vars['@class'] = get_class($e);
+    if ($e_class_pos = strrpos($vars['@class'], '\\')) {
+      $vars['@class'] = substr($vars['@class'], $e_class_pos + 1);
+    }
+
+    // Add request information when this is present in the exception.
+    if ($e instanceof RequestException) {
+      $req = $e->getRequest();
+      $msg .= " HTTP @status; @method @uri;";
+      $vars['@uri'] = $req->getUri();
+      $vars['@method'] = $req->getMethod();
+      $vars['@status'] = $e->hasResponse() ? $e->getResponse()->getStatusCode() : '???';
+    }
+
+    $this->logger()->emergency("$msg @msg", $vars);
   }
 
   /**
