@@ -515,7 +515,6 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
     }
 
     // Fetch the site identifier and start with a successive outcome.
-    $site_identifier = $this->hostingInfo->getSiteIdentifier();
     $overall_success = TRUE;
 
     // Synchronously request each balancer to wipe out everything for this site.
@@ -527,7 +526,7 @@ class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
           'http_errors' => FALSE,
           'timeout' => SELF::TIMEOUT,
           'headers' => [
-            'X-Acquia-Purge' => $site_identifier,
+            'X-Acquia-Purge' => $this->hostingInfo->getSiteIdentifier(),
             'Accept-Encoding' => 'gzip',
             'User-Agent' => 'Acquia Purge',
           ]
