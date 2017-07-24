@@ -53,12 +53,11 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   protected $client;
 
   /**
-   * Supporting variable for ::debug() which is NULL initially, FALSE when there
-   * is no RfcLogLevel::DEBUG grant for $this->logger() and [] when debugging.
+   * Supporting variable for ::debug(), which keeps a call graph in it.
    *
-   * @var null|bool|string[]
+   * @var string[]
    */
-  protected $debug = NULL;
+  protected $debug = [];
 
   /**
    * @var \Drupal\acquia_purge\HostingInfoInterface
@@ -105,7 +104,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
    *   Name of the PHP method that is calling ::debug().
    */
   protected function debug($caller) {
-    if (!$this->debuggerEnabled()) {
+    if (!$this->logger()->isDebuggingEnabled()) {
       return;
     }
 
@@ -130,24 +129,6 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       unset($this->debug[array_search($caller, $this->debug)]);
       $log("      (finished)");
     }
-  }
-
-  /**
-   * Determine whether $this->logger() has a RfcLogLevel::DEBUG grant.
-   *
-   * @return bool
-   */
-  protected function debuggerEnabled() {
-    if (is_null($this->debug)) {
-      if (in_array(RfcLogLevel::DEBUG, $this->logger()->getGrants())) {
-        $this->debug = [];
-      }
-      else {
-        $this->debug = FALSE;
-        return;
-      }
-    }
-    return is_array($this->debug);
   }
 
   /**
@@ -580,7 +561,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     $this->logger()->emergency("$msg @msg", $vars);
 
     // In debugging mode, follow the line with quite a bit more info.
-    if ($this->debuggerEnabled()) {
+    if ($this->logger()->isDebuggingEnabled()) {
       $l = function($m) {
         $this->logger()->debug(" - @debug", ['@debug' => $m]);
       };
