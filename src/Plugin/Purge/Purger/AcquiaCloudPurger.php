@@ -18,8 +18,8 @@ use Drupal\acquia_purge\Hash;
  * Acquia Cloud.
  *
  * @PurgePurger(
- *   id = "acquia_purge_guzzle",
- *   label = @Translation("Acquia Cloud GUZZLE (temporary plugin!)"),
+ *   id = "acquia_purge",
+ *   label = @Translation("Acquia Cloud"),
  *   configform = "",
  *   cooldown_time = 0.2,
  *   description = @Translation("Invalidates Varnish powered load balancers on your Acquia Cloud site."),
@@ -27,7 +27,7 @@ use Drupal\acquia_purge\Hash;
  *   types = {"url", "wildcardurl", "tag", "everything"},
  * )
  */
-class AcquiaCloudGuzzlePurger extends PurgerBase implements PurgerInterface {
+class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
 
   /**
    * Maximum number of requests to send concurrently.
