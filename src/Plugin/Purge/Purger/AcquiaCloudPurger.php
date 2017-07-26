@@ -250,13 +250,16 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       'options' => $this->getGlobalOptions(),
       'concurrency' => self::CONCURRENCY,
       'fulfilled' => function($response, $result_id) use (&$results) {
-        $this->debug(__METHOD__ . '::fulfilled');
+        if ($this->logger()->isDebuggingEnabled()) {
+          $this->debug(__METHOD__ . '::fulfilled');
+          $this->logDebugTable($this->debugInfoForResponse($response));
+        }
         $results[$result_id][] = TRUE;
       },
       'rejected' => function($reason, $result_id) use (&$results, $caller) {
         $this->debug(__METHOD__ . '::rejected');
-        $results[$result_id][] = FALSE;
         $this->logFailedRequest($caller, $reason);
+        $results[$result_id][] = FALSE;
       },
     ]);
 
@@ -651,7 +654,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     // Log the normal message to the emergency output stream.
     $this->logger()->emergency("$msg @msg", $vars);
 
-    // In debugging mode, follow the line with quite a bit more info.
+    // In debugging mode, follow with quite some more data.
     if ($this->logger()->isDebuggingEnabled()) {
       $table = ['exception' => get_class($e)];
       if ($e instanceof RequestException) {
@@ -661,8 +664,8 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
           $table = array_merge($table, $this->debugInfoForResponse($rsp, $e));
         }
       }
+      $this->logDebugTable($table);
     }
-    $this->logDebugTable($table);
   }
 
   /**
