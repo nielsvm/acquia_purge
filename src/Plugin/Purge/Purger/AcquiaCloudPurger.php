@@ -7,6 +7,8 @@ use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise;
 use GuzzleHttp\Pool;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
@@ -136,6 +138,51 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       unset($this->debug[array_search($caller, $this->debug)]);
       $log("      (finished)");
     }
+  }
+
+  /**
+   * Extract debug information from a request.
+   *
+   * @param \Psr\Http\Message\RequestInterface $r
+   *   The HTTP request object.
+   *
+   * @return string[]
+   */
+  protected function debugInfoForRequest(RequestInterface $r) {
+    $info = [];
+    $info['req http']   = $r->getProtocolVersion();
+    $info['req uri']    = $r->getUri()->__toString();
+    $info['req method'] = $r->getMethod();
+    $info['req headers'] = [];
+    foreach ($r->getHeaders() as $h => $v) {
+      $info['req headers'][] = $h . ': ' . $r->getHeaderLine($h);
+    }
+    return $info;
+  }
+
+  /**
+   * Extract debug information from a response.
+   *
+   * @param \Psr\Http\Message\ResponseInterface $r
+   *   The HTTP response object.
+   * @param \GuzzleHttp\Exception\RequestException $r
+   *   Optional exception in case of failures.
+   *
+   * @return string[]
+   */
+  protected function debugInfoForResponse(ResponseInterface $r, RequestException $e = NULL) {
+    $info = [];
+    $info['rsp http'] = $r->getProtocolVersion();
+    $info['rsp status'] = $r->getStatusCode();
+    $info['rsp reason'] = $r->getReasonPhrase();
+    if (!is_null($e)) {
+      $info['rsp summary'] = json_encode($e->getResponseBodySummary($r));
+    }
+    $info['rsp headers'] = [];
+    foreach ($r->getHeaders() as $h => $v) {
+      $info['rsp headers'][] = $h . ': ' . $r->getHeaderLine($h);
+    }
+    return $info;
   }
 
   /**
@@ -608,24 +655,10 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     if ($this->logger()->isDebuggingEnabled()) {
       $table = ['exception' => get_class($e)];
       if ($e instanceof RequestException) {
-        $req = $e->getRequest();
-        $table['req http']   = $req->getProtocolVersion();
-        $table['req uri']    = $req->getUri()->__toString();
-        $table['req method'] = $req->getMethod();
-        $table['req headers'] = [];
-        foreach ($req->getHeaders() as $h => $v) {
-          $table['req headers'][] = $h . ': ' . $req->getHeaderLine($h);
-        }
-        $table['rsp'] = $e->hasResponse() ? 'YES' : 'No response';
-        if ($e->hasResponse() && ($rsp = $e->getResponse())) {
-          $table['rsp http'] = $rsp->getProtocolVersion();
-          $table['rsp status'] = $rsp->getStatusCode();
-          $table['rsp reason'] = $rsp->getReasonPhrase();
-          $table['rsp summary'] = json_encode($e->getResponseBodySummary($rsp));
-          $table['rsp headers'] = [];
-          foreach ($rsp->getHeaders() as $h => $v) {
-            $table['rsp headers'][] = $h . ': ' . $rsp->getHeaderLine($h);
-          }
+        $table = array_merge($table, $this->debugInfoForRequest($e->getRequest()));
+        $table['rsp'] = ($has_rsp = $e->hasResponse()) ? 'YES' : 'No response';
+        if ($has_rsp && ($rsp = $e->getResponse())) {
+          $table = array_merge($table, $this->debugInfoForResponse($rsp, $e));
         }
       }
     }
