@@ -46,6 +46,12 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   const TIMEOUT = 3.0;
 
   /**
+   * Batches of cache tags are split up into multiple requests to prevent HTTP
+   * request headers from growing too large or Varnish refusing to process them.
+   */
+  const TAGS_GROUPED_BY = 15;
+
+  /**
    * The Guzzle HTTP client.
    *
    * @var \GuzzleHttp\Client
@@ -163,10 +169,10 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       'http_errors' => FALSE,
 
       // Prevent inactive balancers from sucking all runtime up.
-      'connect_timeout' => SELF::CONNECT_TIMEOUT,
+      'connect_timeout' => self::CONNECT_TIMEOUT,
 
       // Prevent unresponsive balancers from making Drupal slow.
-      'timeout' => SELF::TIMEOUT,
+      'timeout' => self::TIMEOUT,
 
       // Deliberately disable SSL verification to prevent unsigned certificates
       // from breaking down a website when purging a https:// URL!
@@ -194,7 +200,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     // Create a concurrently executed Pool which collects a boolean per request.
     $pool = new Pool($this->client, $requests(), [
       'options' => $this->getGlobalOptions(),
-      'concurrency' => SELF::CONCURRENCY,
+      'concurrency' => self::CONCURRENCY,
       'fulfilled' => function($response, $result_id) use (&$results) {
         $this->debug(__METHOD__ . '::fulfilled');
         $results[$result_id][] = TRUE;
@@ -282,7 +288,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       if (!isset($groups[$group])) {
         $groups[$group] = ['tags' => [], ['objects' => []]];
       }
-      if (count($groups[$group]['tags']) >= 12) {
+      if (count($groups[$group]['tags']) >= self::TAGS_GROUPED_BY) {
         $group++;
       }
       $groups[$group]['objects'][] = $invalidation;
@@ -503,9 +509,9 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       try {
         $this->client->request('BAN', 'http://' . $ip_address . '/site', [
           'acquia_purge_middleware' => TRUE,
-          'connect_timeout' => SELF::CONNECT_TIMEOUT,
+          'connect_timeout' => self::CONNECT_TIMEOUT,
           'http_errors' => FALSE,
-          'timeout' => SELF::TIMEOUT,
+          'timeout' => self::TIMEOUT,
           'headers' => [
             'X-Acquia-Purge' => $this->hostingInfo->getSiteIdentifier(),
             'Accept-Encoding' => 'gzip',
