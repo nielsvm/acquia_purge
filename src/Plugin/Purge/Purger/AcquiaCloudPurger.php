@@ -540,6 +540,35 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
   }
 
   /**
+   * Render debugging information as table to $this->logger()->debug().
+   *
+   * @param mixed[] $table
+   *   Associative array with each key being the row title. Each value can be
+   *   a string, or when it is a array itself, the row will be repeated.
+   * @param int $left
+   *   Amount of characters that the left size of the table can be long.
+   */
+  protected function logDebugTable(array $table, $left = 15) {
+    $longest_key = max(array_map('strlen', array_keys($table)));
+    $logger = $this->logger();
+    if ($longest_key > $left) {
+      $left = $longest_key;
+    }
+    foreach ($table as $title => $value) {
+      $spacing = str_repeat(' ', $left - strlen($title));
+      $title = strtoupper($title) . $spacing . ' | ';
+      if (is_array($value)) {
+        foreach ($value as $repeated_value) {
+          $logger->debug($title . $repeated_value);
+        }
+      }
+      else {
+        $logger->debug($title . $value);
+      }
+    }
+  }
+
+  /**
    * Write an error to the log for a failed request.
    *
    * @param string $caller
@@ -577,32 +606,30 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
 
     // In debugging mode, follow the line with quite a bit more info.
     if ($this->logger()->isDebuggingEnabled()) {
-      $l = function($m) {
-        $this->logger()->debug(" - @debug", ['@debug' => $m]);
-      };
-
-      // Write out the full class name and lots of REQ/RSP data.
-      $l('EXCEPTION    | ' . get_class($e));
+      $table = ['exception' => get_class($e)];
       if ($e instanceof RequestException) {
         $req = $e->getRequest();
-        $l('REQ HTTP     | ' . $req->getProtocolVersion());
-        $l('REQ URI      | ' . $req->getUri()->__toString());
-        $l('REQ METHOD   | ' . $req->getMethod());
+        $table['req http']   = $req->getProtocolVersion();
+        $table['req uri']    = $req->getUri()->__toString();
+        $table['req method'] = $req->getMethod();
+        $table['req headers'] = [];
         foreach ($req->getHeaders() as $h => $v) {
-          $l('REQ HEADERS  | ' . $h . ': ' . $req->getHeaderLine($h));
+          $table['req headers'][] = $h . ': ' . $req->getHeaderLine($h);
         }
-        $l('RSP          | ' . ($e->hasResponse() ? 'YES' : 'No response'));
+        $table['rsp'] = $e->hasResponse() ? 'YES' : 'No response';
         if ($e->hasResponse() && ($rsp = $e->getResponse())) {
-          $l('RSP HTTP     | ' . $rsp->getProtocolVersion());
-          $l('RSP STATUS   |' . $rsp->getStatusCode());
-          $l('RSP REASON   | ' . $rsp->getReasonPhrase());
-          $l('RSP SUMMARY  | ' . json_encode($e->getResponseBodySummary($rsp)));
+          $table['rsp http'] = $rsp->getProtocolVersion();
+          $table['rsp status'] = $rsp->getStatusCode();
+          $table['rsp reason'] = $rsp->getReasonPhrase();
+          $table['rsp summary'] = json_encode($e->getResponseBodySummary($rsp));
+          $table['rsp headers'] = [];
           foreach ($rsp->getHeaders() as $h => $v) {
-            $l('RSP HEADERS  | ' . $h . ': ' . $rsp->getHeaderLine($h));
+            $table['rsp headers'][] = $h . ': ' . $rsp->getHeaderLine($h);
           }
         }
       }
     }
+    $this->logDebugTable($table);
   }
 
   /**
