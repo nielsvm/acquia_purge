@@ -3,6 +3,7 @@
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise;
 use GuzzleHttp\Pool;
@@ -555,7 +556,15 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
     ];
 
     // Add request information when this is present in the exception.
-    if ($e instanceof RequestException) {
+    if ($e instanceof ConnectException) {
+      $vars['@msg'] = str_replace(
+        '(see http://curl.haxx.se/libcurl/c/libcurl-errors.html)',
+        '', $e->getMessage());
+      $vars['@msg'] .= '; This is allowed to happen accidentally when load'
+        . ' balancers are slow. However, if all cache invalidations fail, your'
+        . ' queue may stall and you should file a ticket with Acquia support!';
+    }
+    elseif ($e instanceof RequestException) {
       $req = $e->getRequest();
       $msg .= " HTTP @status; @method @uri;";
       $vars['@uri'] = $req->getUri();
@@ -575,6 +584,7 @@ class AcquiaCloudPurger extends PurgerBase implements PurgerInterface {
       // Write out the full class name and lots of REQ/RSP data.
       $l('EXCEPTION    | ' . get_class($e));
       if ($e instanceof RequestException) {
+        $req = $e->getRequest();
         $l('REQ HTTP     | ' . $req->getProtocolVersion());
         $l('REQ URI      | ' . $req->getUri()->__toString());
         $l('REQ METHOD   | ' . $req->getMethod());
