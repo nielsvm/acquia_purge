@@ -38,7 +38,7 @@ abstract class AcquiaPurgeProcessorBase implements AcquiaPurgeProcessorInterface
     // Test if the diagnostic tests prohibit purging the queue.
     if ($err = $this->service->diagnostics()->isSystemBlocked()) {
       if ($log) {
-        $this->diagnostics()->log($err);
+        $this->service->diagnostics()->log($err);
       }
       return;
     }
