@@ -197,6 +197,8 @@ class AcquiaPurgeHostingInfo {
     if (!function_exists('drupal_strtolower')) {
       include_once DRUPAL_ROOT . '/includes/unicode.inc';
     }
+
+    // Normalize all domains.
     $domains = array();
     foreach ($this->domains as $domain) {
       $domain = trim(drupal_strtolower($domain));
@@ -207,6 +209,17 @@ class AcquiaPurgeHostingInfo {
         $domains[] = $domain;
       }
     }
+
+    // Remove the acquia-sites.com domain when there's more then just one domain
+    // name discovered, if not, we're likely running on a dev/stage environment.
+    if (count($domains) > 1) {
+      foreach ($domains as $i => $domain) {
+        if (strpos($domain, 'acquia-sites.com') !== FALSE) {
+          unset($domains[$i]);
+        }
+      }
+    }
+
     $this->domains = $domains;
   }
 
@@ -333,16 +346,6 @@ class AcquiaPurgeHostingInfo {
     if (count($detected_domains)) {
       foreach ($detected_domains as $i => $detected_domain) {
         if (strpos($detected_domain, 'amazonaws.com') !== FALSE) {
-          unset($detected_domains[$i]);
-        }
-      }
-    }
-
-    // Remove the acquia-sites.com domain if we have found more then 1 domain. The
-    // less domains found, the faster the end user experience will be.
-    if (count($detected_domains)) {
-      foreach ($detected_domains as $i => $detected_domain) {
-        if (strpos($detected_domain, 'acquia-sites.com') !== FALSE) {
           unset($detected_domains[$i]);
         }
       }
