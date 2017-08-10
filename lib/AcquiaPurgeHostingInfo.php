@@ -340,7 +340,7 @@ class AcquiaPurgeHostingInfo {
 
     // Remove the acquia-sites.com domain if we have found more then 1 domain. The
     // less domains found, the faster the end user experience will be.
-    if (count($detected_domains) > 1) {
+    if (count($detected_domains)) {
       foreach ($detected_domains as $i => $detected_domain) {
         if (strpos($detected_domain, 'acquia-sites.com') !== FALSE) {
           unset($detected_domains[$i]);
