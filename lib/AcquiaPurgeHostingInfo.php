@@ -316,12 +316,14 @@ class AcquiaPurgeHostingInfo {
     $detected_domains = array();
 
     // Source the domain names from config.json.
-    $config_json = '/var/www/site-php' . $this->siteName . '/config.json';
+    $config_json = '/var/www/site-php/' . $this->siteName . '/config.json';
     if (file_exists($config_json) && is_readable($config_json)) {
       $config = json_decode(file_get_contents($config_json, TRUE));
-      if (is_array($config) && count($config)) {
-        foreach ($config as $detected_domain) {
-          $detected_domains[] = $detected_domain;
+      if (isset($config['domains'])) {
+        if (is_array($config['domains'])) {
+          foreach ($config['domains'] as $detected_domain) {
+            $detected_domains[] = (string) $detected_domain;
+          }
         }
       }
     }
