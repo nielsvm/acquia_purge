@@ -148,7 +148,11 @@ class BetaProgramCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
 
     // Test for various modules that we need present (for science baby!).
     if (!$this->moduleHandler->moduleExists('page_cache')) {
-      $this->recommendation = $this->t("Program participants must enable the page_cache module in order for Acquia to be able to measure the full effects on its systems.");
+      $this->recommendation = $this->t("Beta testers must enable the page_cache module in order for Acquia to be able to measure the full effects on its systems.");
+      return SELF::SEVERITY_ERROR;
+    }
+    if (!$this->moduleHandler->moduleExists('dynamic_page_cache')) {
+      $this->recommendation = $this->t("Beta testers must enable the dynamic_page_cache module in order for Acquia to be able to measure the full effects on its systems.");
       return SELF::SEVERITY_ERROR;
     }
     if ($this->moduleHandler->moduleExists('purge_queuer_url')) {

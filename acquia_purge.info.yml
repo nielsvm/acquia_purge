@@ -9,4 +9,5 @@ dependencies:
   - purge_queuer_coretags
   - purge_processor_cron
   - purge_processor_lateruntime
+  - dynamic_page_cache
   - page_cache
