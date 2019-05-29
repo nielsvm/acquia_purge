@@ -26,11 +26,9 @@ and should be finished within minutes, get started with the
 [installation instructions](http://cgit.drupalcode.org/acquia_purge/plain/INSTALL.md).
 
 ###### Drupal 8
-The Drupal 8 version has had 17 weeks of thorough testing in a series of private
-alpha and beta releases. As of now, the module is still officially marked as
-beta but considered to be stable quality and **now open for everyone to
-test**. If it still unexpectedly gives you bugs or quirks you didn't expect,
-reach out to us in the issue queue or through your Acquia workflow page.
+The Drupal 8 version has had two years of thorough testing in a series of
+private, alpha and beta releases. As of now, the module is officially considered
+stable for most usecases.
 
 ###### Drupal 7
 Owners of Drupal 7 sites are advised to schedule _at least one day_ of testing
