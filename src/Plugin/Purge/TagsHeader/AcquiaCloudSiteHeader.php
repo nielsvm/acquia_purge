@@ -5,17 +5,18 @@ namespace Drupal\acquia_purge\Plugin\Purge\TagsHeader;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
 use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
-use Drupal\acquia_purge\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 
 /**
  * Exports the X-Acquia-Site header.
  *
  * @PurgeTagsHeader(
- *   id = "acquiapurgesiteheader",
+ *   id = "acquiapurgecloudsiteheader",
  *   header_name = "X-Acquia-Site",
+ *   dependent_purger_plugins = {"acquia_purge"},
  * )
  */
-class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
+class AcquiaCloudSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
 
   /**
    * The identifier for this site.
@@ -25,7 +26,7 @@ class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
   protected $identifier = '';
 
   /**
-   * Constructs a AcquiaSiteHeader object.
+   * Constructs a AcquiaCloudSiteHeader object.
    *
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
@@ -33,7 +34,7 @@ class AcquiaSiteHeader extends TagsHeaderBase implements TagsHeaderInterface {
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param \Drupal\acquia_purge\HostingInfoInterface $acquia_purge_hostinginfo
+   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
    *   Provides technical information accessors for Acquia Cloud.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, HostingInfoInterface $acquia_purge_hostinginfo) {

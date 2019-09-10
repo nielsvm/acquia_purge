@@ -17,7 +17,7 @@ use Drupal\purge\Plugin\Purge\Purger\PurgersServiceInterface;
  * Acquia Purge Recommendations.
  *
  * @PurgeDiagnosticCheck(
- *   id = "acquia_purge_recommendations",
+ *   id = "acquia_purge_recommendations_check",
  *   title = @Translation("Acquia Purge Recommendations"),
  *   description = @Translation(""),
  *   dependent_queue_plugins = {},

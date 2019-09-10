@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\acquia_purge;
+namespace Drupal\acquia_purge\AcquiaCloud;
 
 /**
  * Helper class that centralizes string hashing for security and maintenance.
@@ -18,7 +18,7 @@ class Hash {
    * @return string
    *   Cryptographic hash with the given length.
    */
-  static private function hash($input, $length) {
+  static public function hash($input, $length) {
     // MD5 is the fastest algorithm beyond CRC32 (which is 30% faster, but high
     // collision risk), so this is the best bet for now. If collisions are going
     // to be a major problem in the future, we might have to consider a hash DB.

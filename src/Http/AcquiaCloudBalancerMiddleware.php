@@ -4,13 +4,13 @@ namespace Drupal\acquia_purge\Http;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Drupal\acquia_purge\Http\FailedInvalidationException;
+use Drupal\acquia_purge\Http\AcquiaCloudBalancerException;
 
 /**
- * HTTP middleware which throws FailedInvalidationException's on BAN and PURGE
+ * HTTP middleware which throws AcquiaCloudBalancerException's on BAN and PURGE
  * requests sent to Acquia Cloud load balancers.
  */
-class LoadBalancerMiddleware {
+class AcquiaCloudBalancerMiddleware {
 
   /**
    * {@inheritdoc}
@@ -20,7 +20,7 @@ class LoadBalancerMiddleware {
       return function ($req, array $options) use ($handler) {
 
         // Don't interfere on requests not going to Acquia Load balancers.
-        if (!isset($options['acquia_purge_middleware'])) {
+        if (!isset($options['acquia_purge_balancer_middleware'])) {
           return $handler($req, $options);
         }
 
@@ -32,33 +32,28 @@ class LoadBalancerMiddleware {
 
             // Define a tiny closure that throws exceptions for us.
             $e = function($msg) use ($req, $rsp) {
-              throw new FailedInvalidationException($msg, $req, $rsp);
+              throw new AcquiaCloudBalancerException($msg, $req, $rsp);
             };
 
             // Flag up suspicious response types.
             if ($status === 403) {
-              $e('Forbidden is abnormal and suggests that your balancer runs'
-              . ' on a malfunctioning custom VCL configuration!');
+              $e('Invalid response (403), please contact Acquia Support.');
             }
             elseif ($status == 405) {
-              $e('Not allowed; Chances are that you customized the VCL file'
-              . ' running on your balancer for a customized cache invalidation'
-              . ' token. Please contact Acquia Support and consider reverting'
-              . ' your configuration as these setups are no longer supported by'
-              . ' the acquia_purge module.');
+              $e('Invalid response (405), please contact Acquia Support.');
             }
 
             // Test response codes and reply messages per type of invalidation.
             if ($method == 'PURGE') {
               if (!in_array($status, [200, 404])) {
-                $e("Expected 200 or 404 instead!");
+                $e('Invalid response (no 200/404), please contact Acquia Support.');
               }
             }
             elseif ($method == 'BAN') {
               $path = $req->getRequestTarget();
               $reply = $rsp->getReasonPhrase();
               if ($status !== 200) {
-                $e("Expected 200 instead!");
+                $e('Invalid response (not 200), please contact Acquia Support.');
               }
               elseif (($path == '/site') && ($reply !== 'Site banned.')) {
                 $e("Reply mismatch for /site.");
@@ -75,7 +70,6 @@ class LoadBalancerMiddleware {
             else {
               $e("Unsupported HTTP method!");
             }
-
             return $rsp;
           }
         );

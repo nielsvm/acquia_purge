@@ -5,30 +5,30 @@ namespace Drupal\acquia_purge\Plugin\Purge\DiagnosticCheck;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckInterface;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckBase;
-use Drupal\acquia_purge\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 
 /**
  * Acquia Purge.
  *
  * @PurgeDiagnosticCheck(
- *   id = "acquia_purge",
- *   title = @Translation("Acquia Purge"),
- *   description = @Translation("Reports the status of the Acquia Purge module."),
+ *   id = "acquia_purge_cloud_check",
+ *   title = @Translation("Acquia Cloud"),
+ *   description = @Translation("Validates the Acquia Cloud configuration."),
  *   dependent_queue_plugins = {},
  *   dependent_purger_plugins = {"acquia_purge"}
  * )
  */
-class AcquiaPurgeCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
+class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
-   * @var \Drupal\acquia_purge\HostingInfoInterface
+   * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
    */
-  protected $acquiaPurgeHostinginfo;
+  protected $hostingInfo;
 
   /**
    * Constructs a AcquiaCloudCheck object.
    *
-   * @param \Drupal\acquia_purge\HostingInfoInterface $acquia_purge_hostinginfo
+   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
    *   Technical information accessors for the Acquia Cloud environment.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
@@ -39,7 +39,7 @@ class AcquiaPurgeCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
    */
   public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->acquiaPurgeHostingInfo = $acquia_purge_hostinginfo;
+    $this->hostingInfo = $acquia_purge_hostinginfo;
   }
 
   /**
@@ -63,13 +63,13 @@ class AcquiaPurgeCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
     $this->value = $version;
 
     // Block the entire system when this is a third-party platform.
-    if (!$this->acquiaPurgeHostingInfo->isThisAcquiaCloud()) {
+    if (!$this->hostingInfo->isThisAcquiaCloud()) {
       $this->recommendation = $this->t("Acquia Purge only works on your Acquia Cloud environment and doesn't work outside of it.");
       return SELF::SEVERITY_ERROR;
     }
 
     // Check the balancer composition for crazy setups.
-    $balancers = $this->acquiaPurgeHostingInfo->getBalancerAddresses();
+    $balancers = $this->hostingInfo->getBalancerAddresses();
     $balancerscount = count($balancers);
     $this->value = $balancerscount ? implode(', ', $balancers) : '';
     if (!$balancerscount) {
@@ -90,8 +90,8 @@ class AcquiaPurgeCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
     $this->value = $this->t(
       "@site_group.@site_env (@version)",
       [
-        '@site_group' => $this->acquiaPurgeHostingInfo->getSiteGroup(),
-        '@site_env' => $this->acquiaPurgeHostingInfo->getSiteEnvironment(),
+        '@site_group' => $this->hostingInfo->getSiteGroup(),
+        '@site_env' => $this->hostingInfo->getSiteEnvironment(),
         '@version' => $version,
       ]
     );
