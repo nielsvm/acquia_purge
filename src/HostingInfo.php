@@ -35,10 +35,19 @@ class HostingInfo implements HostingInfoInterface {
   protected $balancerToken = '';
 
   /**
-  * Whether the current hosting environment is Acquia Cloud or not.
-  *
-  * @var bool
-  */
+   * Associated array with configuration parameters for Acquia Platform CDN,
+   * which has at minimum the following two keys:
+   *  - config: Configuration source string, either 'settings' or 'cmi'.
+   *  - vendor: The underlying CDN backend used by the platform.
+   *  - ... other keys can be present depending on the used backend.
+   */
+  protected $platformCdn = [];
+
+  /**
+   * Whether the current hosting environment is Acquia Cloud or not.
+   *
+   * @var bool
+   */
   protected $isThisAcquiaCloud = FALSE;
 
   /**
@@ -133,6 +142,22 @@ class HostingInfo implements HostingInfoInterface {
       }
     }
 
+    // Retrieval of the Acquia Platform CDN configuration is implemented via
+    // a *temporary* hybrid implementation. For as long as the Platform CDN
+    // product is in beta, the configuration object can come via CMI, after that
+    // it will come through a platform settings object (which takes priority).
+    $asc = $settings->get('acquia_service_credentials');
+    if (isset($asc['platform_cdn']['vendor'])
+        && isset($asc['platform_cdn']['configuration'])
+        && strlen($asc['platform_cdn']['vendor'])
+        && is_array($asc['platform_cdn']['configuration'])
+        && count($asc['platform_cdn']['configuration'])) {
+      $this->platformCdn['config'] = 'settings';
+      $this->platformCdn['vendor'] = (string)$asc['platform_cdn']['vendor'];
+      $this->platformCdn =
+        array_merge($this->platformCdn, $asc['platform_cdn']['configuration']);
+    }
+
     // Use the sitename and site path directory as site identifier.
     $this->siteIdentifier = Hash::siteIdentifier(
       $this->siteName,
@@ -164,15 +189,25 @@ class HostingInfo implements HostingInfoInterface {
   }
 
   /**
-  * {@inheritdoc}
-  */
+   * {@inheritdoc}
+   */
+  public function getPlatformCdnConfiguration() {
+    if (empty($this->platformCdn)) {
+      throw new \RuntimeException("No Platform CDN configuration available.");
+    }
+    return $this->platformCdn;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getSiteEnvironment() {
     return $this->siteEnvironment;
   }
 
   /**
-  * {@inheritdoc}
-  */
+   * {@inheritdoc}
+   */
   public function getSiteGroup() {
     return $this->siteGroup;
   }

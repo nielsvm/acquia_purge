@@ -24,6 +24,21 @@ interface HostingInfoInterface {
   public function getBalancerToken();
 
   /**
+   * Get the Acquia Platform CDN configuration.
+   *
+   * @throws \RuntimeException
+   *   Thrown when either no configuration is available.
+   *
+   * @return array[]
+   *   Associated array with configuration parameters for Acquia Platform CDN,
+   *   which has at minimum the following two keys:
+   *    - config: Configuration source string, either 'settings' or 'cmi'.
+   *    - vendor: The underlying CDN backend used by the platform.
+   *    - ... other keys can be present depending on the used backend.
+   */
+  public function getPlatformCdnConfiguration();
+
+  /**
    * Get the Acquia site environment.
    *
    * @return string
