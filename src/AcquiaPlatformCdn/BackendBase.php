@@ -4,7 +4,6 @@ namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 
 use GuzzleHttp\ClientInterface;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
-use Drupal\purge\Logger\PurgeLoggerAwareTrait;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareTrait;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
@@ -13,7 +12,6 @@ use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
  * Provides a Fastly backend for the Platform CDN purger.
  */
 abstract class BackendBase implements BackendInterface {
-  use PurgeLoggerAwareTrait;
   use DebuggerAwareTrait;
 
   /**
