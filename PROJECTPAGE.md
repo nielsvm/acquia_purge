@@ -24,10 +24,6 @@ a _turn-key_ experience.
 Setting it up shouldn't take more then 15 minutes, see the
 [installation instructions](http://cgit.drupalcode.org/acquia_purge/plain/INSTALL.md).
 
-## When is it stable?
-Version ``8.x-1.0-beta4`` is the last beta release, ``8.x-1.0`` will be
-released afterwards.
-
 #### Drupal 7
 Owners of Drupal 7 sites are advised to schedule _at least one day_ of testing
 and tuning to ensure that every section of their site is covered, as the
