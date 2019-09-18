@@ -3,38 +3,36 @@
 
 **_Top-notch cache invalidation on Acquia Cloud!_**
 
-The ``acquia_purge`` module invalidates your
-[Varnish caches](https://www.varnish-cache.org/about) on your Acquia Cloud site.
-When combined with setting Drupal's _time to live (TTL)_ very high,
-your stack requires less servers, becomes much more resilient against _DDOS
-attacks_ and performance dramatically improves!
+The ``acquia_purge`` module invalidates cached content on Acquia Cloud
+and allows you to set Drupal's _time to live (TTL)_ to a high value like
+a year. This makes your site more resilient, the stack do less work and
+improves the performance of your site dramatically!
 
 ## When do I need this?
-Although we **recommend every Acquia Cloud customer** to use this module, you
-will absolutely need to start using it when any of these things sound familiar:
+We recommend nearly **all Acquia customers to set this up**, but especially
+if any of this sounds familiar:
 
-* You're often getting the infamous ``Temporary Unavailable`` error.
+* Traffic spikes quickly take down your site.
 * Pages are often slow and take more than 2-3 seconds to load.
-* Traffic peaks quickly take down your site.
-* You have many ``web`` servers and would like to reduce costs.
-* Heavy processing (e.g. slow queries, cron imports) take your site down.
+* Your site is constantly dealing with slow queries or other heavy processing.
 
 ## What time does it take?
-Drupal 8 site owners have a true _turn-key_ experience as the module integrates
-heavily with the ``purge`` [cache invalidation framework](https://www.drupal.org/project/purge)
-and should be finished within minutes, get started with the
+The ``acquia_purge`` module works on top of the ``purge``
+[cache invalidation framework](https://www.drupal.org/project/purge) and offers
+a _turn-key_ experience.
+
+Setting it up shouldn't take more then 15 minutes, see the
 [installation instructions](http://cgit.drupalcode.org/acquia_purge/plain/INSTALL.md).
 
-###### Drupal 8
-The Drupal 8 version has had two years of thorough testing in a series of
-private, alpha and beta releases. As of now, the module is officially considered
-stable for most usecases.
+## When is it stable?
+Version ``8.x-1.0-beta4`` is the last beta release, ``8.x-1.0`` will be
+released afterwards.
 
-###### Drupal 7
+#### Drupal 7
 Owners of Drupal 7 sites are advised to schedule _at least one day_ of testing
 and tuning to ensure that every section of their site is covered, as the
 ``expire`` [module](https://www.drupal.org/project/expire) won't cover
-everything and requires them to set up rules. See its
+everything and requires you to set up rules for missing coverage areas. See its
 [README](http://cgit.drupalcode.org/acquia_purge/plain/README.md?h=7.x-1.x),
 [installation instructions](http://cgit.drupalcode.org/acquia_purge/plain/INSTALL.md?h=7.x-1.x)
 and especially its
