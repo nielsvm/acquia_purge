@@ -13,6 +13,7 @@ and this project adheres to
 - **Acquia Platform CDN** support (beta) which supports tags, url and
   'everything' clearance. Please contact Acquia support if you're interested in
   becoming a beta tester.
+- Added `CHANGELOG.md` which follows _Keep a Changelog_-format.
 - Added `composer.json` for integration with Composer-based workflows.
 
 ### Changed
