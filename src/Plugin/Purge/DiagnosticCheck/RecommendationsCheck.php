@@ -69,11 +69,15 @@ class RecommendationsCheck extends DiagnosticCheckBase implements DiagnosticChec
   protected $purgeQueuers;
 
   /**
+   * The purge purgers service.
+   *
    * @var \Drupal\purge\Plugin\Purge\Purger\PurgersServiceInterface
    */
   protected $purgePurgers;
 
   /**
+   * The global Drupal settings object.
+   *
    * @var \Drupal\Core\Site\Settings
    */
   protected $settings;
@@ -144,6 +148,7 @@ class RecommendationsCheck extends DiagnosticCheckBase implements DiagnosticChec
    * it creates a false sense of effectiveness.
    *
    * @return bool
+   *   Boolean indicating if basic auth was found.
    */
   protected function basicHttpAuthenticationFound() {
     $cid = 'acquia_purge_recommendations_basicauth';
@@ -194,7 +199,6 @@ class RecommendationsCheck extends DiagnosticCheckBase implements DiagnosticChec
     return $found;
   }
 
-
   /**
    * {@inheritdoc}
    */
@@ -202,47 +206,37 @@ class RecommendationsCheck extends DiagnosticCheckBase implements DiagnosticChec
 
     // Check for the use of basic HTTP authentication.
     if ($this->basicHttpAuthenticationFound()) {
-      $this->recommendation = $this->t(
-        'Acquia Purge detected that you are protecting your website with basic'
-        . ' HTTP authentication. However, on Acquia Cloud all HTTP responses'
-        . ' with access authentication deliberately MISS cache to prevent'
-        . ' sensitive content from getting served to prying eyes. Acquia Purge'
-        . ' cannot detect if specific parts of the site are protected or all'
-        . ' pages, but does recommend you to temporarily disable invalidating'
-        . " caches if indeed your full site is protected. Please wipe Drupal's"
-        . ' "default" cache bin when this warning persists after you updated'
-        . ' your .htaccess file or uninstalled the Shield module!'
-      );
-      return SELF::SEVERITY_WARNING;
+      $this->recommendation = $this->t('Acquia Purge detected that you are protecting your website with basic HTTP authentication. However, on Acquia Cloud all HTTP responses with access authentication deliberately MISS cache to prevent sensitive content from getting served to prying eyes. Acquia Purge cannot detect if specific parts of the site are protected or all pages, but does recommend you to temporarily disable invalidating caches if indeed your full site is protected. Please wipe Drupal\'s "default" cache bin when this warning persists after you updated your .htaccess file or uninstalled the Shield module!');
+      return self::SEVERITY_WARNING;
     }
 
     // Issue a warning when the user forgot to add the AcquiaCloudPurger.
     if (!in_array('acquia_purge', $this->purgePurgers->getPluginsEnabled())) {
       $this->recommendation = $this->t("The 'Acquia Cloud' purger is not installed!");
-      return SELF::SEVERITY_WARNING;
+      return self::SEVERITY_WARNING;
     }
 
     // The purge_queuer_url can quickly cause issues.
     if ($this->moduleHandler->moduleExists('purge_queuer_url')) {
       $this->recommendation = $this->t("For an optimal experience, you're recommended to not use the URLs queuer (and module) as this module creates a very high load. If you keep using it, make sure your website has only a small number of content so that the risks of using it, are contained.");
-      return SELF::SEVERITY_WARNING;
+      return self::SEVERITY_WARNING;
     }
 
     // Test for the existence of the lateruntime and cron processors.
     if ((!$this->purgeProcessors->get('lateruntime')) || (!$this->purgeProcessors->get('cron'))) {
       $this->recommendation = $this->t("For an optimal experience, you're recommended to enable the cron processor and the late runtime processors simultaneously. These two processors will complement each other and assure that the queue is processed as fast as possible.");
-      return SELF::SEVERITY_WARNING;
+      return self::SEVERITY_WARNING;
     }
 
     // Test for the existence of the tags queuer, to ensure we're queuing tags!
     if (!$this->purgeQueuers->get('coretags')) {
       $this->recommendation = $this->t("For an optimal experience, you're recommended to enable the coretags queuer as this queues cache tags for Acquia Purge to process.");
-      return SELF::SEVERITY_WARNING;
+      return self::SEVERITY_WARNING;
     }
 
     // All okay!
     $this->value = $this->t("Nothing to recommend!");
-    return SELF::SEVERITY_OK;
+    return self::SEVERITY_OK;
   }
 
 }

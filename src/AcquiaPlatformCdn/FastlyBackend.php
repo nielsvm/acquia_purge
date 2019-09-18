@@ -10,8 +10,6 @@ use Drupal\purge\Logger\LoggerChannelPartInterface;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
 use Drupal\acquia_purge\AcquiaCloud\Hash;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
-use Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface;
-use Drupal\acquia_purge\AcquiaPlatformCdn\BackendBase;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
 
@@ -229,13 +227,14 @@ class FastlyBackend extends BackendBase implements BackendInterface {
    *   Additional headers to merge into the headers option.
    *
    * @return mixed[]
+   *   Guzzle option array.
    */
-  protected function fastlyRequestOpt($headers = []) {
+  protected function fastlyRequestOpt(array $headers = []) {
     $opt = [
       'headers' => $headers,
       'http_errors' => FALSE,
       'connect_timeout' => self::CONNECT_TIMEOUT,
-      'timeout' => self::TIMEOUT
+      'timeout' => self::TIMEOUT,
     ];
     $opt['headers']['Accept'] = 'application/json';
     $opt['headers']['Fastly-Key'] = $this->token;
@@ -281,6 +280,7 @@ class FastlyBackend extends BackendBase implements BackendInterface {
    *   for instance. Calls to setTemporaryRuntimeError() will be made as well.
    *
    * @return array
+   *   JSON decoded response data from the Fastly API.
    */
   protected function fastlyResponseData(ResponseInterface $response) {
     if ($data = json_decode($response->getBody(), TRUE)) {
@@ -288,7 +288,7 @@ class FastlyBackend extends BackendBase implements BackendInterface {
       // Detect invalid credentials and suspend operations for a full day,
       // we do this to prevent flooding Fastly in unattended environments.
       if (isset($data['msg']) && (strpos($data['msg'], 'credentials') !== FALSE)) {
-        $message  = "Invalid credentials - please contact Acquia Support and";
+        $message = "Invalid credentials - please contact Acquia Support and";
         $message .= " clear the cache after the issue got resolved.";
         self::setTemporaryRuntimeError($message, 86400);
         throw new \RuntimeException($message);
@@ -297,7 +297,7 @@ class FastlyBackend extends BackendBase implements BackendInterface {
       // Detect invalid environments and suspend operations for 12 hours.
       if (isset($data['msg'], $data['detail']) && ($data['msg'] == 'Record not found')) {
         if ($data['detail'] == 'Cannot find service') {
-          $message  = "Invalid environment - please contact Acquia Support and";
+          $message = "Invalid environment - please contact Acquia Support and";
           $message .= " clear the cache after the issue got resolved.";
           self::setTemporaryRuntimeError($message, 43200);
           throw new \RuntimeException($message);

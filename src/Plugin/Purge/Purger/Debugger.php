@@ -4,13 +4,10 @@ namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerInterface;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
 use Drupal\purge\Logger\PurgeLoggerAwareTrait;
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
-use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
 
 /**
  * Provides a centralized debugger for Acquia purger plugins.
@@ -144,14 +141,14 @@ class Debugger implements DebuggerInterface {
       $info['RSP ' . $header] = implode(',', $value);
     }
 
-    if ($body = (string)$response->getBody()) {
+    if ($body = (string) $response->getBody()) {
       $content_type = $response->getHeaderLine('content-type');
       if (strpos($content_type, 'application/json') !== FALSE) {
         $body = json_decode($body);
         $body = json_encode($body, JSON_PRETTY_PRINT);
       }
       elseif (strpos($content_type, 'text/html') !== FALSE) {
-        if (count($lines = explode("\n", $body)) >=4) {
+        if (count($lines = explode("\n", $body)) >= 4) {
           $lines = array_slice($lines, 0, 4);
           $body = implode("\n", $lines) . "\n...";
         }
@@ -171,6 +168,7 @@ class Debugger implements DebuggerInterface {
    * Calculate the indentation depth in number of characters.
    *
    * @return int
+   *   The number of characters to be used for indentation.
    */
   protected function indentationDepth() {
     return count($this->callGraph) * self::OUTPUT_INDENTLEN;
@@ -200,7 +198,7 @@ class Debugger implements DebuggerInterface {
         $debug[$key] = $value;
       }
       if ($exception->hasResponse() && ($rsp = $exception->getResponse())) {
-        foreach ($z=$this->extractResponseInfo($rsp, TRUE) as $key => $value) {
+        foreach ($this->extractResponseInfo($rsp, TRUE) as $key => $value) {
           $debug[$key] = $value;
         }
       }
@@ -222,9 +220,11 @@ class Debugger implements DebuggerInterface {
   }
 
   /**
-   * The output will be passed to the logger's debug() output stream, but will
-   * be prefixed depending on its depth in the call graph. Output will be
-   * right-side padded up to $padlen to improve output under Drush -d commands.
+   * Write a line to the logger's debug output stream.
+   *
+   * Content will be prefixed depending on its depth in the call graph. Output
+   * will also be right-side padded up to $padlen, to improve readability when
+   * executed using 'drush -d', which adds timestamps at the end of each line.
    *
    * {@inheritdoc}
    */
@@ -297,10 +297,10 @@ class Debugger implements DebuggerInterface {
       $this->writeSeparator('-');
     }
     $workspace = self::OUTPUT_BUFLEN - $this->indentationDepth();
-    $left = intval(floor($workspace/2) - ceil(strlen($title)/2) - 1);
+    $left = intval(floor($workspace / 2) - ceil(strlen($title) / 2) - 1);
     $right = $workspace - $left - strlen($title) - 2;
     $padleft = str_repeat(' ', $left);
-    $padright= str_repeat(' ', $right);
+    $padright = str_repeat(' ', $right);
     $this->write('|' . $padleft . $title . $padright . '|');
     if ($bottom) {
       $this->writeSeparator('-');

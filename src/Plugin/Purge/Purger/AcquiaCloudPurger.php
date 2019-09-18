@@ -2,17 +2,12 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use Psr\Log\LoggerInterface;
-use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Pool;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareInterface;
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareTrait;
 use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
 use Drupal\acquia_purge\AcquiaCloud\Hash;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
@@ -39,23 +34,26 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
   const CONCURRENCY = 6;
 
   /**
-   * Float describing the number of seconds to wait while trying to connect to
-   * a server.
+   * Float: the number of seconds to wait while trying to connect to a server.
    */
   const CONNECT_TIMEOUT = 1.5;
 
   /**
-   * Float describing the timeout of the request in seconds.
+   * Float: the timeout of the request in seconds.
    */
   const TIMEOUT = 3.0;
 
   /**
+   * Groups of tags per request.
+   *
    * Batches of cache tags are split up into multiple requests to prevent HTTP
    * request headers from growing too large or Varnish refusing to process them.
    */
   const TAGS_GROUPED_BY = 15;
 
   /**
+   * API to retrieve technical information from Acquia Cloud.
+   *
    * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
    */
   protected $hostingInfo;
@@ -106,7 +104,8 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
    * @param array[] $extra
    *   Associative array of options to merge onto the standard ones.
    *
-   * @return array
+   * @return mixed[]
+   *   Guzzle option array.
    */
   protected function getGlobalOptions(array $extra = []) {
     $opt = [
@@ -140,7 +139,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
    * @param \Closure $requests
    *   Generator yielding requests which will be passed to \GuzzleHttp\Pool.
    */
-  protected function getResultsConcurrently($requests) {
+  protected function getResultsConcurrently(\Closure $requests) {
     $this->debugger()->callerAdd(__METHOD__);
     $results = [];
 
@@ -148,12 +147,12 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     $pool = new Pool($this->httpClient, $requests(), [
       'options' => $this->getGlobalOptions(),
       'concurrency' => self::CONCURRENCY,
-      'fulfilled' => function($response, $result_id) use (&$results) {
+      'fulfilled' => function ($response, $result_id) use (&$results) {
         $this->debugger()->callerAdd(__METHOD__ . '::fulfilled');
         $results[$result_id][] = TRUE;
         $this->debugger()->callerRemove(__METHOD__ . '::fulfilled');
       },
-      'rejected' => function($exception, $result_id) use (&$results) {
+      'rejected' => function ($exception, $result_id) use (&$results) {
         $this->debugger()->callerAdd(__METHOD__ . '::rejected');
         $this->debugger()->logFailedRequest($exception);
         $results[$result_id][] = FALSE;
@@ -176,9 +175,10 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
    */
   public function getIdealConditionsLimit() {
     // The max amount of outgoing HTTP requests that can be made during script
-    // execution time. Although always respected as outer limit, it will be lower
-    // in practice as PHP resource limits (max execution time) bring it further
-    // down. However, the maximum amount of requests will be higher on the CLI.
+    // execution time. Although always respected as outer limit, it will be
+    // lower in practice as PHP resource limits (max execution time) bring it
+    // further down. However, the maximum amount of requests will be higher on
+    // the CLI.
     $balancers = count($this->hostingInfo->getBalancerAddresses());
     if ($balancers) {
       return intval(ceil(200 / $balancers));
@@ -255,21 +255,21 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     // Now create requests for all groups of tags.
     $site = $this->hostingInfo->getSiteIdentifier();
     $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
-    $requests = function() use ($groups, $ipv4_addresses, $site) {
+    $requests = function () use ($groups, $ipv4_addresses, $site) {
       foreach ($groups as $group_id => $group) {
         $tags = new TagsHeaderValue(
           $group['tags'],
           Hash::cacheTags($group['tags'])
         );
         foreach ($ipv4_addresses as $ipv4) {
-          yield $group_id => function($poolopt) use ($site, $tags, $ipv4) {
+          yield $group_id => function ($poolopt) use ($site, $tags, $ipv4) {
             $opt = [
               'headers' => [
                 'X-Acquia-Purge' => $site,
                 'X-Acquia-Purge-Tags' => $tags,
                 'Accept-Encoding' => 'gzip',
                 'User-Agent' => 'Acquia Purge',
-              ]
+              ],
             ];
             // Pass the TagsHeaderValue to DebuggerMiddleware (when loaded).
             if ($this->debugger()->enabled()) {
@@ -328,10 +328,10 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     // Generate request objects for each balancer/invalidation combination.
     $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
     $token = $this->hostingInfo->getBalancerToken();
-    $requests = function() use ($invalidations, $ipv4_addresses, $token) {
+    $requests = function () use ($invalidations, $ipv4_addresses, $token) {
       foreach ($invalidations as $inv) {
         foreach ($ipv4_addresses as $ipv4) {
-          yield $inv->getId() => function($poolopt) use ($inv, $ipv4, $token) {
+          yield $inv->getId() => function ($poolopt) use ($inv, $ipv4, $token) {
             $uri = $inv->getExpression();
             $host = parse_url($uri, PHP_URL_HOST);
             $uri = str_replace($host, $ipv4, $uri);
@@ -341,7 +341,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
                 'Accept-Encoding' => 'gzip',
                 'User-Agent' => 'Acquia Purge',
                 'Host' => $host,
-              ]
+              ],
             ];
             if (is_array($poolopt) && count($poolopt)) {
               $opt = array_merge($poolopt, $opt);
@@ -391,10 +391,10 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     // Generate request objects for each balancer/invalidation combination.
     $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
     $token = $this->hostingInfo->getBalancerToken();
-    $requests = function() use ($invalidations, $ipv4_addresses, $token) {
+    $requests = function () use ($invalidations, $ipv4_addresses, $token) {
       foreach ($invalidations as $inv) {
         foreach ($ipv4_addresses as $ipv4) {
-          yield $inv->getId() => function($poolopt) use ($inv, $ipv4, $token) {
+          yield $inv->getId() => function ($poolopt) use ($inv, $ipv4, $token) {
             $uri = str_replace('https://', 'http://', $inv->getExpression());
             $host = parse_url($uri, PHP_URL_HOST);
             $uri = str_replace($host, $ipv4, $uri);
@@ -404,7 +404,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
                 'Accept-Encoding' => 'gzip',
                 'User-Agent' => 'Acquia Purge',
                 'Host' => $host,
-              ]
+              ],
             ];
             if (is_array($poolopt) && count($poolopt)) {
               $opt = array_merge($poolopt, $opt);
@@ -502,7 +502,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
       'tag'         => 'invalidateTags',
       'url'         => 'invalidateUrls',
       'wildcardurl' => 'invalidateWildcardUrls',
-      'everything'  => 'invalidateEverything'
+      'everything'  => 'invalidateEverything',
     ];
     return isset($methods[$type]) ? $methods[$type] : 'invalidate';
   }

@@ -18,11 +18,10 @@ interface BackendInterface extends PurgeLoggerAwareInterface, DebuggerAwareInter
    * Construct a vendor backend for the Platform CDN purger.
    *
    * @param array $config
-   *   Associative array with arbitrary settings coming from:
-   *   \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration
+   *   Acquia Platform CDN configuration settings.
    * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
    *   Technical information accessors for the Acquia Cloud environment.
-   * @param \Drupal\purge\Logger\LoggerChannelPartInterface $logger,
+   * @param \Drupal\purge\Logger\LoggerChannelPartInterface $logger
    *   The logger passed to the Platform CDN purger.
    * @param \Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface $debugger
    *   The centralized debugger for Acquia purger plugins.
@@ -49,22 +48,29 @@ interface BackendInterface extends PurgeLoggerAwareInterface, DebuggerAwareInter
    *   Thrown when the object hasn't been set yet.
    *
    * @return \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
+   *   API to retrieve technical information from Acquia Cloud.
    */
   public static function hostingInfo(HostingInfoInterface $set = NULL);
 
   /**
+   * Invalidate all 'tag' invalidations.
+   *
    * @see \Drupal\purge\Plugin\Purge\Purger\invalidate
    * @see \Drupal\purge\Plugin\Purge\Purger\routeTypeToMethod
    */
   public function invalidateTags(array $invalidations);
 
   /**
+   * Invalidate all 'url' invalidations.
+   *
    * @see \Drupal\purge\Plugin\Purge\Purger\invalidate
    * @see \Drupal\purge\Plugin\Purge\Purger\routeTypeToMethod
    */
   public function invalidateUrls(array $invalidations);
 
   /**
+   * Invalidate all 'everything' invalidations.
+   *
    * @see \Drupal\purge\Plugin\Purge\Purger\invalidate
    * @see \Drupal\purge\Plugin\Purge\Purger\routeTypeToMethod
    */
@@ -106,7 +112,7 @@ interface BackendInterface extends PurgeLoggerAwareInterface, DebuggerAwareInter
    *
    * @param array $config
    *   Associative array with arbitrary settings coming from:
-   *   \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration
+   *   \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration.
    *
    * @return bool
    *   Boolean TRUE if the configuration array is valid. When returning FALSE

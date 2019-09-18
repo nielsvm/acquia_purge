@@ -5,7 +5,6 @@ namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 use GuzzleHttp\ClientInterface;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
-use Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 
 /**
@@ -19,7 +18,7 @@ class BackendFactory {
    * @var string[]
    */
   protected static $backendClasses = [
-    'fastly' => \Drupal\acquia_purge\AcquiaPlatformCdn\FastlyBackend::class
+    'fastly' => FastlyBackend::class,
   ];
 
   /**
@@ -27,7 +26,7 @@ class BackendFactory {
    *
    * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $hostinginfo
    *   Technical information accessors for the Acquia Cloud environment.
-   * @param \Drupal\purge\Logger\LoggerChannelPartInterface $logger,
+   * @param \Drupal\purge\Logger\LoggerChannelPartInterface $logger
    *   The logger passed to the Platform CDN purger.
    * @param \Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface $debugger
    *   The centralized debugger for Acquia purger plugins.
@@ -35,6 +34,7 @@ class BackendFactory {
    *   An HTTP client that can perform remote requests.
    *
    * @return null|\Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface
+   *   The instantiated backend or NULL in case of failure.
    */
   public static function get(HostingInfoInterface $hostinginfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client) {
     if (!$backend_config = self::getConfig($hostinginfo)) {
@@ -69,7 +69,8 @@ class BackendFactory {
   public static function getConfig(HostingInfoInterface $hostinginfo) {
     try {
       return $hostinginfo->getPlatformCdnConfiguration();
-    } catch (\RuntimeException $e) {
+    }
+    catch (\RuntimeException $e) {
       return NULL;
     }
   }
@@ -94,8 +95,7 @@ class BackendFactory {
    * Get the backend class from the Platform CDN configuration array.
    *
    * @param array $config
-   *   Associative array with arbitrary settings coming from:
-   *   \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration
+   *   Acquia Platform CDN configuration settings.
    *
    * @return string|null
    *   Class providing the Platform CDN purger backend, or NULL if unconfigured.

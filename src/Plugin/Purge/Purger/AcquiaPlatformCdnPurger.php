@@ -2,15 +2,10 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use GuzzleHttp\ClientInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareInterface;
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareTrait;
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
-use Drupal\acquia_purge\AcquiaPlatformCdn\BackendFactory;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 
 /**
@@ -30,11 +25,15 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
   use DebuggerAwareTrait;
 
   /**
+   * The Acquia Platform CDN backend.
+   *
    * @var \Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface
    */
   protected $backend = NULL;
 
   /**
+   * API to retrieve technical information from Acquia Cloud.
+   *
    * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
    */
   protected $hostingInfo;
@@ -169,7 +168,7 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
     $methods = [
       'tag'         => 'invalidateTags',
       'url'         => 'invalidateUrls',
-      'everything'  => 'invalidateEverything'
+      'everything'  => 'invalidateEverything',
     ];
     return isset($methods[$type]) ? $methods[$type] : 'invalidate';
   }

@@ -18,7 +18,7 @@ class Hash {
    * @return string
    *   Cryptographic hash with the given length.
    */
-  static public function hash($input, $length) {
+  protected static function hashInput($input, $length) {
     // MD5 is the fastest algorithm beyond CRC32 (which is 30% faster, but high
     // collision risk), so this is the best bet for now. If collisions are going
     // to be a major problem in the future, we might have to consider a hash DB.
@@ -39,10 +39,10 @@ class Hash {
    * @return string[]
    *   Non-associative array with hashed copies of the given cache tags.
    */
-  static public function cacheTags(array $tags) {
+  public static function cacheTags(array $tags) {
     $hashes = [];
     foreach ($tags as $tag) {
-      $hashes[] = SELF::hash($tag, 4);
+      $hashes[] = self::hashInput($tag, 4);
     }
     return $hashes;
   }
@@ -58,8 +58,8 @@ class Hash {
    * @return string
    *   Cryptographic hash that's long enough to be unique.
    */
-  static public function siteIdentifier($site_name, $site_path) {
-    return SELF::hash($site_name . $site_path, 16);
+  public static function siteIdentifier($site_name, $site_path) {
+    return self::hashInput($site_name . $site_path, 16);
   }
 
 }

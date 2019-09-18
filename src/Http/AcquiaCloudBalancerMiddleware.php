@@ -2,13 +2,10 @@
 
 namespace Drupal\acquia_purge\Http;
 
-use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Drupal\acquia_purge\Http\AcquiaCloudBalancerException;
 
 /**
- * HTTP middleware which throws AcquiaCloudBalancerException's on BAN and PURGE
- * requests sent to Acquia Cloud load balancers.
+ * HTTP middleware which asserts correct responses from Acquia Cloud.
  */
 class AcquiaCloudBalancerMiddleware {
 
@@ -31,7 +28,7 @@ class AcquiaCloudBalancerMiddleware {
             $method = $req->getMethod();
 
             // Define a tiny closure that throws exceptions for us.
-            $e = function($msg) use ($req, $rsp) {
+            $e = function ($msg) use ($req, $rsp) {
               throw new AcquiaCloudBalancerException($msg, $req, $rsp);
             };
 

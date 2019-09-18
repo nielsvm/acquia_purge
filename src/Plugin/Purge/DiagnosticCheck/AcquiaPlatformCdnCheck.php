@@ -22,6 +22,8 @@ use Drupal\acquia_purge\AcquiaPlatformCdn\BackendFactory;
 class AcquiaPlatformCdnCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
+   * API to retrieve technical information from Acquia Cloud.
+   *
    * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
    */
   protected $hostingInfo;

@@ -2,37 +2,36 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
-use Drupal\acquia_purge\Plugin\Purge\Purger\Debugger;
-
 /**
  * Provides a Acquia purger which is debugging aware.
  */
 trait DebuggerAwareTrait {
 
   /**
+   * The debugger instance.
+   *
    * @var \Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface
    */
-  private $debugger_instance;
+  private $debuggerInstance;
 
   /**
    * {@inheritdoc}
    */
   public function debugger() {
-    if (is_null($this->debugger_instance)) {
-      $this->debugger_instance = new Debugger($this->logger());
+    if (is_null($this->debuggerInstance)) {
+      $this->debuggerInstance = new Debugger($this->logger());
     }
-    return $this->debugger_instance;
+    return $this->debuggerInstance;
   }
 
   /**
    * {@inheritdoc}
    */
   public function setDebugger(DebuggerInterface $debugger, $throw = TRUE) {
-    if ($throw && (!is_null($this->debugger_instance))) {
+    if ($throw && (!is_null($this->debuggerInstance))) {
       throw new \RuntimeException("Debugger already instantiated!");
     }
-    $this->debugger_instance = $debugger;
+    $this->debuggerInstance = $debugger;
   }
 
 }

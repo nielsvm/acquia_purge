@@ -6,11 +6,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\State\StateInterface;
-use Drupal\acquia_purge\AcquiaCloud\Hash;
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 
 /**
- * Provides technical information accessors for the Acquia Cloud environment.
+ * Provides a API to retrieve technical information from Acquia Cloud.
  */
 class HostingInfo implements HostingInfoInterface {
 
@@ -29,18 +27,22 @@ class HostingInfo implements HostingInfoInterface {
   protected $balancerAddresses = [];
 
   /**
-   * The token used to authenticate cache invalidations with
+   * The token used to authenticate cache invalidations with.
    *
    * @var string
    */
   protected $balancerToken = '';
 
   /**
+   * Acquia Platform CDN configuration settings.
+   *
    * Associated array with configuration parameters for Acquia Platform CDN,
    * which has at minimum the following two keys:
    *  - config: Configuration source string, either 'settings' or 'cmi'.
    *  - vendor: The underlying CDN backend used by the platform.
    *  - ... other keys can be present depending on the used backend.
+   *
+   * @var string[]
    */
   protected $platformCdn = [];
 
@@ -111,9 +113,9 @@ class HostingInfo implements HostingInfoInterface {
     }
 
     // Call the AH_INFO_FUNCTION and take the keys 'sitename' and 'sitegroup'.
-    $function = SELF::AH_INFO_FUNCTION;
+    $function = self::AH_INFO_FUNCTION;
     if (function_exists($function)) {
-      if (is_array($info = $function ())) {
+      if (is_array($info = $function())) {
         if (isset($info['environment'])) {
           if (is_string($info['environment']) && $info['environment']) {
             $this->siteEnvironment = $info['environment'];
@@ -131,7 +133,7 @@ class HostingInfo implements HostingInfoInterface {
         }
       }
     }
-    else if(!empty($GLOBALS['gardens_site_settings'])) {
+    elseif (!empty($GLOBALS['gardens_site_settings'])) {
       $this->siteEnvironment = $GLOBALS['gardens_site_settings']['env'];
       $this->siteGroup = $GLOBALS['gardens_site_settings']['site'];
       $this->siteName = $this->siteGroup . '.' . $this->siteEnvironment;
@@ -157,7 +159,7 @@ class HostingInfo implements HostingInfoInterface {
         && is_array($cdn_asc['platform_cdn']['configuration'])
         && count($cdn_asc['platform_cdn']['configuration'])) {
       $this->platformCdn['config'] = 'settings';
-      $this->platformCdn['vendor'] = (string)$cdn_asc['platform_cdn']['vendor'];
+      $this->platformCdn['vendor'] = (string) $cdn_asc['platform_cdn']['vendor'];
       $this->platformCdn = array_merge($this->platformCdn, $cdn_asc['platform_cdn']['configuration']);
     }
     elseif (isset($cdn_state['vendor']) && strlen($cdn_state['vendor']) && (count($cdn_state) > 2)) {

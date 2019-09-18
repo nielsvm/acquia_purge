@@ -2,8 +2,6 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
-
 /**
  * Describes a Acquia purger which is debugging aware.
  */
@@ -23,13 +21,13 @@ interface DebuggerAwareInterface {
   /**
    * Set the debugger instance.
    *
-   * @throws \RuntimeException
-   *   Thrown when the debugger was already instantiated.
-   *
    * @param \Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface $debugger
    *   The debugger.
    * @param bool $throw
    *   Throw an exception when the debugger is already set.
+   *
+   * @throws \RuntimeException
+   *   Thrown when the debugger was already instantiated.
    */
   public function setDebugger(DebuggerInterface $debugger, $throw = TRUE);
 

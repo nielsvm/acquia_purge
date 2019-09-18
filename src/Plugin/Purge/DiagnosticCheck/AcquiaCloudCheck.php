@@ -21,6 +21,8 @@ use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
+   * API to retrieve technical information from Acquia Cloud.
+   *
    * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
    */
   protected $hostingInfo;
@@ -65,7 +67,7 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
     // Block the entire system when this is a third-party platform.
     if (!$this->hostingInfo->isThisAcquiaCloud()) {
       $this->recommendation = $this->t("Acquia Purge only works on your Acquia Cloud environment and doesn't work outside of it.");
-      return SELF::SEVERITY_ERROR;
+      return self::SEVERITY_ERROR;
     }
 
     // Check the balancer composition for crazy setups.
@@ -75,15 +77,15 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
     if (!$balancerscount) {
       $this->value = '';
       $this->recommendation = $this->t("No balancers found, therefore cache invalidation has been disabled. Please contact Acquia Support!");
-      return SELF::SEVERITY_ERROR;
+      return self::SEVERITY_ERROR;
     }
     elseif ($balancerscount < 2) {
       $this->recommendation = $this->t("You have only one load balancer, this means your site cannot be failed over in case of emergency. Please contact Acquia Support!");
-      return SELF::SEVERITY_WARNING;
+      return self::SEVERITY_WARNING;
     }
     elseif ($balancerscount >= 5) {
       $this->recommendation = $this->t("Your site has @n load balancers, which will put severe stress on your system. Please pay attention to your queue, contact Acquia Support and request less but bigger load balancers!", ['@n' => $count]);
-      return SELF::SEVERITY_WARNING;
+      return self::SEVERITY_WARNING;
     }
 
     // Under normal operating conditions, we'll report site info and version.
@@ -96,7 +98,7 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
       ]
     );
     $this->recommendation = " ";
-    return SELF::SEVERITY_OK;
+    return self::SEVERITY_OK;
   }
 
 }

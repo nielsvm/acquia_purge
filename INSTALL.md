@@ -11,7 +11,8 @@ Setting it all up shouldn't take long:
 
 1. Download and enable the required modules: ``drush en acquia_purge --yes``
 
-2. Add the "Acquia Cloud" purger at ``/admin/config/development/performance/purge``.
+2. Add the "Acquia Cloud" purger on:
+   ``/admin/config/development/performance/purge``
 
 3. Verify if there are no diagnostic issues by running ``drush p-diagnostics``.
 

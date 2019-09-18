@@ -6,7 +6,6 @@ use GuzzleHttp\ClientInterface;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
 use Drupal\purge\Logger\PurgeLoggerAwareTrait;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
-use Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareTrait;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 
@@ -25,14 +24,18 @@ abstract class BackendBase implements BackendInterface {
   protected $httpClient;
 
   /**
+   * Acquia Platform CDN configuration settings.
+   *
    * Associative array with arbitrary settings coming from:
-   * \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration
+   * \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration.
    *
    * @var array
    */
   protected $config;
 
   /**
+   * API to retrieve technical information from Acquia Cloud.
+   *
    * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
    */
   protected $hostingInfo;

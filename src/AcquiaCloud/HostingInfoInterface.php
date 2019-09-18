@@ -3,7 +3,7 @@
 namespace Drupal\acquia_purge\AcquiaCloud;
 
 /**
- * Describes technical information accessors for the Acquia Cloud environment.
+ * Describes a API to retrieve technical information from Acquia Cloud.
  */
 interface HostingInfoInterface {
 
