@@ -7,6 +7,7 @@ use GuzzleHttp\ClientInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaPlatformCdn\BackendFactory;
 
 /**
  * Acquia Platform CDN (beta).

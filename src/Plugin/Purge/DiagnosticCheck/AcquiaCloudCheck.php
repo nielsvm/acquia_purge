@@ -84,7 +84,7 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
       return self::SEVERITY_WARNING;
     }
     elseif ($balancerscount >= 5) {
-      $this->recommendation = $this->t("Your site has @n load balancers, which will put severe stress on your system. Please pay attention to your queue, contact Acquia Support and request less but bigger load balancers!", ['@n' => $count]);
+      $this->recommendation = $this->t("Your site has @n load balancers, which will put severe stress on your system. Please pay attention to your queue, contact Acquia Support and request less but bigger load balancers!", ['@n' => $balancerscount]);
       return self::SEVERITY_WARNING;
     }
 

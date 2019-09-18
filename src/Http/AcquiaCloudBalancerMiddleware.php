@@ -23,7 +23,7 @@ class AcquiaCloudBalancerMiddleware {
 
         // Return a handler that throws exceptions on bad responses.
         return $handler($req, $options)->then(
-          function (ResponseInterface $rsp) use ($req, $handler, $options) {
+          function (ResponseInterface $rsp) use ($req) {
             $status = $rsp->getStatusCode();
             $method = $req->getMethod();
 

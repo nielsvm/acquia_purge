@@ -265,6 +265,7 @@ class Debugger implements DebuggerInterface {
     $this->writeSeparator('-');
     $longest_key = max(array_map('strlen', array_keys($table)));
     foreach ($table as $key => $value) {
+      $spacing = '';
       // Determine how the left-side of the table looks like.
       $left = '| ';
       if (!is_int($key)) {

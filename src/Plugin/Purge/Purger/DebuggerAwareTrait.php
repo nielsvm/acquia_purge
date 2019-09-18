@@ -2,10 +2,13 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
+use Drupal\purge\Logger\PurgeLoggerAwareTrait;
+
 /**
  * Provides a Acquia purger which is debugging aware.
  */
 trait DebuggerAwareTrait {
+  use PurgeLoggerAwareTrait;
 
   /**
    * The debugger instance.
