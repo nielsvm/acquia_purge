@@ -2,16 +2,16 @@
 
 namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 
-use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Exception\RequestException;
-use Psr\Http\Message\ResponseInterface;
-use Drupal\purge\Logger\LoggerChannelPartInterface;
-use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
 use Drupal\acquia_purge\AcquiaCloud\Hash;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
+use Drupal\purge\Logger\LoggerChannelPartInterface;
+use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Psr7\Request;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Provides a Fastly backend for the Platform CDN purger.

@@ -2,10 +2,10 @@
 
 namespace Drupal\acquia_purge\AcquiaCloud;
 
-use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\DrupalKernel;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\State\StateInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Provides a API to retrieve technical information from Acquia Cloud.

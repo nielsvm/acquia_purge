@@ -2,11 +2,11 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\DiagnosticCheck;
 
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckBase;
-use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckInterface;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 use Drupal\acquia_purge\AcquiaPlatformCdn\BackendFactory;
+use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckBase;
+use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Acquia Purge CDN.

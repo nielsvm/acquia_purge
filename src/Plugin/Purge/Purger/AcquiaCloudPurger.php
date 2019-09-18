@@ -2,15 +2,15 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
+use Drupal\acquia_purge\AcquiaCloud\Hash;
+use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
+use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
+use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
+use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Pool;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
-use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
-use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
-use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
-use Drupal\acquia_purge\AcquiaCloud\Hash;
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 
 /**
  * Acquia Cloud.

@@ -2,10 +2,10 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
 use Drupal\purge\Logger\PurgeLoggerAwareInterface;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Describes a centralized debugger for Acquia purger plugins.

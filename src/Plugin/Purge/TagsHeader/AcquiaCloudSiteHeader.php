@@ -2,10 +2,10 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\TagsHeader;
 
-use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
-use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
+use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Exports the X-Acquia-Site header.

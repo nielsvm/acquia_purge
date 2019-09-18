@@ -2,9 +2,9 @@
 
 namespace Drupal\acquia_purge\Http;
 
-use Psr\Http\Message\ResponseInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareTrait;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * HTTP middleware which logs requests and responses for debugging purposes.

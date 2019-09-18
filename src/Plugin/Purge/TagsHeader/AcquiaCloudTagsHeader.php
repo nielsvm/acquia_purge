@@ -2,9 +2,9 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\TagsHeader;
 
-use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
-use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
 use Drupal\acquia_purge\AcquiaCloud\Hash;
+use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
+use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
 
 /**
  * Exports the X-Acquia-Purge-Tags header.

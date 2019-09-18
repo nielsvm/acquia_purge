@@ -2,10 +2,10 @@
 
 namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 
-use GuzzleHttp\ClientInterface;
-use Drupal\purge\Logger\LoggerChannelPartInterface;
 use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
+use Drupal\purge\Logger\LoggerChannelPartInterface;
+use GuzzleHttp\ClientInterface;
 
 /**
  * Provides a backend for the Platform CDN purger.

@@ -2,12 +2,12 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\ResponseInterface;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\RequestException;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
 use Drupal\purge\Logger\PurgeLoggerAwareTrait;
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\RequestException;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Provides a centralized debugger for Acquia purger plugins.
@@ -103,7 +103,6 @@ class Debugger implements DebuggerInterface {
    * {@inheritdoc}
    */
   public function extractRequestInfo(RequestInterface $request, $body_title = FALSE) {
-    $uri = $request->getUri();
     $info = [];
     $info['REQ'] = sprintf(
       "%s %s HTTP/%s",
