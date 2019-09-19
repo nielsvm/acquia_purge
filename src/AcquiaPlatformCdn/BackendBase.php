@@ -9,7 +9,7 @@ use Drupal\purge\Logger\LoggerChannelPartInterface;
 use GuzzleHttp\ClientInterface;
 
 /**
- * Provides a Fastly backend for the Platform CDN purger.
+ * Provides a backend for the Platform CDN purger.
  */
 abstract class BackendBase implements BackendInterface {
   use DebuggerAwareTrait;
