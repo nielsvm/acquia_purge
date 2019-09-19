@@ -3,9 +3,9 @@
 namespace Drupal\acquia_purge\AcquiaCloud;
 
 /**
- * Describes a API to retrieve technical information from Acquia Cloud.
+ * Describes an information object interfacing with the Acquia platform.
  */
-interface HostingInfoInterface {
+interface PlatformInfoInterface {
 
   /**
    * Get the load balancer IP adresses installed in front of this site.
@@ -79,7 +79,7 @@ interface HostingInfoInterface {
   public function getSitePath();
 
   /**
-   * Determine whether the current hosting environment is Acquia Cloud or not.
+   * Determine whether the current site is running on Acquia Cloud.
    *
    * @return true|false
    *   Boolean expression where 'true' indicates Acquia Cloud or 'false'.

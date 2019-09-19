@@ -3,7 +3,7 @@
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
 use Drupal\acquia_purge\AcquiaCloud\Hash;
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
 use Drupal\purge\Plugin\Purge\Invalidation\InvalidationInterface;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
@@ -52,11 +52,11 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
   const TAGS_GROUPED_BY = 15;
 
   /**
-   * API to retrieve technical information from Acquia Cloud.
+   * Information object interfacing with the Acquia platform.
    *
-   * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
+   * @var \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
    */
-  protected $hostingInfo;
+  protected $platformInfo;
 
   /**
    * The Guzzle HTTP client.
@@ -68,8 +68,8 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
   /**
    * Constructs a AcquiaCloudPurger object.
    *
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
+   *   Information object interfacing with the Acquia platform.
    * @param \GuzzleHttp\ClientInterface $http_client
    *   An HTTP client that can perform remote requests.
    * @param array $configuration
@@ -79,9 +79,9 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->hostingInfo = $acquia_purge_hostinginfo;
+    $this->platformInfo = $acquia_purge_platforminfo;
     $this->httpClient = $http_client;
   }
 
@@ -90,7 +90,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
-      $container->get('acquia_purge.hostinginfo'),
+      $container->get('acquia_purge.platforminfo'),
       $container->get('http_client'),
       $configuration,
       $plugin_id,
@@ -179,7 +179,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     // lower in practice as PHP resource limits (max execution time) bring it
     // further down. However, the maximum amount of requests will be higher on
     // the CLI.
-    $balancers = count($this->hostingInfo->getBalancerAddresses());
+    $balancers = count($this->platformInfo->getBalancerAddresses());
     if ($balancers) {
       return intval(ceil(200 / $balancers));
     }
@@ -253,8 +253,8 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     }
 
     // Now create requests for all groups of tags.
-    $site = $this->hostingInfo->getSiteIdentifier();
-    $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
+    $site = $this->platformInfo->getSiteIdentifier();
+    $ipv4_addresses = $this->platformInfo->getBalancerAddresses();
     $requests = function () use ($groups, $ipv4_addresses, $site) {
       foreach ($groups as $group_id => $group) {
         $tags = new TagsHeaderValue(
@@ -326,8 +326,8 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     }
 
     // Generate request objects for each balancer/invalidation combination.
-    $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
-    $token = $this->hostingInfo->getBalancerToken();
+    $ipv4_addresses = $this->platformInfo->getBalancerAddresses();
+    $token = $this->platformInfo->getBalancerToken();
     $requests = function () use ($invalidations, $ipv4_addresses, $token) {
       foreach ($invalidations as $inv) {
         foreach ($ipv4_addresses as $ipv4) {
@@ -389,8 +389,8 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     }
 
     // Generate request objects for each balancer/invalidation combination.
-    $ipv4_addresses = $this->hostingInfo->getBalancerAddresses();
-    $token = $this->hostingInfo->getBalancerToken();
+    $ipv4_addresses = $this->platformInfo->getBalancerAddresses();
+    $token = $this->platformInfo->getBalancerToken();
     $requests = function () use ($invalidations, $ipv4_addresses, $token) {
       foreach ($invalidations as $inv) {
         foreach ($ipv4_addresses as $ipv4) {
@@ -444,7 +444,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
    * load balancers on Acquia Cloud host multiple websites (e.g. sites in a
    * multisite) this will only affect the current site instance. This works
    * because all Varnish-cached resources are tagged with a unique identifier
-   * coming from hostingInfo::getSiteIdentifier().
+   * coming from platformInfo::getSiteIdentifier().
    *
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::invalidate()
    * @see \Drupal\purge\Plugin\Purge\Purger\PurgerInterface::routeTypeToMethod()
@@ -463,11 +463,11 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
     // Synchronously request each balancer to wipe out everything for this site.
     $opt = $this->getGlobalOptions();
     $opt['headers'] = [
-      'X-Acquia-Purge' => $this->hostingInfo->getSiteIdentifier(),
+      'X-Acquia-Purge' => $this->platformInfo->getSiteIdentifier(),
       'Accept-Encoding' => 'gzip',
       'User-Agent' => 'Acquia Purge',
     ];
-    foreach ($this->hostingInfo->getBalancerAddresses() as $ip_address) {
+    foreach ($this->platformInfo->getBalancerAddresses() as $ip_address) {
       try {
         $this->httpClient->request(
           'BAN',

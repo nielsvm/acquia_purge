@@ -1,6 +1,6 @@
 services:
-  acquia_purge.hostinginfo:
-    class: Drupal\acquia_purge\AcquiaCloud\HostingInfo
+  acquia_purge.platforminfo:
+    class: Drupal\acquia_purge\AcquiaCloud\PlatformInfo
     arguments: ['@request_stack', '@settings', '@state']
     public: true
   http_client_middleware.acquia_purge_balancer_middleware:

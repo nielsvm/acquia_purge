@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareTrait;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
@@ -25,24 +25,24 @@ abstract class BackendBase implements BackendInterface {
    * Acquia Platform CDN configuration settings.
    *
    * Associative array with arbitrary settings coming from:
-   * \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration.
+   * \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface::getPlatformCdnConfiguration.
    *
    * @var array
    */
   protected $config;
 
   /**
-   * API to retrieve technical information from Acquia Cloud.
+   * Information object interfacing with the Acquia platform.
    *
-   * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
+   * @var \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
    */
-  protected $hostingInfo;
+  protected $platformInfo;
 
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $config, HostingInfoInterface $acquia_purge_hostinginfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client) {
-    $this->hostingInfo = $acquia_purge_hostinginfo;
+  public function __construct(array $config, PlatformInfoInterface $acquia_purge_platforminfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client) {
+    $this->platformInfo = $acquia_purge_platforminfo;
     $this->httpClient = $http_client;
     $this->logger = $logger;
     $this->config = $config;
@@ -62,15 +62,15 @@ abstract class BackendBase implements BackendInterface {
   /**
    * {@inheritdoc}
    */
-  public static function hostingInfo(HostingInfoInterface $set = NULL) {
-    static $hostinginfo;
-    if (is_null($hostinginfo) && (!is_null($set))) {
-      $hostinginfo = $set;
+  public static function platformInfo(PlatformInfoInterface $set = NULL) {
+    static $platforminfo;
+    if (is_null($platforminfo) && (!is_null($set))) {
+      $platforminfo = $set;
     }
-    elseif (is_null($hostinginfo)) {
-      throw new \RuntimeException("BackendBase::hostingInfo can't deliver requested instance.");
+    elseif (is_null($platforminfo)) {
+      throw new \RuntimeException("BackendBase::platformInfo can't deliver requested instance.");
     }
-    return $hostinginfo;
+    return $platforminfo;
   }
 
   /**

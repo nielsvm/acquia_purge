@@ -8,9 +8,9 @@ use Drupal\Core\State\StateInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
- * Provides a API to retrieve technical information from Acquia Cloud.
+ * Provides an information object interfacing with the Acquia platform.
  */
-class HostingInfo implements HostingInfoInterface {
+class PlatformInfo implements PlatformInfoInterface {
 
   /**
    * Name of the PHP function that's available when on Acquia Cloud.
@@ -47,7 +47,7 @@ class HostingInfo implements HostingInfoInterface {
   protected $platformCdn = [];
 
   /**
-   * Whether the current hosting environment is Acquia Cloud or not.
+   * Whether the current site is running on Acquia Cloud or not.
    *
    * @var bool
    */
@@ -89,7 +89,7 @@ class HostingInfo implements HostingInfoInterface {
   protected $sitePath = '';
 
   /**
-   * Constructs a HostingInfo object.
+   * Constructs a PlatformInfo object.
    *
    * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
    *   The request stack.

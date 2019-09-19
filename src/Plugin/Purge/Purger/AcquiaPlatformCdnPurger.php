@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\Purger;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\AcquiaPlatformCdn\BackendFactory;
 use Drupal\purge\Plugin\Purge\Purger\PurgerBase;
 use Drupal\purge\Plugin\Purge\Purger\PurgerInterface;
@@ -33,11 +33,11 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
   protected $backend = NULL;
 
   /**
-   * API to retrieve technical information from Acquia Cloud.
+   * Information object interfacing with the Acquia platform.
    *
-   * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
+   * @var \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
    */
-  protected $hostingInfo;
+  protected $platformInfo;
 
   /**
    * The Guzzle HTTP client.
@@ -49,8 +49,8 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
   /**
    * Constructs a AcquiaCdnPurger object.
    *
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
+   *   Information object interfacing with the Acquia platform.
    * @param \GuzzleHttp\ClientInterface $http_client
    *   An HTTP client that can perform remote requests.
    * @param array $configuration
@@ -60,9 +60,9 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->hostingInfo = $acquia_purge_hostinginfo;
+    $this->platformInfo = $acquia_purge_platforminfo;
     $this->httpClient = $http_client;
   }
 
@@ -71,7 +71,7 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
-      $container->get('acquia_purge.hostinginfo'),
+      $container->get('acquia_purge.platforminfo'),
       $container->get('http_client'),
       $configuration,
       $plugin_id,
@@ -87,7 +87,7 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
   }
 
   /**
-   * Lazy load the underlying backend based on HostingInfo CDN configuration.
+   * Lazy load the underlying backend based on PlatformInfo CDN configuration.
    *
    * @warning
    *   Don't call this from the constructor!
@@ -100,7 +100,7 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
 
     // Attempt to load the backend or halt code execution.
     $this->backend = BackendFactory::get(
-      $this->hostingInfo,
+      $this->platformInfo,
       $this->logger(),
       $this->debugger(),
       $this->httpClient

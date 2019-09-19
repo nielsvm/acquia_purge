@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerAwareInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
@@ -19,8 +19,8 @@ interface BackendInterface extends PurgeLoggerAwareInterface, DebuggerAwareInter
    *
    * @param array $config
    *   Acquia Platform CDN configuration settings.
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
+   *   Information object interfacing with the Acquia platform.
    * @param \Drupal\purge\Logger\LoggerChannelPartInterface $logger
    *   The logger passed to the Platform CDN purger.
    * @param \Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface $debugger
@@ -28,7 +28,7 @@ interface BackendInterface extends PurgeLoggerAwareInterface, DebuggerAwareInter
    * @param \GuzzleHttp\ClientInterface $http_client
    *   An HTTP client that can perform remote requests.
    */
-  public function __construct(array $config, HostingInfoInterface $acquia_purge_hostinginfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client);
+  public function __construct(array $config, PlatformInfoInterface $acquia_purge_platforminfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client);
 
   /**
    * Check if a temporary runtime error has been set.
@@ -39,18 +39,18 @@ interface BackendInterface extends PurgeLoggerAwareInterface, DebuggerAwareInter
   public static function getTemporaryRuntimeError();
 
   /**
-   * Get the hosting info object.
+   * Get the information object interfacing with the Acquia platform.
    *
-   * @param null|\Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $set
+   * @param null|\Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $set
    *   Set the object initially.
    *
    * @throws \RuntimeException
    *   Thrown when the object hasn't been set yet.
    *
-   * @return \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
-   *   API to retrieve technical information from Acquia Cloud.
+   * @return \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
+   *   Information object interfacing with the Acquia platform.
    */
-  public static function hostingInfo(HostingInfoInterface $set = NULL);
+  public static function platformInfo(PlatformInfoInterface $set = NULL);
 
   /**
    * Invalidate all 'tag' invalidations.
@@ -112,7 +112,7 @@ interface BackendInterface extends PurgeLoggerAwareInterface, DebuggerAwareInter
    *
    * @param array $config
    *   Associative array with arbitrary settings coming from:
-   *   \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration.
+   *   \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface::getPlatformCdnConfiguration.
    *
    * @return bool
    *   Boolean TRUE if the configuration array is valid. When returning FALSE

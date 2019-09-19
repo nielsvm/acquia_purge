@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\DiagnosticCheck;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\AcquiaPlatformCdn\BackendFactory;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckBase;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckInterface;
@@ -22,17 +22,17 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class AcquiaPlatformCdnCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
-   * API to retrieve technical information from Acquia Cloud.
+   * Information object interfacing with the Acquia platform.
    *
-   * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
+   * @var \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
    */
-  protected $hostingInfo;
+  protected $platformInfo;
 
   /**
    * Constructs a AcquiaPlatformCdnCheck object.
    *
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
+   *   Information object interfacing with the Acquia platform.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -40,9 +40,9 @@ class AcquiaPlatformCdnCheck extends DiagnosticCheckBase implements DiagnosticCh
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->hostingInfo = $acquia_purge_hostinginfo;
+    $this->platformInfo = $acquia_purge_platforminfo;
   }
 
   /**
@@ -50,7 +50,7 @@ class AcquiaPlatformCdnCheck extends DiagnosticCheckBase implements DiagnosticCh
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
-      $container->get('acquia_purge.hostinginfo'),
+      $container->get('acquia_purge.platforminfo'),
       $configuration,
       $plugin_id,
       $plugin_definition
@@ -62,7 +62,7 @@ class AcquiaPlatformCdnCheck extends DiagnosticCheckBase implements DiagnosticCh
    */
   public function run() {
     // Verify if we're able to fetch the Platform CDN configuration array.
-    if (!$backend_config = BackendFactory::getConfig($this->hostingInfo)) {
+    if (!$backend_config = BackendFactory::getConfig($this->platformInfo)) {
       $this->recommendation = $this->t("Platform CDN isn't yet configured, please contact Acquia Support to do this for you.");
       return self::SEVERITY_ERROR;
     }

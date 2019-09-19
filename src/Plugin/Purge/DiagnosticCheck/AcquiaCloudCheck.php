@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\DiagnosticCheck;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckBase;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -21,17 +21,17 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
-   * API to retrieve technical information from Acquia Cloud.
+   * Information object interfacing with the Acquia platform.
    *
-   * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
+   * @var \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
    */
-  protected $hostingInfo;
+  protected $platformInfo;
 
   /**
    * Constructs a AcquiaCloudCheck object.
    *
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
+   *   Information object interfacing with the Acquia platform.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -39,9 +39,9 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct(HostingInfoInterface $acquia_purge_hostinginfo, array $configuration, $plugin_id, $plugin_definition) {
+  public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->hostingInfo = $acquia_purge_hostinginfo;
+    $this->platformInfo = $acquia_purge_platforminfo;
   }
 
   /**
@@ -49,7 +49,7 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
-      $container->get('acquia_purge.hostinginfo'),
+      $container->get('acquia_purge.platforminfo'),
       $configuration,
       $plugin_id,
       $plugin_definition
@@ -65,13 +65,13 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
     $this->value = $version;
 
     // Block the entire system when this is a third-party platform.
-    if (!$this->hostingInfo->isThisAcquiaCloud()) {
+    if (!$this->platformInfo->isThisAcquiaCloud()) {
       $this->recommendation = $this->t("Acquia Purge only works on your Acquia Cloud environment and doesn't work outside of it.");
       return self::SEVERITY_ERROR;
     }
 
     // Check the balancer composition for crazy setups.
-    $balancers = $this->hostingInfo->getBalancerAddresses();
+    $balancers = $this->platformInfo->getBalancerAddresses();
     $balancerscount = count($balancers);
     $this->value = $balancerscount ? implode(', ', $balancers) : '';
     if (!$balancerscount) {
@@ -92,8 +92,8 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
     $this->value = $this->t(
       "@site_group.@site_env (@version)",
       [
-        '@site_group' => $this->hostingInfo->getSiteGroup(),
-        '@site_env' => $this->hostingInfo->getSiteEnvironment(),
+        '@site_group' => $this->platformInfo->getSiteGroup(),
+        '@site_env' => $this->platformInfo->getSiteEnvironment(),
         '@version' => $version,
       ]
     );

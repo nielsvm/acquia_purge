@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\TagsHeader;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\AcquiaPlatformCdn\BackendFactory;
 use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
 use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
@@ -27,11 +27,11 @@ class AcquiaPlatformCdnTagsHeader extends TagsHeaderBase implements TagsHeaderIn
   protected $backendClass = NULL;
 
   /**
-   * API to retrieve technical information from Acquia Cloud.
+   * Information object interfacing with the Acquia platform.
    *
-   * @var \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface
+   * @var \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
    */
-  protected $hostingInfo;
+  protected $platformInfo;
 
   /**
    * Constructs a AcquiaPlatformCdnTagsHeader object.
@@ -42,15 +42,15 @@ class AcquiaPlatformCdnTagsHeader extends TagsHeaderBase implements TagsHeaderIn
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
-   *   Provides technical information accessors for Acquia Cloud.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
+   *   Information object interfacing with the Acquia platform.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, HostingInfoInterface $acquia_purge_hostinginfo) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, PlatformInfoInterface $acquia_purge_platforminfo) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->hostingInfo = $acquia_purge_hostinginfo;
-    $this->backendClass = BackendFactory::getClass($this->hostingInfo);
+    $this->platformInfo = $acquia_purge_platforminfo;
+    $this->backendClass = BackendFactory::getClass($this->platformInfo);
     if ($this->backendClass) {
-      return $this->backendClass::hostingInfo($this->hostingInfo);
+      return $this->backendClass::platformInfo($this->platformInfo);
     }
   }
 
@@ -62,7 +62,7 @@ class AcquiaPlatformCdnTagsHeader extends TagsHeaderBase implements TagsHeaderIn
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('acquia_purge.hostinginfo')
+      $container->get('acquia_purge.platforminfo')
     );
   }
 

@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\Plugin\Purge\TagsHeader;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderBase;
 use Drupal\purge\Plugin\Purge\TagsHeader\TagsHeaderInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -34,12 +34,12 @@ class AcquiaCloudSiteHeader extends TagsHeaderBase implements TagsHeaderInterfac
    *   The plugin_id for the plugin instance.
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $acquia_purge_hostinginfo
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
    *   Provides technical information accessors for Acquia Cloud.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, HostingInfoInterface $acquia_purge_hostinginfo) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, PlatformInfoInterface $acquia_purge_platforminfo) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->identifier = $acquia_purge_hostinginfo->getSiteIdentifier();
+    $this->identifier = $acquia_purge_platforminfo->getSiteIdentifier();
   }
 
   /**
@@ -50,7 +50,7 @@ class AcquiaCloudSiteHeader extends TagsHeaderBase implements TagsHeaderInterfac
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('acquia_purge.hostinginfo')
+      $container->get('acquia_purge.platforminfo')
     );
   }
 

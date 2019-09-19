@@ -3,7 +3,7 @@
 namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 
 use Drupal\acquia_purge\AcquiaCloud\Hash;
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 use Drupal\acquia_purge\Plugin\Purge\TagsHeader\TagsHeaderValue;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
@@ -50,12 +50,13 @@ class FastlyBackend extends BackendBase implements BackendInterface {
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $config, HostingInfoInterface $acquia_purge_hostinginfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client) {
-    parent::__construct($config, $acquia_purge_hostinginfo, $logger, $debugger, $http_client);
+  public function __construct(array $config, PlatformInfoInterface $acquia_purge_platforminfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client) {
+    parent::__construct($config, $acquia_purge_platforminfo, $logger, $debugger, $http_client);
     $this->serviceId = (string) $this->config['service_id'];
     $this->token = (string) $this->config['token'];
-    // Call hostingInfo() to having hosting info accessible to static helpers.
-    self::hostingInfo($this->hostingInfo);
+    // Call platformInfo() to having platform information accessible to
+    // the static helper functions.
+    self::platformInfo($this->platformInfo);
   }
 
   /**
@@ -164,7 +165,7 @@ class FastlyBackend extends BackendBase implements BackendInterface {
 
     // Every response is tagged with the site identifier by ::tagsHeaderValue(),
     // so that we can use it here as key to purge all CDN content with.
-    $key = current(Hash::cacheTags([$this->hostingInfo->getSiteIdentifier()]));
+    $key = current(Hash::cacheTags([$this->platformInfo->getSiteIdentifier()]));
 
     // Execute the API call and triage the response.
     $success = FALSE;
@@ -215,7 +216,7 @@ class FastlyBackend extends BackendBase implements BackendInterface {
 
     // Always add a hashed site identifier to the tags on the Surrogate-Key
     // header, so that ::invalidateEverything() can use it to wipe the CDN.
-    $tags[] = $identifier = self::hostingInfo()->getSiteIdentifier();
+    $tags[] = $identifier = self::platformInfo()->getSiteIdentifier();
     $tags_hashed[] = current(Hash::cacheTags([$identifier]));
     return new TagsHeaderValue($tags, $tags_hashed);
   }
@@ -319,7 +320,7 @@ class FastlyBackend extends BackendBase implements BackendInterface {
    *   Non-associative array with salted and hashed copies of the input tags.
    */
   protected static function getHashedTags(array $tags) {
-    $identifier = self::hostingInfo()->getSiteIdentifier();
+    $identifier = self::platformInfo()->getSiteIdentifier();
     $tags_prefixed = [];
     foreach ($tags as $tag) {
       $tags_prefixed[] = $identifier . $tag;

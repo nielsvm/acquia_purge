@@ -2,7 +2,7 @@
 
 namespace Drupal\acquia_purge\AcquiaPlatformCdn;
 
-use Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface;
+use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
 use Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface;
 use Drupal\purge\Logger\LoggerChannelPartInterface;
 use GuzzleHttp\ClientInterface;
@@ -24,8 +24,8 @@ class BackendFactory {
   /**
    * Get a instantiated Platform CDN purger backend.
    *
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $platforminfo
+   *   Information object interfacing with the Acquia platform.
    * @param \Drupal\purge\Logger\LoggerChannelPartInterface $logger
    *   The logger passed to the Platform CDN purger.
    * @param \Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface $debugger
@@ -36,8 +36,8 @@ class BackendFactory {
    * @return null|\Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface
    *   The instantiated backend or NULL in case of failure.
    */
-  public static function get(HostingInfoInterface $hostinginfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client) {
-    if (!$backend_config = self::getConfig($hostinginfo)) {
+  public static function get(PlatformInfoInterface $platforminfo, LoggerChannelPartInterface $logger, DebuggerInterface $debugger, ClientInterface $http_client) {
+    if (!$backend_config = self::getConfig($platforminfo)) {
       return NULL;
     }
     if (!$backend_class = self::getClassFromConfig($backend_config)) {
@@ -48,7 +48,7 @@ class BackendFactory {
     }
     return new $backend_class(
       $backend_config,
-      $hostinginfo,
+      $platforminfo,
       $logger,
       $debugger,
       $http_client
@@ -58,17 +58,17 @@ class BackendFactory {
   /**
    * Get the CDN configuration array.
    *
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $platforminfo
+   *   Information object interfacing with the Acquia platform.
    *
    * @return array|null
    *   NULL when unconfigured, or associative array with arbitrary settings
    *   coming from:
-   *   \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface::getPlatformCdnConfiguration
+   *   \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface::getPlatformCdnConfiguration
    */
-  public static function getConfig(HostingInfoInterface $hostinginfo) {
+  public static function getConfig(PlatformInfoInterface $platforminfo) {
     try {
-      return $hostinginfo->getPlatformCdnConfiguration();
+      return $platforminfo->getPlatformCdnConfiguration();
     }
     catch (\RuntimeException $e) {
       return NULL;
@@ -76,16 +76,16 @@ class BackendFactory {
   }
 
   /**
-   * Get the backend class based on hosting configuration.
+   * Get the backend class based on platform configuration.
    *
-   * @param \Drupal\acquia_purge\AcquiaCloud\HostingInfoInterface $hostinginfo
-   *   Technical information accessors for the Acquia Cloud environment.
+   * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $platforminfo
+   *   Information object interfacing with the Acquia platform.
    *
    * @return string|null
    *   Class providing the Platform CDN purger backend, or NULL if unconfigured.
    */
-  public static function getClass(HostingInfoInterface $hostinginfo) {
-    if ($config = self::getConfig($hostinginfo)) {
+  public static function getClass(PlatformInfoInterface $platforminfo) {
+    if ($config = self::getConfig($platforminfo)) {
       return self::getClassFromConfig($config);
     }
     return NULL;
