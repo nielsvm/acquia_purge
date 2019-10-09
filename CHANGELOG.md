@@ -10,6 +10,14 @@ and this project adheres to
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [8.x-1.1-beta1] - 2019-10-09
+
+### Added
 - **Acquia Platform CDN** support (beta) which supports tags, url and
   'everything' clearance. Please contact Acquia support if you're interested in
   becoming a beta tester.
