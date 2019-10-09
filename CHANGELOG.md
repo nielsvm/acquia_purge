@@ -25,6 +25,7 @@ and this project adheres to
   quality screening for Drupal modules).
 
 ### Fixed
+- **#3085471** by `Chi`, `nielsvm`: Remove dependency on purge_drush.
 - Use `error` instead of `emergency` as logging stream for invalidation failure.
 
 ## [8.x-1.0] - 2019-05-29
