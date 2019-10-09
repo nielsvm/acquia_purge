@@ -25,6 +25,8 @@ and this project adheres to
   quality screening for Drupal modules).
 
 ### Fixed
+- Prevent Guzzle from throwing:
+  `Header value must be scalar or null but TagsHeaderValue provided.`
 - **#3085471** by `Chi`, `nielsvm`: Remove dependency on purge_drush.
 - Use `error` instead of `emergency` as logging stream for invalidation failure.
 

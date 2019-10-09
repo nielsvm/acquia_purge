@@ -76,10 +76,12 @@ class FastlyBackend extends BackendBase implements BackendInterface {
     $success = FALSE;
     try {
       $request = new Request('POST', $this->fastlyRequestUri('service/service_id/purge'));
-      $response = $this->httpClient->send(
-        $request,
-        $this->fastlyRequestOpt(['Surrogate-Key' => $tags])
-      );
+      $request_opt = $this->fastlyRequestOpt(['Surrogate-Key' => $tags->__toString()]);
+      // Pass the TagsHeaderValue to DebuggerMiddleware (when loaded).
+      if ($this->debugger()->enabled()) {
+        $request_opt['acquia_purge_tags'] = $tags;
+      }
+      $response = $this->httpClient->send($request, $request_opt);
       $data = $this->fastlyResponseData($response);
       if (count($data)) {
         $success = TRUE;
@@ -243,10 +245,6 @@ class FastlyBackend extends BackendBase implements BackendInterface {
     // Trigger the debugging middleware when Purge's debug mode is enabled.
     if ($this->debugger()->enabled()) {
       $opt['acquia_purge_debugger'] = $this->debugger();
-      // Pass the TagsHeaderValue to DebuggerMiddleware.
-      if (isset($opt['headers']['Surrogate-Key'])) {
-        $opt['acquia_purge_tags'] = $opt['headers']['Surrogate-Key'];
-      }
     }
     return $opt;
   }

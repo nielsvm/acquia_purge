@@ -266,7 +266,7 @@ class AcquiaCloudPurger extends PurgerBase implements DebuggerAwareInterface, Pu
             $opt = [
               'headers' => [
                 'X-Acquia-Purge' => $site,
-                'X-Acquia-Purge-Tags' => $tags,
+                'X-Acquia-Purge-Tags' => $tags->__toString(),
                 'Accept-Encoding' => 'gzip',
                 'User-Agent' => 'Acquia Purge',
               ],
