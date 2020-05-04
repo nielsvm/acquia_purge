@@ -3,5 +3,6 @@ type: module
 description: 'Top-notch cache invalidation on Acquia Cloud!'
 package: "Purge - reverse proxies & CDNs"
 core: 8.x
+core_version_requirement: '^8 || ^9'
 dependencies:
   - purge:purge (>=8.x-3.0-beta9)
