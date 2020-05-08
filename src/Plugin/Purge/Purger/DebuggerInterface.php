@@ -55,8 +55,8 @@ interface DebuggerInterface extends PurgeLoggerAwareInterface {
    * @param string|object $caller
    *   Fully namespaced class string or instantiated object.
    *
-   * @return string[]
-   *   Tabular information which could be fed to ::writeTable().
+   * @return string
+   *   String describing the class name to the user.
    */
   public function extractClassName($caller);
 

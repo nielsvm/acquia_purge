@@ -3,6 +3,7 @@
 namespace Drupal\acquia_purge\Plugin\Purge\DiagnosticCheck;
 
 use Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface;
+use Drupal\Core\Extension\ModuleExtensionList;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckBase;
 use Drupal\purge\Plugin\Purge\DiagnosticCheck\DiagnosticCheckInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -21,6 +22,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInterface {
 
   /**
+   * The module extension list.
+   *
+   * @var \Drupal\Core\Extension\ModuleExtensionList
+   */
+  protected $moduleExtensionList;
+
+  /**
    * Information object interfacing with the Acquia platform.
    *
    * @var \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface
@@ -32,6 +40,8 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
    *
    * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
    *   Information object interfacing with the Acquia platform.
+   * @param \Drupal\Core\Extension\ModuleExtensionList $moduleExtensionList
+   *   The module extension list.
    * @param array $configuration
    *   A configuration array containing information about the plugin instance.
    * @param string $plugin_id
@@ -39,8 +49,9 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, array $configuration, $plugin_id, $plugin_definition) {
+  final public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, ModuleExtensionList $moduleExtensionList, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->moduleExtensionList = $moduleExtensionList;
     $this->platformInfo = $acquia_purge_platforminfo;
   }
 
@@ -50,6 +61,7 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $container->get('acquia_purge.platforminfo'),
+      $container->get('extension.list.module'),
       $configuration,
       $plugin_id,
       $plugin_definition
@@ -60,8 +72,10 @@ class AcquiaCloudCheck extends DiagnosticCheckBase implements DiagnosticCheckInt
    * {@inheritdoc}
    */
   public function run() {
-    $version = system_get_info('module', 'acquia_purge')['version'];
-    $version = is_null($version) ? '8.x-1.x-dev' : $version;
+    // Use get_object_vars() to avoid the following Phpstan error:
+    // Access to an undefined property Drupal\Core\Extension\Extension::$info.
+    $info = get_object_vars($this->moduleExtensionList->get('acquia_purge'));
+    $version = isset($info['info']['version']) ? $info['info']['version'] : 'dev';
     $this->value = $version;
 
     // Block the entire system when this is a third-party platform.

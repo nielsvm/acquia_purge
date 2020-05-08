@@ -18,7 +18,7 @@ interface PlatformInfoInterface {
   /**
    * Get the token used to authenticate cache invalidations with.
    *
-   * @return string[]
+   * @return string
    *   Token string, e.g. 'oursecret' or 'sitedev'.
    */
   public function getBalancerToken();
@@ -29,7 +29,7 @@ interface PlatformInfoInterface {
    * @throws \RuntimeException
    *   Thrown when either no configuration is available.
    *
-   * @return array[]
+   * @return mixed[]
    *   Associated array with configuration parameters for Acquia Platform CDN,
    *   which has at minimum the following two keys:
    *    - config: Configuration source string, either 'settings' or 'state'.

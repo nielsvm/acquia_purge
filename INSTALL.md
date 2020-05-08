@@ -1,6 +1,3 @@
-[//]: # ( clear&&curl -s -F input_files[]=@INSTALL.md -F from=markdown -F to=html http://c.docverter.com/convert|tail -n+11|head -n-2 )
-[//]: # ( curl -s -F input_files[]=@INSTALL.md -F from=markdown -F to=pdf http://c.docverter.com/convert>INSTALL.pdf )
-
 # Installation
 
 The Acquia Purge module provides integration with the

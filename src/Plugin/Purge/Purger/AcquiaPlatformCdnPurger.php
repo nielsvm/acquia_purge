@@ -28,7 +28,7 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
   /**
    * The Acquia Platform CDN backend.
    *
-   * @var \Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface
+   * @var null|\Drupal\acquia_purge\AcquiaPlatformCdn\BackendInterface
    */
   protected $backend = NULL;
 
@@ -42,7 +42,7 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
   /**
    * The Guzzle HTTP client.
    *
-   * @var \GuzzleHttp\Client
+   * @var \GuzzleHttp\ClientInterface
    */
   protected $httpClient;
 
@@ -60,7 +60,7 @@ class AcquiaPlatformCdnPurger extends PurgerBase implements DebuggerAwareInterfa
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
+  final public function __construct(PlatformInfoInterface $acquia_purge_platforminfo, ClientInterface $http_client, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->platformInfo = $acquia_purge_platforminfo;
     $this->httpClient = $http_client;

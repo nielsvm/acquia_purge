@@ -108,7 +108,7 @@ class RecommendationsCheck extends DiagnosticCheckBase implements DiagnosticChec
    * @param mixed $plugin_definition
    *   The plugin implementation definition.
    */
-  public function __construct($root, CacheBackendInterface $cache_backend, ConfigFactoryInterface $config_factory, ModuleHandlerInterface $module_handler, ProcessorsServiceInterface $purge_processors, QueuersServiceInterface $purge_queuers, PurgersServiceInterface $purge_purgers, Settings $settings, array $configuration, $plugin_id, $plugin_definition) {
+  final public function __construct($root, CacheBackendInterface $cache_backend, ConfigFactoryInterface $config_factory, ModuleHandlerInterface $module_handler, ProcessorsServiceInterface $purge_processors, QueuersServiceInterface $purge_queuers, PurgersServiceInterface $purge_purgers, Settings $settings, array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->cache = $cache_backend;
     $this->configFactory = $config_factory;

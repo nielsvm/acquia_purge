@@ -37,7 +37,7 @@ class AcquiaCloudSiteHeader extends TagsHeaderBase implements TagsHeaderInterfac
    * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
    *   Provides technical information accessors for Acquia Cloud.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, PlatformInfoInterface $acquia_purge_platforminfo) {
+  final public function __construct(array $configuration, $plugin_id, $plugin_definition, PlatformInfoInterface $acquia_purge_platforminfo) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->identifier = $acquia_purge_platforminfo->getSiteIdentifier();
   }

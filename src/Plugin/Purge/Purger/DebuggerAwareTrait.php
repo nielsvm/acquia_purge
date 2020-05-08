@@ -13,9 +13,9 @@ trait DebuggerAwareTrait {
   /**
    * The debugger instance.
    *
-   * @var \Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface
+   * @var null|\Drupal\acquia_purge\Plugin\Purge\Purger\DebuggerInterface
    */
-  private $debuggerInstance;
+  private $debuggerInstance = NULL;
 
   /**
    * {@inheritdoc}

@@ -115,6 +115,7 @@ class PlatformInfo implements PlatformInfoInterface {
     // Call the AH_INFO_FUNCTION and take the keys 'sitename' and 'sitegroup'.
     $function = self::AH_INFO_FUNCTION;
     if (function_exists($function)) {
+      // @phpstan-ignore-next-line
       if (is_array($info = $function())) {
         if (isset($info['environment'])) {
           if (is_string($info['environment']) && $info['environment']) {

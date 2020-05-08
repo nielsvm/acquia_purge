@@ -22,7 +22,7 @@ class AcquiaPlatformCdnTagsHeader extends TagsHeaderBase implements TagsHeaderIn
   /**
    * The Acquia Platform CDN backend.
    *
-   * @var string
+   * @var null|string
    */
   protected $backendClass = NULL;
 
@@ -45,12 +45,14 @@ class AcquiaPlatformCdnTagsHeader extends TagsHeaderBase implements TagsHeaderIn
    * @param \Drupal\acquia_purge\AcquiaCloud\PlatformInfoInterface $acquia_purge_platforminfo
    *   Information object interfacing with the Acquia platform.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, PlatformInfoInterface $acquia_purge_platforminfo) {
+  final public function __construct(array $configuration, $plugin_id, $plugin_definition, PlatformInfoInterface $acquia_purge_platforminfo) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->platformInfo = $acquia_purge_platforminfo;
     $this->backendClass = BackendFactory::getClass($this->platformInfo);
+
+    // When a backend is available, inject the platform info object.
     if ($this->backendClass) {
-      return $this->backendClass::platformInfo($this->platformInfo);
+      $this->backendClass::platformInfo($this->platformInfo);
     }
   }
 

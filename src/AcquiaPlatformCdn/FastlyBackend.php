@@ -252,11 +252,12 @@ class FastlyBackend extends BackendBase implements BackendInterface {
   /**
    * Get a fully qualified Fastly API uri in which 'service_id' is replaced.
    *
+   * This helper can be used similar to sprintf() by passing in placeholders
+   * like '%s' and '%d' to get substituted URLs, for example:
+   *   $this->fastlyRequestUri('service/service_id/purge/%s', $key)
+   *
    * @param string $path
    *   The API path on the Fastly API.
-   * @param mixed ...
-   *   Placeholders like '%s' and '%d' can be used in $path, and passed
-   *   as extra arguments, similar to how sprintf() works.
    *
    * @return string
    *   Fastly API uri with 'service_id' replaced.

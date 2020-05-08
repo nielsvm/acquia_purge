@@ -17,7 +17,7 @@ abstract class BackendBase implements BackendInterface {
   /**
    * The Guzzle HTTP client.
    *
-   * @var \GuzzleHttp\Client
+   * @var \GuzzleHttp\ClientInterface
    */
   protected $httpClient;
 
