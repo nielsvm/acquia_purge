@@ -45,7 +45,6 @@ jobs:
     #    - env: ORCA_JOB=CORE_NEXT
     # Temporary allowances.
     - env: ORCA_JOB=STATIC_CODE_ANALYSIS
-    - env: ORCA_JOB=DEPRECATED_CODE_SCAN
     - { php: "7.3", env: ORCA_JOB=D9_READINESS }
 
 before_install:
