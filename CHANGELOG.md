@@ -10,14 +10,18 @@ and this project adheres to
 ### Added
 
 ### Changed
+
+## [8.x-1.1] - 2020-05-29
+
+### Changed
 - **Important:** Acquia Purge now requires Drupal 8 to be updated to a recent
   stable version, which is ``8.8.6``. This requirement supports the ongoing
   commitment to stability, quality and functional equivalent on Drupal 8, while
   paving the way for equal Drupal 9 quality with a single codebase.
-- **Improvement:** Module has been thoroughly tested on D9 (D9 readiness).
-- **Improvement:** Code quality has been brought up to date (D9 readiness).
 
 ### Fixed
+- **D9 support:** Various little fixes have been made to run smooth on D9.
+- **Improvement:** Code quality has been brought up to date (D9 readiness).
 
 ## [8.x-1.1-beta1] - 2019-10-09
 
