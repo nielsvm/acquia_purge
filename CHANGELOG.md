@@ -10,9 +10,12 @@ and this project adheres to
 ### Added
 
 ### Changed
-- **Improvement:** fixes to pass all these these standards checks:
-    - `phpcs --standard=Drupal --extensions=php,module,inc,install,..`
-    - `phpcs --standard=AcquiaDrupalStrict`
+- **Important:** Acquia Purge now requires Drupal 8 to be updated to a recent
+  stable version, which is ``8.8.6``. This requirement supports the ongoing
+  commitment to stability, quality and functional equivalent on Drupal 8, while
+  paving the way for equal Drupal 9 quality with a single codebase.
+- **Improvement:** Module has been thoroughly tested on D9 (D9 readiness).
+- **Improvement:** Code quality has been brought up to date (D9 readiness).
 
 ### Fixed
 
