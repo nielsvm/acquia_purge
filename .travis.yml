@@ -34,9 +34,6 @@ jobs:
     - { name: "Integrated test w/ dev package versions", env: ORCA_JOB=INTEGRATED_DEV }
     - { name: "Integrated test w/ dev package versions & next minor dev version of Drupal core", env: ORCA_JOB=CORE_NEXT }
     - { name: "D9 readiness test", php: "7.3", env: ORCA_JOB=D9_READINESS}
-  allow_failures:
-    # Temporary allowances.
-    - env: ORCA_JOB=STATIC_CODE_ANALYSIS
 
 before_install:
   - composer create-project --no-dev acquia/orca ../orca "$ORCA_VERSION"
